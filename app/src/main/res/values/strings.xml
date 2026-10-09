@@ -1,14 +1,15 @@
 <resources>
     <string name="app_name">Алиса Дом: Виджет</string>
-    <string name="widget_4x2_name">Алиса: Датчики Умного Дома (4x2)</string>
+    <string name="widget_4x2_name">Алиса: Датчики Дома (4x2)</string>
     <string name="widget_2x2_name">Алиса: Климат Комнаты (2x2)</string>
+    <string name="widget_2x1_name">Алиса: Климат Мини (2x1)</string>
     <string name="widget_4x1_name">Алиса: Статус дома (4x1)</string>
 
     <string name="client_id_hint">Вставьте ваш ClientID (например: 1a2b3c...)</string>
     <string name="token_hint">Вставьте токен y0_...</string>
     <string name="btn_paste">Вставить</string>
-    <string name="btn_authorize_yandex">🌐 Авторизоваться и получить токен</string>
-    <string name="btn_how_to_get_token">Создать ClientID на oauth.yandex.ru</string>
-    <string name="btn_test_sync">🔄 Сохранить токен и синхронизировать</string>
+    <string name="btn_authorize_yandex">⚡ Получить токен (автоматически)</string>
+    <string name="btn_create_client_id">➕ Создать ClientID на oauth.yandex.ru</string>
+    <string name="btn_test_sync">🔄 Синхронизировать датчики</string>
     <string name="btn_open_yandex_app">Открыть «Дом с Алисой»</string>
 </resources>

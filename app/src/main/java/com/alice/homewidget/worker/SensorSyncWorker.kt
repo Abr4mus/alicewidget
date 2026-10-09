@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters
 import com.alice.homewidget.api.YandexApiClient
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.widget.AliceBarWidgetProvider
+import com.alice.homewidget.widget.AliceCompact2x1WidgetProvider
 import com.alice.homewidget.widget.AliceCompactWidgetProvider
 import com.alice.homewidget.widget.AliceHomeWidgetProvider
 
@@ -63,6 +64,18 @@ class SensorSyncWorker(
                 val intent = Intent(context, AliceCompactWidgetProvider::class.java).apply {
                     action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, compactIds)
+                }
+                context.sendBroadcast(intent)
+            }
+
+            // Update 2x1
+            val compact2x1Ids = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, AliceCompact2x1WidgetProvider::class.java)
+            )
+            if (compact2x1Ids.isNotEmpty()) {
+                val intent = Intent(context, AliceCompact2x1WidgetProvider::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, compact2x1Ids)
                 }
                 context.sendBroadcast(intent)
             }

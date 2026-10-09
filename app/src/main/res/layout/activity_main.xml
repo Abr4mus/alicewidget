@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top Header with Official Style Icon and Version v.0.3 -->
+        <!-- Top Header with Delicate Russian Icon and Version v.0.31 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -22,9 +22,9 @@
             android:paddingBottom="16dp">
 
             <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="Алиса"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:contentDescription="Алиса Виджеты"
                 android:src="@drawable/ic_alice_app_icon" />
 
             <LinearLayout
@@ -57,7 +57,7 @@
                         android:paddingTop="2dp"
                         android:paddingEnd="6dp"
                         android:paddingBottom="2dp"
-                        android:text="v.0.3"
+                        android:text="v.0.31"
                         android:textColor="@color/alice_neon_light"
                         android:textSize="11sp"
                         android:textStyle="bold" />
@@ -66,13 +66,13 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Виджет рабочего стола"
+                    android:text="Виджеты рабочего стола"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- CARD 1: FAST 1-CLICK AUTHENTICATION -->
+        <!-- CARD 1: FAST 1-CLICK AUTHENTICATION & CLIENT ID -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -95,11 +95,24 @@
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
+                <!-- Button to Create ClientID on oauth.yandex.ru -->
+                <Button
+                    android:id="@+id/btnCreateClientId"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="10dp"
+                    android:text="➕ Создать ClientID на oauth.yandex.ru"
+                    android:textColor="@color/alice_neon_light"
+                    android:textSize="12sp"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="@color/alice_neon_purple" />
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Введите ClientID и нажмите «Получить токен» — авторизация пройдет прямо в приложении:"
+                    android:layout_marginTop="8dp"
+                    android:text="После создания вставьте ClientID и нажмите «Получить токен»:"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
 
@@ -107,7 +120,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -135,7 +148,7 @@
                         android:textColor="@color/alice_neon_light" />
                 </LinearLayout>
 
-                <!-- Automatic Get Token Button -->
+                <!-- Automatic In-App Token Button -->
                 <Button
                     android:id="@+id/btnAuthorizeYandex"
                     android:layout_width="match_parent"
@@ -148,7 +161,7 @@
                     android:textStyle="bold"
                     app:cornerRadius="12dp" />
 
-                <!-- OAuth Token Row (auto-filled, but can be manual) -->
+                <!-- OAuth Token Row -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -211,7 +224,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- CARD 2: PIN WIDGET DIRECTLY FROM APP (NEW!) -->
+        <!-- CARD 2: PIN WIDGET DIRECTLY FROM APP (INCLUDES 2x1) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -238,7 +251,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Нажмите кнопку, чтобы сразу разместить виджет на экране без поиска в меню:"
+                    android:text="Выберите формат виджета и добавьте в 1 клик на главный экран:"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
 
@@ -246,7 +259,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="10dp"
                     android:background="@drawable/bg_alice_tile"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
@@ -269,7 +282,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Температура, влажность, двери, заряд"
+                            android:text="Полный обзор: климат, двери, батарейки"
                             android:textColor="@color/alice_text_muted"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -326,6 +339,48 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
+                <!-- NEW Widget 2x1 Pin Option -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_alice_tile"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2 × 1 (Мини-климат)"
+                            android:textColor="@color/alice_text_white"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Узкая компактная плитка с температурой"
+                            android:textColor="@color/alice_text_muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnPinWidget2x1"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:text="+ Добавить"
+                        android:textColor="@color/alice_neon_light"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
                 <!-- Widget 4x1 Pin Option -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -353,7 +408,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Компактная строка в одну линию"
+                            android:text="Строка статуса для верха или низа экрана"
                             android:textColor="@color/alice_text_muted"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -370,7 +425,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- CARD 3: DEVICE & METRICS CUSTOMIZATION (NEW!) -->
+        <!-- CARD 3: ROOM SELECTION & DEVICE METRICS -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -388,27 +443,47 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⚙️ Выбор данных и датчиков"
+                    android:text="⚙️ Выбор комнаты и показателей"
                     android:textColor="@color/alice_text_white"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
+                <!-- Room Selector Spinner -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Отображать данные для комнаты:"
+                    android:textColor="@color/alice_neon_light"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spRoomsList"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
                     android:layout_marginTop="4dp"
-                    android:text="Отключите показатели, которых нет на ваших датчиках (например, давление):"
-                    android:textColor="@color/alice_text_muted"
-                    android:textSize="12sp" />
+                    android:background="@drawable/bg_alice_tile"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Показатели в этой комнате:"
+                    android:textColor="@color/alice_neon_light"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <!-- Checkboxes for metrics -->
                 <CheckBox
                     android:id="@+id/cbShowHumidity"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="4dp"
                     android:checked="true"
-                    android:text="💧 Показывать влажность (%)"
+                    android:text="💧 Влажность (%)"
                     android:textColor="@color/alice_text_white" />
 
                 <CheckBox
@@ -416,7 +491,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:checked="false"
-                    android:text="🧭 Показывать атмосферное давление (мм рт. ст.)"
+                    android:text="🧭 Атмосферное давление (мм рт. ст.)"
                     android:textColor="@color/alice_text_white" />
 
                 <CheckBox
@@ -424,7 +499,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:checked="true"
-                    android:text="🚪 Показывать датчик открытия дверей"
+                    android:text="🚪 Датчик открытия дверей/окон"
                     android:textColor="@color/alice_text_white" />
 
                 <CheckBox
@@ -432,16 +507,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:checked="true"
-                    android:text="🔋 Показывать уровень батареек"
+                    android:text="🔋 Уровень батареек"
                     android:textColor="@color/alice_text_white" />
 
-                <!-- Dynamic Devices Section -->
+                <!-- Dynamic Devices in Selected Room -->
                 <TextView
                     android:id="@+id/tvDevicesHeader"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Отображаемые устройства:"
+                    android:layout_marginTop="10dp"
+                    android:text="Датчики в выбранной комнате:"
                     android:textColor="@color/alice_neon_light"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -450,9 +525,9 @@
                     android:id="@+id/layoutDevicesList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="4dp"
                     android:orientation="vertical">
-                    <!-- Populated programmatically -->
+                    <!-- Populated programmatically per selected room -->
                 </LinearLayout>
 
                 <Button

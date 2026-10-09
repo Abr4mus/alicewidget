@@ -46,7 +46,7 @@ class WidgetDataManager(context: Context) {
         set(value) = prefs.edit().putString(KEY_SELECTED_ROOM_ID, value).apply()
 
     var showPressure: Boolean
-        get() = prefs.getBoolean(KEY_SHOW_PRESSURE, false) // Default FALSE as requested
+        get() = prefs.getBoolean(KEY_SHOW_PRESSURE, false)
         set(value) = prefs.edit().putBoolean(KEY_SHOW_PRESSURE, value).apply()
 
     var showHumidity: Boolean
@@ -90,10 +90,20 @@ class WidgetDataManager(context: Context) {
         return getCachedUserInfo()?.rooms ?: emptyList()
     }
 
+    fun getDevicesForRoom(roomId: String?): List<Device> {
+        val allDevices = getCachedUserInfo()?.devices ?: return emptyList()
+        if (roomId.isNullOrBlank() || roomId == "ALL") {
+            return allDevices.filter { it.isClimateSensor() || it.isOpenSensor() || it.isLeakSensor() || it.getTemperature() != null || it.getHumidity() != null }
+        }
+        val room = getAvailableRooms().firstOrNull { it.id == roomId }
+        return allDevices.filter { dev ->
+            (dev.room == roomId || room?.devices?.contains(dev.id) == true) &&
+            (dev.isClimateSensor() || dev.isOpenSensor() || dev.isLeakSensor() || dev.getTemperature() != null || dev.getHumidity() != null)
+        }
+    }
+
     fun getAvailableDevices(): List<Device> {
-        return getCachedUserInfo()?.devices?.filter {
-            it.isClimateSensor() || it.isOpenSensor() || it.isLeakSensor() || it.getTemperature() != null || it.getHumidity() != null
-        } ?: emptyList()
+        return getDevicesForRoom(selectedRoomId)
     }
 
     fun getAggregatedSensorData(): AggregatedSensorData {
@@ -115,8 +125,8 @@ class WidgetDataManager(context: Context) {
         val allDevices = info.devices
         val enabledSet = enabledDeviceIds
 
-        // Filter only enabled devices if user selected some, otherwise all
-        val devices = if (enabledSet.isNotEmpty()) {
+        // Filter only enabled devices
+        val filteredDevices = if (enabledSet.isNotEmpty()) {
             allDevices.filter { enabledSet.contains(it.id) }
         } else {
             allDevices
@@ -129,14 +139,16 @@ class WidgetDataManager(context: Context) {
         var primaryPress: Double? = null
         var primaryRoomName = ""
 
-        // Find primary room
-        val targetRoom = rooms.firstOrNull { it.id == selectedRoomId }
-            ?: rooms.firstOrNull { r -> devices.any { it.room == r.id || r.devices.contains(it.id) } }
-            ?: rooms.firstOrNull()
+        val roomId = selectedRoomId
+        val targetRoom = if (!roomId.isNullOrBlank() && roomId != "ALL") {
+            rooms.firstOrNull { it.id == roomId }
+        } else {
+            rooms.firstOrNull { r -> filteredDevices.any { it.room == r.id || r.devices.contains(it.id) } } ?: rooms.firstOrNull()
+        }
 
         if (targetRoom != null) {
             primaryRoomName = targetRoom.name
-            val roomDevs = devices.filter { it.room == targetRoom.id || targetRoom.devices.contains(it.id) }
+            val roomDevs = filteredDevices.filter { it.room == targetRoom.id || targetRoom.devices.contains(it.id) }
             for (dev in roomDevs) {
                 if (primaryTemp == null) primaryTemp = dev.getTemperature()
                 if (primaryHum == null && showHumidity) primaryHum = dev.getHumidity()
@@ -144,26 +156,31 @@ class WidgetDataManager(context: Context) {
             }
         }
 
-        // Fallbacks across filtered devices
+        // Fallbacks across filtered devices if still null
         if (primaryTemp == null) {
-            primaryTemp = devices.firstNotNullOfOrNull { it.getTemperature() }
+            primaryTemp = filteredDevices.firstNotNullOfOrNull { it.getTemperature() }
         }
         if (primaryHum == null && showHumidity) {
-            primaryHum = devices.firstNotNullOfOrNull { it.getHumidity() }
+            primaryHum = filteredDevices.firstNotNullOfOrNull { it.getHumidity() }
         }
         if (primaryPress == null && showPressure) {
-            primaryPress = devices.firstNotNullOfOrNull { it.getPressure() }
+            primaryPress = filteredDevices.firstNotNullOfOrNull { it.getPressure() }
         }
 
         if (primaryRoomName.isBlank()) {
             primaryRoomName = targetRoom?.name ?: "Дом"
         }
 
-        // Check door sensors (only if enabled in settings)
+        // Check door sensors (only if enabled)
         var anyDoorOpen = false
         var openDoorName: String? = null
         if (showDoor) {
-            for (dev in devices) {
+            val doorScope = if (targetRoom != null && !roomId.isNullOrBlank() && roomId != "ALL") {
+                filteredDevices.filter { it.room == targetRoom.id || targetRoom.devices.contains(it.id) }
+            } else {
+                filteredDevices
+            }
+            for (dev in doorScope) {
                 if (dev.isDoorOrWindowOpen() == true) {
                     anyDoorOpen = true
                     openDoorName = dev.name
@@ -175,7 +192,7 @@ class WidgetDataManager(context: Context) {
         // Check leak sensors
         var anyLeak = false
         var leakName: String? = null
-        for (dev in devices) {
+        for (dev in filteredDevices) {
             if (dev.hasWaterLeak() == true) {
                 anyLeak = true
                 leakName = dev.name
@@ -185,14 +202,14 @@ class WidgetDataManager(context: Context) {
 
         // Check lowest battery (only if enabled)
         val lowestBattery = if (showBattery) {
-            devices.mapNotNull { it.getBattery() }.minOrNull()
+            filteredDevices.mapNotNull { it.getBattery() }.minOrNull()
         } else null
 
         // Room summaries (excluding primary room)
         val roomSummaries = mutableListOf<RoomClimateSummary>()
         for (r in rooms) {
             if (r.id == targetRoom?.id) continue
-            val rDevs = devices.filter { it.room == r.id || r.devices.contains(it.id) }
+            val rDevs = filteredDevices.filter { it.room == r.id || r.devices.contains(it.id) }
             val t = rDevs.firstNotNullOfOrNull { it.getTemperature() }
             val h = if (showHumidity) rDevs.firstNotNullOfOrNull { it.getHumidity() } else null
             val p = if (showPressure) rDevs.firstNotNullOfOrNull { it.getPressure() } else null
@@ -210,7 +227,7 @@ class WidgetDataManager(context: Context) {
             }
         }
 
-        val totalSensors = devices.count { it.isClimateSensor() || it.isOpenSensor() || it.isLeakSensor() }
+        val totalSensors = filteredDevices.count { it.isClimateSensor() || it.isOpenSensor() || it.isLeakSensor() }
 
         return AggregatedSensorData(
             householdName = householdName,

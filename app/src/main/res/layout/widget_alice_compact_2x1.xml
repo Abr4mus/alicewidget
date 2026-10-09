@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayoutCompact2x1"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_alice_widget_glass"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="6dp">
+
+    <!-- Room Name -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvCompact2x1RoomName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Комната"
+            android:textColor="@color/alice_text_muted"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvCompact2x1Temp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="23.5°"
+            android:textColor="@color/alice_text_white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Humidity Metric -->
+    <LinearLayout
+        android:id="@+id/layoutCompact2x1Humidity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_alice_tile"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="4dp">
+
+        <ImageView
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:src="@drawable/ic_humidity" />
+
+        <TextView
+            android:id="@+id/tvCompact2x1Humidity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="48%"
+            android:textColor="@color/sensor_humidity_cyan"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Mini Refresh Button -->
+    <FrameLayout
+        android:id="@+id/btnCompact2x1Refresh"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:background="@drawable/bg_alice_btn_circle">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="center"
+            android:contentDescription="Обновить"
+            android:src="@drawable/ic_refresh" />
+    </FrameLayout>
+
+</LinearLayout>

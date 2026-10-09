@@ -15,6 +15,8 @@ import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -26,7 +28,9 @@ import com.alice.homewidget.R
 import com.alice.homewidget.api.YandexApiClient
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.databinding.ActivityMainBinding
+import com.alice.homewidget.model.Room
 import com.alice.homewidget.widget.AliceBarWidgetProvider
+import com.alice.homewidget.widget.AliceCompact2x1WidgetProvider
 import com.alice.homewidget.widget.AliceCompactWidgetProvider
 import com.alice.homewidget.widget.AliceHomeWidgetProvider
 import com.alice.homewidget.worker.SensorSyncWorker
@@ -40,6 +44,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var dataManager: WidgetDataManager
     private val apiClient = YandexApiClient()
+    private var availableRooms: List<Room> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +61,12 @@ class MainActivity : AppCompatActivity() {
     private fun initViews() {
         binding.etClientId.setText(dataManager.clientId)
         binding.etOauthToken.setText(dataManager.oauthToken)
+
+        // Button to create application on oauth.yandex.ru
+        binding.btnCreateClientId.setOnClickListener {
+            val url = "https://oauth.yandex.ru/client/new"
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
 
         // Paste ClientID
         binding.btnPasteClientId.setOnClickListener {
@@ -116,6 +127,7 @@ class MainActivity : AppCompatActivity() {
         // Pin widgets directly to desktop
         binding.btnPinWidget4x2.setOnClickListener { pinWidget(AliceHomeWidgetProvider::class.java) }
         binding.btnPinWidget2x2.setOnClickListener { pinWidget(AliceCompactWidgetProvider::class.java) }
+        binding.btnPinWidget2x1.setOnClickListener { pinWidget(AliceCompact2x1WidgetProvider::class.java) }
         binding.btnPinWidget4x1.setOnClickListener { pinWidget(AliceBarWidgetProvider::class.java) }
 
         // Save custom metric settings
@@ -140,6 +152,61 @@ class MainActivity : AppCompatActivity() {
         binding.cbShowPressure.isChecked = dataManager.showPressure
         binding.cbShowDoor.isChecked = dataManager.showDoor
         binding.cbShowBattery.isChecked = dataManager.showBattery
+        setupRoomsSpinner()
+    }
+
+    private fun setupRoomsSpinner() {
+        availableRooms = dataManager.getAvailableRooms()
+        val roomTitles = mutableListOf("Все комнаты")
+        roomTitles.addAll(availableRooms.map { it.name })
+
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, roomTitles)
+        binding.spRoomsList.adapter = adapter
+
+        // Set current selection
+        val curRoomId = dataManager.selectedRoomId
+        if (!curRoomId.isNullOrBlank() && curRoomId != "ALL") {
+            val index = availableRooms.indexOfFirst { it.id == curRoomId }
+            if (index >= 0) {
+                binding.spRoomsList.setSelection(index + 1)
+            }
+        } else {
+            binding.spRoomsList.setSelection(0)
+        }
+
+        binding.spRoomsList.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                dataManager.selectedRoomId = if (position == 0) "ALL" else availableRooms.getOrNull(position - 1)?.id
+                renderDevicesForSelectedRoom()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        renderDevicesForSelectedRoom()
+    }
+
+    private fun renderDevicesForSelectedRoom() {
+        val devices = dataManager.getDevicesForRoom(dataManager.selectedRoomId)
+        binding.layoutDevicesList.removeAllViews()
+        val enabledSet = dataManager.enabledDeviceIds
+
+        if (devices.isNotEmpty()) {
+            binding.tvDevicesHeader.visibility = View.VISIBLE
+            for (dev in devices) {
+                val cb = CheckBox(this).apply {
+                    tag = dev.id
+                    val rName = availableRooms.firstOrNull { it.id == dev.room }?.name ?: ""
+                    val title = if (rName.isNotBlank() && dataManager.selectedRoomId == "ALL") "${dev.name} ($rName)" else dev.name
+                    text = title
+                    setTextColor(getColor(R.color.alice_text_white))
+                    isChecked = enabledSet.isEmpty() || enabledSet.contains(dev.id)
+                }
+                binding.layoutDevicesList.addView(cb)
+            }
+        } else {
+            binding.tvDevicesHeader.visibility = View.GONE
+        }
     }
 
     private fun saveWidgetPreferences() {
@@ -273,6 +340,7 @@ class MainActivity : AppCompatActivity() {
                 (application as? AliceApplication)?.scheduleSensorSync()
                 SensorSyncWorker.notifyWidgetsToUpdate(this@MainActivity)
 
+                setupRoomsSpinner()
                 renderCachedStatus()
                 Toast.makeText(this@MainActivity, "Виджеты успешно обновлены!", Toast.LENGTH_SHORT).show()
             }.onFailure { error ->
@@ -284,28 +352,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderCachedStatus() {
         val aggregated = dataManager.getAggregatedSensorData()
-        val devices = dataManager.getAvailableDevices()
-
-        // Populate device checkboxes
-        binding.layoutDevicesList.removeAllViews()
-        val enabledSet = dataManager.enabledDeviceIds
-
-        if (devices.isNotEmpty()) {
-            binding.tvDevicesHeader.visibility = View.VISIBLE
-            for (dev in devices) {
-                val cb = CheckBox(this).apply {
-                    tag = dev.id
-                    val roomName = dataManager.getAvailableRooms().firstOrNull { it.id == dev.room }?.name ?: ""
-                    val title = if (roomName.isNotBlank()) "${dev.name} ($roomName)" else dev.name
-                    text = title
-                    setTextColor(getColor(R.color.alice_text_white))
-                    isChecked = enabledSet.isEmpty() || enabledSet.contains(dev.id)
-                }
-                binding.layoutDevicesList.addView(cb)
-            }
-        } else {
-            binding.tvDevicesHeader.visibility = View.GONE
-        }
+        val allDevices = dataManager.getAvailableDevices()
 
         if (dataManager.lastSyncTimestamp > 0) {
             val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
@@ -313,9 +360,10 @@ class MainActivity : AppCompatActivity() {
             binding.cardStatus.visibility = View.VISIBLE
             binding.tvStatusResult.text = "✅ Данные получены: $dateStr\n" +
                     "Дом: ${aggregated.householdName}\n" +
-                    "Найдено устройств: ${devices.size}\n" +
+                    "Комната: ${aggregated.primaryRoomName}\n" +
+                    "Найдено устройств: ${allDevices.size}\n" +
                     "Температура: ${aggregated.primaryTemperature?.let { "$it°C" } ?: "--"}\n" +
-                    (if (dataManager.showHumidity) "Влажность: ${aggregated.primaryHumidity?.let { "$it%" } ?: "--"}\n" else "") +
+                    (if (dataManager.showHumidity && aggregated.primaryHumidity != null) "Влажность: ${aggregated.primaryHumidity}%\n" else "") +
                     (if (dataManager.showPressure && aggregated.primaryPressure != null) "Давление: ${aggregated.primaryPressure} мм рт. ст.\n" else "") +
                     "Датчик дверей: ${if (aggregated.isAnyDoorOpen) "ОТКРЫТО" else "Закрыто"}"
         } else {

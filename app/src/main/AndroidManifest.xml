@@ -53,6 +53,20 @@
                 android:resource="@xml/widget_alice_compact_2x2_info" />
         </receiver>
 
+        <!-- 2x1 Mini Horizontal Widget Provider -->
+        <receiver
+            android:name=".widget.AliceCompact2x1WidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_2x1_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.alice.homewidget.ACTION_REFRESH_WIDGET" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_alice_compact_2x1_info" />
+        </receiver>
+
         <!-- 4x1 Minimal Bar Widget Provider -->
         <receiver
             android:name=".widget.AliceBarWidgetProvider"
