@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Алиса Дом: Виджет</string>
+    <string name="widget_4x2_name">Алиса: Датчики Умного Дома (4x2)</string>
+    <string name="widget_2x2_name">Алиса: Климат Комнаты (2x2)</string>
+    <string name="widget_4x1_name">Алиса: Статус дома (4x1)</string>
+
+    <string name="token_hint">Вставьте OAuth токен Яндекса</string>
+    <string name="btn_paste">Вставить</string>
+    <string name="btn_how_to_get_token">Как получить токен?</string>
+    <string name="btn_test_sync">Синхронизировать и проверить</string>
+    <string name="btn_open_yandex_app">Открыть «Дом с Алисой»</string>
+</resources>

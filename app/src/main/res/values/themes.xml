@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.AliceHomeWidget" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/alice_neon_purple</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/alice_primary_purple</item>
+        <item name="android:statusBarColor">@color/alice_purple_dark</item>
+        <item name="android:navigationBarColor">@color/alice_purple_dark</item>
+        <item name="android:windowBackground">@color/alice_purple_dark</item>
+    </style>
+</resources>

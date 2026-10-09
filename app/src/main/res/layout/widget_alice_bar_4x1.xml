@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayoutBar"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_alice_widget_glass"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="6dp">
+
+    <!-- Alice Icon -->
+    <FrameLayout
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:background="@drawable/bg_alice_gradient_circle">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_alice_logo" />
+    </FrameLayout>
+
+    <!-- Household Title -->
+    <TextView
+        android:id="@+id/tvBarHousehold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Мой дом"
+        android:textColor="@color/alice_text_white"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <!-- Space -->
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="1" />
+
+    <!-- Temp -->
+    <TextView
+        android:id="@+id/tvBarTemp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:drawablePadding="2dp"
+        android:text="23.5°C"
+        android:textColor="@color/alice_text_white"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:text="•"
+        android:textColor="@color/alice_text_dim" />
+
+    <!-- Hum -->
+    <TextView
+        android:id="@+id/tvBarHumidity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="48%"
+        android:textColor="@color/sensor_humidity_cyan"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:text="•"
+        android:textColor="@color/alice_text_dim" />
+
+    <!-- Door -->
+    <TextView
+        android:id="@+id/tvBarDoor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🚪 ОК"
+        android:textColor="@color/sensor_ok_green"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <!-- Space -->
+    <View
+        android:layout_width="8dp"
+        android:layout_height="1dp" />
+
+    <!-- Mini Refresh Button -->
+    <FrameLayout
+        android:id="@+id/btnBarRefresh"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:background="@drawable/bg_alice_btn_circle">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_refresh" />
+    </FrameLayout>
+
+</LinearLayout>

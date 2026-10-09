@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Alice Deep Violet Theme Colors -->
+    <color name="alice_purple_dark">#120B24</color>
+    <color name="alice_purple_surface">#1A1233</color>
+    <color name="alice_purple_card">#251B45</color>
+    <color name="alice_purple_tile">#302257</color>
+    <color name="alice_purple_border">#4A377E</color>
+    
+    <!-- Alice Brand Neon Gradients & Accents -->
+    <color name="alice_neon_purple">#9D4EDD</color>
+    <color name="alice_primary_purple">#7B2CBF</color>
+    <color name="alice_deep_purple">#5A189A</color>
+    <color name="alice_neon_light">#C77DFF</color>
+    <color name="alice_glow">#E0AAFF</color>
+
+    <!-- Text Colors -->
+    <color name="alice_text_white">#FFFFFF</color>
+    <color name="alice_text_light">#F1E8FF</color>
+    <color name="alice_text_muted">#A793D0</color>
+    <color name="alice_text_dim">#7A67A2</color>
+
+    <!-- Sensor State Colors -->
+    <color name="sensor_temp_warm">#FF6B8B</color>
+    <color name="sensor_humidity_cyan">#38BDF8</color>
+    <color name="sensor_ok_green">#10B981</color>
+    <color name="sensor_warn_red">#EF4444</color>
+    <color name="sensor_pressure_lilac">#C084FC</color>
+
+    <!-- System -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
