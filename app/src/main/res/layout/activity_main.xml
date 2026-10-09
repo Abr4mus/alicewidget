@@ -10,55 +10,76 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
-        <!-- Header -->
+        <!-- Top Header with Official Style Icon and Version v.0.3 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingTop="12dp"
-            android:paddingBottom="20dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp">
 
             <ImageView
-                android:layout_width="52dp"
-                android:layout_height="52dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:contentDescription="Алиса"
                 android:src="@drawable/ic_alice_app_icon" />
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
+                android:layout_marginStart="12dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Умный Дом Алисы"
-                    android:textColor="@color/alice_text_white"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Умный Дом Алисы"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_alice_chip"
+                        android:paddingStart="6dp"
+                        android:paddingTop="2dp"
+                        android:paddingEnd="6dp"
+                        android:paddingBottom="2dp"
+                        android:text="v.0.3"
+                        android:textColor="@color/alice_neon_light"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Настройка виджета рабочего стола"
+                    android:text="Виджет рабочего стола"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- CARD 1: CLIENT ID & 1-CLICK AUTH -->
+        <!-- CARD 1: FAST 1-CLICK AUTHENTICATION -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="14dp"
             app:cardBackgroundColor="@color/alice_purple_card"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="4dp">
+            app:cardCornerRadius="16dp"
+            app:cardElevation="3dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -69,7 +90,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🆔 Шаг 1. Введите ClientID"
+                    android:text="🔑 Авторизация в Яндекс IoT"
                     android:textColor="@color/alice_text_white"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -78,10 +99,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Вставьте ClientID созданного приложения с oauth.yandex.ru и нажмите кнопку авторизации:"
+                    android:text="Введите ClientID и нажмите «Получить токен» — авторизация пройдет прямо в приложении:"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
 
+                <!-- Client ID Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -92,10 +114,10 @@
                     <EditText
                         android:id="@+id/etClientId"
                         android:layout_width="0dp"
-                        android:layout_height="48dp"
+                        android:layout_height="46dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_alice_tile"
-                        android:hint="@string/client_id_hint"
+                        android:hint="ClientID приложения"
                         android:inputType="text"
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp"
@@ -107,45 +129,96 @@
                         android:id="@+id/btnPasteClientId"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="wrap_content"
-                        android:layout_height="48dp"
+                        android:layout_height="46dp"
                         android:layout_marginStart="8dp"
-                        android:text="@string/btn_paste"
+                        android:text="Вставить"
                         android:textColor="@color/alice_neon_light" />
                 </LinearLayout>
 
-                <!-- 1-Click Authorize Button -->
+                <!-- Automatic Get Token Button -->
                 <Button
                     android:id="@+id/btnAuthorizeYandex"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="10dp"
                     android:backgroundTint="@color/alice_neon_purple"
-                    android:text="@string/btn_authorize_yandex"
+                    android:text="⚡ Получить токен (автоматически)"
                     android:textColor="@color/white"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    app:cornerRadius="14dp" />
+                    app:cornerRadius="12dp" />
 
-                <Button
-                    android:id="@+id/btnTokenHelp"
-                    style="@style/Widget.Material3.Button.TextButton"
+                <!-- OAuth Token Row (auto-filled, but can be manual) -->
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Токен доступа:"
+                    android:textColor="@color/alice_text_muted"
+                    android:textSize="11sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="@string/btn_how_to_get_token"
-                    android:textColor="@color/alice_neon_light"
-                    android:textSize="12sp" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/etOauthToken"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_alice_tile"
+                        android:hint="Токен появится здесь сам"
+                        android:inputType="textPassword"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textColor="@color/alice_text_white"
+                        android:textColorHint="@color/alice_text_dim"
+                        android:textSize="12sp" />
+
+                    <Button
+                        android:id="@+id/btnPasteToken"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="46dp"
+                        android:layout_marginStart="8dp"
+                        android:text="Вставить"
+                        android:textColor="@color/alice_neon_light" />
+                </LinearLayout>
+
+                <!-- Sync Button -->
+                <Button
+                    android:id="@+id/btnTestSync"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp"
+                    android:backgroundTint="@color/alice_primary_purple"
+                    android:text="🔄 Синхронизировать датчики"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="12dp" />
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- CARD 2: OAUTH TOKEN INPUT & SYNC -->
+        <!-- CARD 2: PIN WIDGET DIRECTLY FROM APP (NEW!) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="14dp"
             app:cardBackgroundColor="@color/alice_purple_card"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="4dp">
+            app:cardCornerRadius="16dp"
+            app:cardElevation="3dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -156,7 +229,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🔑 Шаг 2. Вставьте полученный токен"
+                    android:text="📌 Добавить виджет на рабочий стол"
                     android:textColor="@color/alice_text_white"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -165,60 +238,232 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="После подтверждения доступа в браузере скопируйте токен (y0_...) и вставьте сюда:"
+                    android:text="Нажмите кнопку, чтобы сразу разместить виджет на экране без поиска в меню:"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
 
+                <!-- Widget 4x2 Pin Option -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_alice_tile"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:padding="10dp">
 
-                    <EditText
-                        android:id="@+id/etOauthToken"
+                    <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_alice_tile"
-                        android:hint="@string/token_hint"
-                        android:inputType="textPassword"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
-                        android:textColor="@color/alice_text_white"
-                        android:textColorHint="@color/alice_text_dim"
-                        android:textSize="13sp" />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="4 × 2 (Датчики дома)"
+                            android:textColor="@color/alice_text_white"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Температура, влажность, двери, заряд"
+                            android:textColor="@color/alice_text_muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
 
                     <Button
-                        android:id="@+id/btnPasteToken"
+                        android:id="@+id/btnPinWidget4x2"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/btn_paste"
-                        android:textColor="@color/alice_neon_light" />
+                        android:layout_height="38dp"
+                        android:text="+ Добавить"
+                        android:textColor="@color/alice_neon_light"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Widget 2x2 Pin Option -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_alice_tile"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2 × 2 (Климат комнаты)"
+                            android:textColor="@color/alice_text_white"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Крупная температура и влажность"
+                            android:textColor="@color/alice_text_muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnPinWidget2x2"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:text="+ Добавить"
+                        android:textColor="@color/alice_neon_light"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Widget 4x1 Pin Option -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_alice_tile"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="4 × 1 (Мини-полоса)"
+                            android:textColor="@color/alice_text_white"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Компактная строка в одну линию"
+                            android:textColor="@color/alice_text_muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnPinWidget4x1"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:text="+ Добавить"
+                        android:textColor="@color/alice_neon_light"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- CARD 3: DEVICE & METRICS CUSTOMIZATION (NEW!) -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            app:cardBackgroundColor="@color/alice_purple_card"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚙️ Выбор данных и датчиков"
+                    android:textColor="@color/alice_text_white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Отключите показатели, которых нет на ваших датчиках (например, давление):"
+                    android:textColor="@color/alice_text_muted"
+                    android:textSize="12sp" />
+
+                <!-- Checkboxes for metrics -->
+                <CheckBox
+                    android:id="@+id/cbShowHumidity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:checked="true"
+                    android:text="💧 Показывать влажность (%)"
+                    android:textColor="@color/alice_text_white" />
+
+                <CheckBox
+                    android:id="@+id/cbShowPressure"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    android:text="🧭 Показывать атмосферное давление (мм рт. ст.)"
+                    android:textColor="@color/alice_text_white" />
+
+                <CheckBox
+                    android:id="@+id/cbShowDoor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="🚪 Показывать датчик открытия дверей"
+                    android:textColor="@color/alice_text_white" />
+
+                <CheckBox
+                    android:id="@+id/cbShowBattery"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="🔋 Показывать уровень батареек"
+                    android:textColor="@color/alice_text_white" />
+
+                <!-- Dynamic Devices Section -->
+                <TextView
+                    android:id="@+id/tvDevicesHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Отображаемые устройства:"
+                    android:textColor="@color/alice_neon_light"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/layoutDevicesList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="vertical">
+                    <!-- Populated programmatically -->
                 </LinearLayout>
 
                 <Button
-                    android:id="@+id/btnTestSync"
+                    android:id="@+id/btnSaveSettings"
+                    style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:layout_marginTop="14dp"
-                    android:backgroundTint="@color/alice_primary_purple"
-                    android:text="@string/btn_test_sync"
-                    android:textColor="@color/white"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    app:cornerRadius="14dp" />
-
-                <ProgressBar
-                    android:id="@+id/progressBar"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="10dp"
-                    android:visibility="gone" />
+                    android:layout_height="46dp"
+                    android:layout_marginTop="12dp"
+                    android:text="💾 Применить настройки к виджетам"
+                    android:textColor="@color/alice_neon_light"
+                    android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -227,11 +472,10 @@
             android:id="@+id/cardStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="14dp"
             android:visibility="gone"
-            app:cardBackgroundColor="@color/alice_purple_card"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="2dp">
+            app:cardBackgroundColor="@color/alice_purple_surface"
+            app:cardCornerRadius="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -251,43 +495,9 @@
                     android:id="@+id/tvStatusResult"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:lineSpacingExtra="3dp"
-                    android:text="Ожидание проверки..."
-                    android:textColor="@color/alice_text_light"
-                    android:textSize="13sp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Instructions Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/alice_purple_surface"
-            app:cardCornerRadius="18dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📱 Добавление виджета на рабочий стол"
-                    android:textColor="@color/alice_neon_light"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:lineSpacingExtra="2dp"
-                    android:text="1. Удерживайте палец на пустом месте рабочего стола смартфона.\n2. Выберите пункт «Виджеты».\n3. Найдите в списке «Алиса Дом: Виджет».\n4. Выберите размер: 4x2 (полный хаб с датчиками), 2x2 (комната) или 4x1 (строка).\n5. Виджет автоматически начнет обновляться каждые 15 минут, а также при нажатии на кнопку 🔄 прямо на виджете."
-                    android:textColor="@color/alice_text_muted"
+                    android:lineSpacingExtra="3dp"
+                    android:textColor="@color/alice_text_light"
                     android:textSize="12sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -298,7 +508,8 @@
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="@string/btn_open_yandex_app"
+            android:layout_marginBottom="16dp"
+            android:text="Открыть «Дом с Алисой»"
             android:textColor="@color/alice_text_light"
             app:cornerRadius="14dp"
             app:strokeColor="@color/alice_purple_border" />

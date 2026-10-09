@@ -7,7 +7,7 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <!-- Header Row -->
+    <!-- Header Row (Clean, NO LOGO IMAGE) -->
     <LinearLayout
         android:id="@+id/headerLayout"
         android:layout_width="match_parent"
@@ -16,18 +16,9 @@
         android:orientation="horizontal"
         android:paddingBottom="8dp">
 
-        <!-- App Icon -->
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:contentDescription="Алиса"
-            android:src="@drawable/ic_alice_app_icon" />
-
-        <!-- Household Name & Status -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -35,9 +26,9 @@
                 android:id="@+id/tvHouseholdName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Мой дом"
+                android:text="Датчики"
                 android:textColor="@color/alice_text_white"
-                android:textSize="13sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -52,8 +43,8 @@
         <!-- Refresh Button -->
         <FrameLayout
             android:id="@+id/btnWidgetRefresh"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/bg_alice_btn_circle">
 
             <ImageView
@@ -66,12 +57,12 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Climate Main Cards Row (3 columns) -->
+    <!-- Climate Main Cards Row -->
     <LinearLayout
+        android:id="@+id/layoutMainMetrics"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="3">
+        android:orientation="horizontal">
 
         <!-- Temperature Tile -->
         <LinearLayout
@@ -90,10 +81,13 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    android:id="@+id/tvActiveRoomLabel"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Климат"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Температура"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="10sp" />
 
@@ -110,21 +104,11 @@
                 android:layout_marginTop="2dp"
                 android:text="23.5°"
                 android:textColor="@color/alice_text_white"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvActiveRoomLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="Гостиная"
-                android:textColor="@color/alice_neon_light"
-                android:textSize="9sp" />
         </LinearLayout>
 
-        <!-- Humidity Tile (with marginStart instead of View spacer) -->
+        <!-- Humidity Tile -->
         <LinearLayout
             android:id="@+id/tileHumidity"
             android:layout_width="0dp"
@@ -162,18 +146,11 @@
                 android:layout_marginTop="2dp"
                 android:text="48%"
                 android:textColor="@color/sensor_humidity_cyan"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Норма"
-                android:textColor="@color/sensor_ok_green"
-                android:textSize="9sp" />
         </LinearLayout>
 
-        <!-- Pressure Tile (with marginStart instead of View spacer) -->
+        <!-- Pressure Tile (Hidden if disabled) -->
         <LinearLayout
             android:id="@+id/tilePressure"
             android:layout_width="0dp"
@@ -182,7 +159,8 @@
             android:layout_weight="1"
             android:background="@drawable/bg_alice_tile"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="8dp"
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -211,25 +189,18 @@
                 android:layout_marginTop="2dp"
                 android:text="752"
                 android:textColor="@color/alice_text_light"
-                android:textSize="17sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="мм рт. ст."
-                android:textColor="@color/alice_text_dim"
-                android:textSize="9sp" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Secondary Rooms Summary Row (2 columns) -->
+    <!-- Secondary Rooms Summary Row -->
     <LinearLayout
+        android:id="@+id/layoutSecondaryRooms"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:orientation="horizontal"
-        android:weightSum="2">
+        android:orientation="horizontal">
 
         <!-- Room 1 Tile -->
         <LinearLayout
@@ -240,7 +211,8 @@
             android:background="@drawable/bg_alice_tile"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="6dp">
+            android:padding="6dp"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/tvRoom1Name"
@@ -249,7 +221,6 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Спальня"
                 android:textColor="@color/alice_text_muted"
                 android:textSize="11sp" />
 
@@ -257,13 +228,12 @@
                 android:id="@+id/tvRoom1Value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="21.8° 52%"
                 android:textColor="@color/alice_text_white"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Room 2 Tile (with marginStart instead of View spacer) -->
+        <!-- Room 2 Tile -->
         <LinearLayout
             android:id="@+id/tileRoom2"
             android:layout_width="0dp"
@@ -273,7 +243,8 @@
             android:background="@drawable/bg_alice_tile"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="6dp">
+            android:padding="6dp"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/tvRoom2Name"
@@ -282,7 +253,6 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Кухня"
                 android:textColor="@color/alice_text_muted"
                 android:textSize="11sp" />
 
@@ -290,20 +260,19 @@
                 android:id="@+id/tvRoom2Value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="22.1° 44%"
                 android:textColor="@color/alice_text_white"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Bottom Status Row: Door & Battery (2 columns) -->
+    <!-- Bottom Status Row: Door & Battery -->
     <LinearLayout
+        android:id="@+id/layoutBottomStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="5dp"
-        android:orientation="horizontal"
-        android:weightSum="2">
+        android:orientation="horizontal">
 
         <!-- Door Sensor Tile -->
         <LinearLayout
@@ -326,7 +295,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_weight="1"
-                android:text="Двери"
+                android:text="Дверь"
                 android:textColor="@color/alice_text_muted"
                 android:textSize="10sp" />
 
@@ -340,7 +309,7 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Battery Status Tile (with marginStart instead of View spacer) -->
+        <!-- Battery Status Tile -->
         <LinearLayout
             android:id="@+id/tileBattery"
             android:layout_width="0dp"
@@ -364,7 +333,7 @@
                 android:id="@+id/tvBatteryStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="92% мин."
+                android:text="100%"
                 android:textColor="@color/alice_text_light"
                 android:textSize="11sp"
                 android:textStyle="bold" />

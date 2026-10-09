@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.view.View
 import android.widget.RemoteViews
 import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
@@ -31,16 +32,29 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_bar_4x1)
                 val aggregated = dataManager.getAggregatedSensorData()
 
-                views.setTextViewText(R.id.tvBarHousehold, aggregated.householdName)
+                val title = if (aggregated.primaryRoomName.isNotBlank() && aggregated.primaryRoomName != "Дом") {
+                    aggregated.primaryRoomName
+                } else {
+                    "Климат"
+                }
+                views.setTextViewText(R.id.tvBarHousehold, title)
 
                 val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°C", it) } ?: "--°"
                 views.setTextViewText(R.id.tvBarTemp, tempStr)
 
-                val humStr = aggregated.primaryHumidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
-                views.setTextViewText(R.id.tvBarHumidity, humStr)
+                if (dataManager.showHumidity && aggregated.primaryHumidity != null) {
+                    views.setViewVisibility(R.id.tvBarHumidity, View.VISIBLE)
+                    views.setTextViewText(R.id.tvBarHumidity, String.format(Locale.US, "%.0f%%", aggregated.primaryHumidity))
+                } else {
+                    views.setViewVisibility(R.id.tvBarHumidity, View.GONE)
+                }
 
-                val doorStr = if (aggregated.isAnyDoorOpen) "🚪 ОТКРЫТО" else "🚪 ОК"
-                views.setTextViewText(R.id.tvBarDoor, doorStr)
+                if (dataManager.showDoor) {
+                    views.setViewVisibility(R.id.tvBarDoor, View.VISIBLE)
+                    views.setTextViewText(R.id.tvBarDoor, if (aggregated.isAnyDoorOpen) "🚪 ОТКРЫТО" else "🚪 ОК")
+                } else {
+                    views.setViewVisibility(R.id.tvBarDoor, View.GONE)
+                }
 
                 // Click to open main app
                 val intent = Intent(context, MainActivity::class.java)

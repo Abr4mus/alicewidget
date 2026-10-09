@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.view.View
 import android.widget.RemoteViews
 import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
@@ -31,16 +32,22 @@ class AliceCompactWidgetProvider : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_compact_2x2)
                 val aggregated = dataManager.getAggregatedSensorData()
 
-                views.setTextViewText(R.id.tvCompactRoomName, aggregated.primaryRoomName)
+                val title = if (aggregated.primaryRoomName.isNotBlank() && aggregated.primaryRoomName != "Дом") {
+                    aggregated.primaryRoomName
+                } else {
+                    "Климат"
+                }
+                views.setTextViewText(R.id.tvCompactRoomName, title)
 
                 val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
                 views.setTextViewText(R.id.tvCompactTemp, tempStr)
 
-                val humStr = aggregated.primaryHumidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
-                views.setTextViewText(R.id.tvCompactHumidity, humStr)
-
-                val pressStr = aggregated.primaryPressure?.let { String.format(Locale.US, "%.0f", it) } ?: "752"
-                views.setTextViewText(R.id.tvCompactPressure, pressStr)
+                if (dataManager.showHumidity && aggregated.primaryHumidity != null) {
+                    views.setViewVisibility(R.id.layoutCompactHumidity, View.VISIBLE)
+                    views.setTextViewText(R.id.tvCompactHumidity, String.format(Locale.US, "%.0f%%", aggregated.primaryHumidity))
+                } else {
+                    views.setViewVisibility(R.id.layoutCompactHumidity, View.GONE)
+                }
 
                 // Click to open main app
                 val intent = Intent(context, MainActivity::class.java)

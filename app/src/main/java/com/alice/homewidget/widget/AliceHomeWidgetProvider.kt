@@ -52,7 +52,6 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                     val result = YandexApiClient().fetchUserInfo(token)
                     result.onSuccess { data ->
                         dataManager.saveUserInfo(data)
-                        // Trigger update of all widgets on Main thread
                         launch(Dispatchers.Main) {
                             for (id in allWidgetIds) {
                                 updateWidget(context, appWidgetManager, id, dataManager)
@@ -62,7 +61,7 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                         launch(Dispatchers.Main) {
                             for (id in allWidgetIds) {
                                 val views = RemoteViews(context.packageName, R.layout.widget_alice_sensors_4x2)
-                                views.setTextViewText(R.id.tvWidgetUpdateTime, "Ошибка обновления")
+                                views.setTextViewText(R.id.tvWidgetUpdateTime, "Ошибка")
                                 appWidgetManager.partiallyUpdateAppWidget(id, views)
                             }
                         }
@@ -85,69 +84,94 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_sensors_4x2)
                 val aggregated = dataManager.getAggregatedSensorData()
 
-                // Header
-                views.setTextViewText(R.id.tvHouseholdName, aggregated.householdName)
+                // Header title
+                val title = if (aggregated.primaryRoomName.isNotBlank() && aggregated.primaryRoomName != "Дом") {
+                    aggregated.primaryRoomName
+                } else {
+                    aggregated.householdName
+                }
+                views.setTextViewText(R.id.tvHouseholdName, title)
 
                 val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
                 val timeStr = if (aggregated.lastUpdatedTimestamp > 0) {
                     "Обновлено в " + timeFormat.format(Date(aggregated.lastUpdatedTimestamp))
                 } else {
-                    "Требуется обновление"
+                    "Нажмите для обновления"
                 }
                 views.setTextViewText(R.id.tvWidgetUpdateTime, timeStr)
 
-                // Primary Climate (Living Room / Main)
-                views.setTextViewText(R.id.tvActiveRoomLabel, aggregated.primaryRoomName)
-
+                // Temperature
                 val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
                 views.setTextViewText(R.id.tvMainTemp, tempStr)
+                views.setTextViewText(R.id.tvActiveRoomLabel, "Температура")
 
-                val humStr = aggregated.primaryHumidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
-                views.setTextViewText(R.id.tvMainHumidity, humStr)
+                // Humidity
+                if (dataManager.showHumidity && aggregated.primaryHumidity != null) {
+                    views.setViewVisibility(R.id.tileHumidity, View.VISIBLE)
+                    views.setTextViewText(R.id.tvMainHumidity, String.format(Locale.US, "%.0f%%", aggregated.primaryHumidity))
+                } else {
+                    views.setViewVisibility(R.id.tileHumidity, View.GONE)
+                }
 
-                val pressStr = aggregated.primaryPressure?.let { String.format(Locale.US, "%.0f", it) } ?: "752"
-                views.setTextViewText(R.id.tvMainPressure, pressStr)
+                // Pressure (only if explicitly enabled and available)
+                if (dataManager.showPressure && aggregated.primaryPressure != null) {
+                    views.setViewVisibility(R.id.tilePressure, View.VISIBLE)
+                    views.setTextViewText(R.id.tvMainPressure, String.format(Locale.US, "%.0f", aggregated.primaryPressure))
+                } else {
+                    views.setViewVisibility(R.id.tilePressure, View.GONE)
+                }
 
-                // Additional rooms summary
-                val otherRooms = aggregated.roomSensors.filter { it.roomName != aggregated.primaryRoomName }
+                // Secondary rooms
+                val otherRooms = aggregated.roomSensors
                 if (otherRooms.isNotEmpty()) {
+                    views.setViewVisibility(R.id.layoutSecondaryRooms, View.VISIBLE)
                     val r1 = otherRooms[0]
                     views.setTextViewText(R.id.tvRoom1Name, r1.roomName)
-                    val r1Temp = r1.temperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
+                    val r1Temp = r1.temperature?.let { String.format(Locale.US, "%.1f°", it) } ?: ""
                     val r1Hum = r1.humidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
                     views.setTextViewText(R.id.tvRoom1Value, "$r1Temp $r1Hum".trim())
                     views.setViewVisibility(R.id.tileRoom1, View.VISIBLE)
-                } else {
-                    views.setTextViewText(R.id.tvRoom1Name, "Спальня")
-                    views.setTextViewText(R.id.tvRoom1Value, "21.8° 52%")
-                    views.setViewVisibility(R.id.tileRoom1, View.VISIBLE)
-                }
 
-                if (otherRooms.size > 1) {
-                    val r2 = otherRooms[1]
-                    views.setTextViewText(R.id.tvRoom2Name, r2.roomName)
-                    val r2Temp = r2.temperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
-                    val r2Hum = r2.humidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
-                    views.setTextViewText(R.id.tvRoom2Value, "$r2Temp $r2Hum".trim())
-                    views.setViewVisibility(R.id.tileRoom2, View.VISIBLE)
+                    if (otherRooms.size > 1) {
+                        val r2 = otherRooms[1]
+                        views.setTextViewText(R.id.tvRoom2Name, r2.roomName)
+                        val r2Temp = r2.temperature?.let { String.format(Locale.US, "%.1f°", it) } ?: ""
+                        val r2Hum = r2.humidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
+                        views.setTextViewText(R.id.tvRoom2Value, "$r2Temp $r2Hum".trim())
+                        views.setViewVisibility(R.id.tileRoom2, View.VISIBLE)
+                    } else {
+                        views.setViewVisibility(R.id.tileRoom2, View.GONE)
+                    }
                 } else {
-                    views.setTextViewText(R.id.tvRoom2Name, "Кухня")
-                    views.setTextViewText(R.id.tvRoom2Value, "22.1° 44%")
-                    views.setViewVisibility(R.id.tileRoom2, View.VISIBLE)
+                    views.setViewVisibility(R.id.layoutSecondaryRooms, View.GONE)
                 }
 
                 // Door sensor
-                if (aggregated.isAnyDoorOpen) {
-                    views.setTextViewText(R.id.tvDoorStatus, "ОТКРЫТА!")
-                    views.setTextColor(R.id.tvDoorStatus, ContextCompat.getColor(context, R.color.sensor_warn_red))
+                var hasBottomItem = false
+                if (dataManager.showDoor) {
+                    hasBottomItem = true
+                    views.setViewVisibility(R.id.tileDoor, View.VISIBLE)
+                    if (aggregated.isAnyDoorOpen) {
+                        views.setTextViewText(R.id.tvDoorStatus, "ОТКРЫТО!")
+                        views.setTextColor(R.id.tvDoorStatus, ContextCompat.getColor(context, R.color.sensor_warn_red))
+                    } else {
+                        views.setTextViewText(R.id.tvDoorStatus, "Закрыто")
+                        views.setTextColor(R.id.tvDoorStatus, ContextCompat.getColor(context, R.color.sensor_ok_green))
+                    }
                 } else {
-                    views.setTextViewText(R.id.tvDoorStatus, "Закрыта")
-                    views.setTextColor(R.id.tvDoorStatus, ContextCompat.getColor(context, R.color.sensor_ok_green))
+                    views.setViewVisibility(R.id.tileDoor, View.GONE)
                 }
 
-                // Battery
-                val bat = aggregated.lowestBatteryLevel?.let { String.format(Locale.US, "%.0f%% мин.", it) } ?: "92% мин."
-                views.setTextViewText(R.id.tvBatteryStatus, bat)
+                // Battery sensor
+                if (dataManager.showBattery && aggregated.lowestBatteryLevel != null) {
+                    hasBottomItem = true
+                    views.setViewVisibility(R.id.tileBattery, View.VISIBLE)
+                    views.setTextViewText(R.id.tvBatteryStatus, String.format(Locale.US, "%.0f%%", aggregated.lowestBatteryLevel))
+                } else {
+                    views.setViewVisibility(R.id.tileBattery, View.GONE)
+                }
+
+                views.setViewVisibility(R.id.layoutBottomStatus, if (hasBottomItem) View.VISIBLE else View.GONE)
 
                 // Click Intent: Open App on Header Click
                 val openAppIntent = Intent(context, MainActivity::class.java)

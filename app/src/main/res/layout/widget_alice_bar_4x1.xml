@@ -6,28 +6,20 @@
     android:background="@drawable/bg_alice_widget_glass"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingStart="12dp"
+    android:paddingStart="14dp"
     android:paddingTop="6dp"
-    android:paddingEnd="12dp"
+    android:paddingEnd="14dp"
     android:paddingBottom="6dp">
-
-    <!-- Alice Icon -->
-    <ImageView
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:contentDescription="Алиса"
-        android:src="@drawable/ic_alice_app_icon" />
 
     <!-- Household Title -->
     <TextView
         android:id="@+id/tvBarHousehold"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
         android:layout_weight="1"
-        android:text="Мой дом"
+        android:text="Датчики"
         android:textColor="@color/alice_text_white"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:textStyle="bold" />
 
     <!-- Temp -->
@@ -37,51 +29,37 @@
         android:layout_height="wrap_content"
         android:text="23.5°C"
         android:textColor="@color/alice_text_white"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:layout_marginEnd="6dp"
-        android:text="•"
-        android:textColor="@color/alice_text_dim" />
 
     <!-- Hum -->
     <TextView
         android:id="@+id/tvBarHumidity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
         android:text="48%"
         android:textColor="@color/sensor_humidity_cyan"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:layout_marginEnd="6dp"
-        android:text="•"
-        android:textColor="@color/alice_text_dim" />
 
     <!-- Door -->
     <TextView
         android:id="@+id/tvBarDoor"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
         android:text="🚪 ОК"
         android:textColor="@color/sensor_ok_green"
-        android:textSize="11sp"
+        android:textSize="12sp"
         android:textStyle="bold" />
 
     <!-- Mini Refresh Button -->
     <FrameLayout
         android:id="@+id/btnBarRefresh"
-        android:layout_width="26dp"
-        android:layout_height="26dp"
-        android:layout_marginStart="8dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="10dp"
         android:background="@drawable/bg_alice_btn_circle">
 
         <ImageView
