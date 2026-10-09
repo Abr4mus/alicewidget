@@ -21,17 +21,11 @@
             android:paddingTop="12dp"
             android:paddingBottom="20dp">
 
-            <FrameLayout
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_alice_gradient_circle">
-
-                <ImageView
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_alice_logo" />
-            </FrameLayout>
+            <ImageView
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:contentDescription="Алиса"
+                android:src="@drawable/ic_alice_app_icon" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -57,7 +51,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- OAuth Token Input Card -->
+        <!-- CARD 1: CLIENT ID & 1-CLICK AUTH -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -75,7 +69,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🔑 Авторизация в Яндекс IoT"
+                    android:text="🆔 Шаг 1. Введите ClientID"
                     android:textColor="@color/alice_text_white"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -84,14 +78,101 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Введите ваш постоянный OAuth-токен от Яндекса с разрешением iot:view:"
+                    android:text="Вставьте ClientID созданного приложения с oauth.yandex.ru и нажмите кнопку авторизации:"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/etClientId"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_alice_tile"
+                        android:hint="@string/client_id_hint"
+                        android:inputType="text"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textColor="@color/alice_text_white"
+                        android:textColorHint="@color/alice_text_dim"
+                        android:textSize="13sp" />
+
+                    <Button
+                        android:id="@+id/btnPasteClientId"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/btn_paste"
+                        android:textColor="@color/alice_neon_light" />
+                </LinearLayout>
+
+                <!-- 1-Click Authorize Button -->
+                <Button
+                    android:id="@+id/btnAuthorizeYandex"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
                     android:layout_marginTop="12dp"
+                    android:backgroundTint="@color/alice_neon_purple"
+                    android:text="@string/btn_authorize_yandex"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="14dp" />
+
+                <Button
+                    android:id="@+id/btnTokenHelp"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/btn_how_to_get_token"
+                    android:textColor="@color/alice_neon_light"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- CARD 2: OAUTH TOKEN INPUT & SYNC -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/alice_purple_card"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔑 Шаг 2. Вставьте полученный токен"
+                    android:textColor="@color/alice_text_white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="После подтверждения доступа в браузере скопируйте токен (y0_...) и вставьте сюда:"
+                    android:textColor="@color/alice_text_muted"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -120,43 +201,33 @@
                 </LinearLayout>
 
                 <Button
-                    android:id="@+id/btnTokenHelp"
-                    style="@style/Widget.Material3.Button.TextButton"
+                    android:id="@+id/btnTestSync"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="14dp"
+                    android:backgroundTint="@color/alice_primary_purple"
+                    android:text="@string/btn_test_sync"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="14dp" />
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/btn_how_to_get_token"
-                    android:textColor="@color/alice_neon_purple"
-                    android:textSize="12sp" />
+                    android:layout_gravity="center"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
-
-        <!-- Sync Button & Progress -->
-        <Button
-            android:id="@+id/btnTestSync"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:backgroundTint="@color/alice_primary_purple"
-            android:text="@string/btn_test_sync"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:cornerRadius="16dp" />
-
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="12dp"
-            android:visibility="gone" />
 
         <!-- Status Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
             android:visibility="gone"
             app:cardBackgroundColor="@color/alice_purple_card"
             app:cardCornerRadius="18dp"
@@ -192,7 +263,7 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
             app:cardBackgroundColor="@color/alice_purple_surface"
             app:cardCornerRadius="18dp">
 
@@ -215,7 +286,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:lineSpacingExtra="2dp"
-                    android:text="1. Удерживайте палец на пустом месте рабочего стола смартфона.\n2. Выберите пункт «Виджеты».\n3. Найдите в списке «Алиса Дом: Виджет».\n4. Выберите размер: 4x2 (полный хаб с датчиками), 2x2 (комната) или 4x1 (строка).\n5. Виджет автоматически начнет обновляться каждые 15 минут, а также при нажатии на кнопку обновления."
+                    android:text="1. Удерживайте палец на пустом месте рабочего стола смартфона.\n2. Выберите пункт «Виджеты».\n3. Найдите в списке «Алиса Дом: Виджет».\n4. Выберите размер: 4x2 (полный хаб с датчиками), 2x2 (комната) или 4x1 (строка).\n5. Виджет автоматически начнет обновляться каждые 15 минут, а также при нажатии на кнопку 🔄 прямо на виджете."
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -227,7 +298,6 @@
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="16dp"
             android:text="@string/btn_open_yandex_app"
             android:textColor="@color/alice_text_light"
             app:cornerRadius="14dp"

@@ -16,19 +16,12 @@
         android:orientation="horizontal"
         android:paddingBottom="8dp">
 
-        <!-- Alice Logo Circle -->
-        <FrameLayout
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:background="@drawable/bg_alice_gradient_circle">
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_gravity="center"
-                android:contentDescription="Alice Logo"
-                android:src="@drawable/ic_alice_logo" />
-        </FrameLayout>
+        <!-- App Icon -->
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:contentDescription="Алиса"
+            android:src="@drawable/ic_alice_app_icon" />
 
         <!-- Household Name & Status -->
         <LinearLayout
@@ -59,8 +52,8 @@
         <!-- Refresh Button -->
         <FrameLayout
             android:id="@+id/btnWidgetRefresh"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:background="@drawable/bg_alice_btn_circle">
 
             <ImageView
@@ -73,7 +66,7 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Climate Main Cards Row -->
+    <!-- Climate Main Cards Row (3 columns) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -131,16 +124,12 @@
                 android:textSize="9sp" />
         </LinearLayout>
 
-        <!-- Space -->
-        <View
-            android:layout_width="6dp"
-            android:layout_height="1dp" />
-
-        <!-- Humidity Tile -->
+        <!-- Humidity Tile (with marginStart instead of View spacer) -->
         <LinearLayout
             android:id="@+id/tileHumidity"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:background="@drawable/bg_alice_tile"
             android:orientation="vertical"
@@ -184,16 +173,12 @@
                 android:textSize="9sp" />
         </LinearLayout>
 
-        <!-- Space -->
-        <View
-            android:layout_width="6dp"
-            android:layout_height="1dp" />
-
-        <!-- Pressure Tile -->
+        <!-- Pressure Tile (with marginStart instead of View spacer) -->
         <LinearLayout
             android:id="@+id/tilePressure"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:background="@drawable/bg_alice_tile"
             android:orientation="vertical"
@@ -238,7 +223,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Secondary Sensors Rows -->
+    <!-- Secondary Rooms Summary Row (2 columns) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -278,15 +263,12 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <View
-            android:layout_width="6dp"
-            android:layout_height="1dp" />
-
-        <!-- Room 2 Tile -->
+        <!-- Room 2 Tile (with marginStart instead of View spacer) -->
         <LinearLayout
             android:id="@+id/tileRoom2"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:background="@drawable/bg_alice_tile"
             android:gravity="center_vertical"
@@ -315,7 +297,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Bottom Status Row: Door & Battery -->
+    <!-- Bottom Status Row: Door & Battery (2 columns) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -358,15 +340,12 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <View
-            android:layout_width="6dp"
-            android:layout_height="1dp" />
-
-        <!-- Battery Status Tile -->
+        <!-- Battery Status Tile (with marginStart instead of View spacer) -->
         <LinearLayout
             android:id="@+id/tileBattery"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:background="@drawable/bg_alice_tile"
             android:gravity="center_vertical"

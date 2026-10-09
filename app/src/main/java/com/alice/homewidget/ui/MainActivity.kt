@@ -37,22 +37,52 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
+        binding.etClientId.setText(dataManager.clientId)
         binding.etOauthToken.setText(dataManager.oauthToken)
 
-        // Paste from clipboard
+        // Paste ClientID from clipboard
+        binding.btnPasteClientId.setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val item = clipboard.primaryClip?.getItemAt(0)
+            val text = item?.text?.toString()?.trim()
+            if (!text.isNullOrBlank()) {
+                binding.etClientId.setText(text)
+                dataManager.clientId = text
+                Toast.makeText(this, "ClientID вставлен", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Буфер обмена пуст", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // 1-Click Authorize in Yandex Browser
+        binding.btnAuthorizeYandex.setOnClickListener {
+            val clientId = binding.etClientId.text.toString().trim()
+            if (clientId.isBlank()) {
+                Toast.makeText(this, "Сначала введите ваш ClientID", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            dataManager.clientId = clientId
+            val authUrl = "https://oauth.yandex.ru/authorize?response_type=token&client_id=$clientId"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(authUrl))
+            startActivity(intent)
+            Toast.makeText(this, "Разрешите доступ в браузере и скопируйте токен", Toast.LENGTH_LONG).show()
+        }
+
+        // Paste Token from clipboard
         binding.btnPasteToken.setOnClickListener {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val item = clipboard.primaryClip?.getItemAt(0)
             val text = item?.text?.toString()?.trim()
             if (!text.isNullOrBlank()) {
                 binding.etOauthToken.setText(text)
-                Toast.makeText(this, "Токен вставлен из буфера", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Токен вставлен", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "Буфер обмена пуст", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // Help dialog or browser link
+        // Help link: Create app on Yandex OAuth
         binding.btnTokenHelp.setOnClickListener {
             val url = "https://oauth.yandex.ru/client/new"
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -63,8 +93,13 @@ class MainActivity : AppCompatActivity() {
         binding.btnTestSync.setOnClickListener {
             val token = binding.etOauthToken.text.toString().trim()
             if (token.isBlank()) {
-                Toast.makeText(this, "Пожалуйста, введите токен Яндекса", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Пожалуйста, вставьте полученный токен Яндекса", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
+            }
+
+            val clientId = binding.etClientId.text.toString().trim()
+            if (clientId.isNotBlank()) {
+                dataManager.clientId = clientId
             }
 
             dataManager.oauthToken = token

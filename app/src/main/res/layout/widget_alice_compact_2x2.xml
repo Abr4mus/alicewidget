@@ -15,17 +15,11 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <FrameLayout
+        <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:background="@drawable/bg_alice_gradient_circle">
-
-            <ImageView
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_alice_logo" />
-        </FrameLayout>
+            android:contentDescription="Алиса"
+            android:src="@drawable/ic_alice_app_icon" />
 
         <TextView
             android:id="@+id/tvCompactRoomName"
@@ -64,7 +58,7 @@
             android:textSize="10sp" />
     </LinearLayout>
 
-    <!-- Bottom Metrics -->
+    <!-- Bottom Metrics (2 columns with marginStart) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -97,13 +91,10 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <View
-            android:layout_width="4dp"
-            android:layout_height="1dp" />
-
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:background="@drawable/bg_alice_tile"
             android:gravity="center"

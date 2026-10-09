@@ -27,39 +27,43 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
             appWidgetId: Int,
             dataManager: WidgetDataManager
         ) {
-            val views = RemoteViews(context.packageName, R.layout.widget_alice_bar_4x1)
-            val aggregated = dataManager.getAggregatedSensorData()
+            try {
+                val views = RemoteViews(context.packageName, R.layout.widget_alice_bar_4x1)
+                val aggregated = dataManager.getAggregatedSensorData()
 
-            views.setTextViewText(R.id.tvBarHousehold, aggregated.householdName)
+                views.setTextViewText(R.id.tvBarHousehold, aggregated.householdName)
 
-            val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°C", it) } ?: "--°"
-            views.setTextViewText(R.id.tvBarTemp, tempStr)
+                val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°C", it) } ?: "--°"
+                views.setTextViewText(R.id.tvBarTemp, tempStr)
 
-            val humStr = aggregated.primaryHumidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
-            views.setTextViewText(R.id.tvBarHumidity, humStr)
+                val humStr = aggregated.primaryHumidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
+                views.setTextViewText(R.id.tvBarHumidity, humStr)
 
-            val doorStr = if (aggregated.isAnyDoorOpen) "🚪 ОТКРЫТО" else "🚪 ОК"
-            views.setTextViewText(R.id.tvBarDoor, doorStr)
+                val doorStr = if (aggregated.isAnyDoorOpen) "🚪 ОТКРЫТО" else "🚪 ОК"
+                views.setTextViewText(R.id.tvBarDoor, doorStr)
 
-            // Click to open main app
-            val intent = Intent(context, MainActivity::class.java)
-            val pendingIntent = PendingIntent.getActivity(
-                context, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.rootLayoutBar, pendingIntent)
+                // Click to open main app
+                val intent = Intent(context, MainActivity::class.java)
+                val pendingIntent = PendingIntent.getActivity(
+                    context, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.rootLayoutBar, pendingIntent)
 
-            // Click refresh
-            val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {
-                action = AliceHomeWidgetProvider.ACTION_REFRESH_WIDGET
+                // Click refresh
+                val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {
+                    action = AliceHomeWidgetProvider.ACTION_REFRESH_WIDGET
+                }
+                val refreshPendingIntent = PendingIntent.getBroadcast(
+                    context, appWidgetId, refreshIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.btnBarRefresh, refreshPendingIntent)
+
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            val refreshPendingIntent = PendingIntent.getBroadcast(
-                context, appWidgetId, refreshIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.btnBarRefresh, refreshPendingIntent)
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 }

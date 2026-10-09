@@ -14,12 +14,17 @@ class WidgetDataManager(context: Context) {
 
     companion object {
         private const val PREFS_NAME = "alice_widget_prefs"
+        private const val KEY_CLIENT_ID = "yandex_client_id"
         private const val KEY_OAUTH_TOKEN = "oauth_token"
         private const val KEY_CACHED_USER_INFO = "cached_user_info_json"
         private const val KEY_LAST_SYNC_TIME = "last_sync_timestamp"
         private const val KEY_SYNC_INTERVAL_MIN = "sync_interval_minutes"
         private const val KEY_SELECTED_ROOM_ID = "selected_room_id"
     }
+
+    var clientId: String
+        get() = prefs.getString(KEY_CLIENT_ID, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_CLIENT_ID, value.trim()).apply()
 
     var oauthToken: String
         get() = prefs.getString(KEY_OAUTH_TOKEN, "") ?: ""
@@ -79,8 +84,7 @@ class WidgetDataManager(context: Context) {
         var primaryRoomName = "Гостиная"
 
         // Find primary climate readings
-        // If a preferred room is selected, check it first
-        val targetRoom = rooms.firstOrNull { it.id == selectedRoomId } 
+        val targetRoom = rooms.firstOrNull { it.id == selectedRoomId }
             ?: rooms.firstOrNull { it.name.contains("Гостин", ignoreCase = true) }
             ?: rooms.firstOrNull()
 

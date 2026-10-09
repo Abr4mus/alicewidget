@@ -27,29 +27,33 @@ class AliceCompactWidgetProvider : AppWidgetProvider() {
             appWidgetId: Int,
             dataManager: WidgetDataManager
         ) {
-            val views = RemoteViews(context.packageName, R.layout.widget_alice_compact_2x2)
-            val aggregated = dataManager.getAggregatedSensorData()
+            try {
+                val views = RemoteViews(context.packageName, R.layout.widget_alice_compact_2x2)
+                val aggregated = dataManager.getAggregatedSensorData()
 
-            views.setTextViewText(R.id.tvCompactRoomName, aggregated.primaryRoomName)
+                views.setTextViewText(R.id.tvCompactRoomName, aggregated.primaryRoomName)
 
-            val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
-            views.setTextViewText(R.id.tvCompactTemp, tempStr)
+                val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
+                views.setTextViewText(R.id.tvCompactTemp, tempStr)
 
-            val humStr = aggregated.primaryHumidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
-            views.setTextViewText(R.id.tvCompactHumidity, humStr)
+                val humStr = aggregated.primaryHumidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
+                views.setTextViewText(R.id.tvCompactHumidity, humStr)
 
-            val pressStr = aggregated.primaryPressure?.let { String.format(Locale.US, "%.0f", it) } ?: "752"
-            views.setTextViewText(R.id.tvCompactPressure, pressStr)
+                val pressStr = aggregated.primaryPressure?.let { String.format(Locale.US, "%.0f", it) } ?: "752"
+                views.setTextViewText(R.id.tvCompactPressure, pressStr)
 
-            // Click to open main app
-            val intent = Intent(context, MainActivity::class.java)
-            val pendingIntent = PendingIntent.getActivity(
-                context, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.rootLayoutCompact, pendingIntent)
+                // Click to open main app
+                val intent = Intent(context, MainActivity::class.java)
+                val pendingIntent = PendingIntent.getActivity(
+                    context, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.rootLayoutCompact, pendingIntent)
 
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
