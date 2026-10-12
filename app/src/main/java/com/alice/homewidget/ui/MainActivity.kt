@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -17,17 +18,20 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.alice.homewidget.AliceApplication
 import com.alice.homewidget.R
 import com.alice.homewidget.api.YandexApiClient
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.databinding.ActivityMainBinding
+import com.alice.homewidget.model.Device
 import com.alice.homewidget.model.Room
 import com.alice.homewidget.widget.AliceBarWidgetProvider
 import com.alice.homewidget.widget.AliceCompact2x1WidgetProvider
@@ -46,6 +50,12 @@ class MainActivity : AppCompatActivity() {
     private val apiClient = YandexApiClient()
     private var availableRooms: List<Room> = emptyList()
 
+    enum class WidgetConfigTab {
+        W4X2, W4X1, W2X2, W2X1
+    }
+
+    private var currentTab: WidgetConfigTab = WidgetConfigTab.W4X2
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -54,6 +64,8 @@ class MainActivity : AppCompatActivity() {
         dataManager = WidgetDataManager(this)
 
         initViews()
+        initThemeSelector()
+        initTabSelector()
         renderSettings()
         renderCachedStatus()
     }
@@ -147,6 +159,78 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun initThemeSelector() {
+        when (dataManager.widgetTheme) {
+            WidgetDataManager.THEME_IOS -> binding.rbThemeIos.isChecked = true
+            WidgetDataManager.THEME_ANDROID -> binding.rbThemeAndroid.isChecked = true
+            else -> binding.rbThemeAlice.isChecked = true
+        }
+
+        binding.rgThemeSelector.setOnCheckedChangeListener { _, checkedId ->
+            val theme = when (checkedId) {
+                R.id.rbThemeIos -> WidgetDataManager.THEME_IOS
+                R.id.rbThemeAndroid -> WidgetDataManager.THEME_ANDROID
+                else -> WidgetDataManager.THEME_ALICE
+            }
+            dataManager.widgetTheme = theme
+            SensorSyncWorker.notifyWidgetsToUpdate(this)
+            val name = when (theme) {
+                WidgetDataManager.THEME_IOS -> "iPhone / iOS"
+                WidgetDataManager.THEME_ANDROID -> "Android / Material You"
+                else -> "Яндекс / Алиса"
+            }
+            Toast.makeText(this, "Стиль виджетов изменен на: $name", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun initTabSelector() {
+        val updateTabStyles = {
+            binding.btnTab4x2.setTextColor(if (currentTab == WidgetConfigTab.W4X2) getColor(R.color.alice_neon_light) else Color.WHITE)
+            binding.btnTab4x1.setTextColor(if (currentTab == WidgetConfigTab.W4X1) getColor(R.color.alice_neon_light) else Color.WHITE)
+            binding.btnTab2x2.setTextColor(if (currentTab == WidgetConfigTab.W2X2) getColor(R.color.alice_neon_light) else Color.WHITE)
+            binding.btnTab2x1.setTextColor(if (currentTab == WidgetConfigTab.W2X1) getColor(R.color.alice_neon_light) else Color.WHITE)
+
+            when (currentTab) {
+                WidgetConfigTab.W4X2 -> {
+                    binding.tvTabDescription.text = "Виджет 4×2: выберите несколько устройств из разных комнат и показатели для каждого."
+                    binding.layoutRoomSpinner.visibility = View.GONE
+                }
+                WidgetConfigTab.W4X1 -> {
+                    binding.tvTabDescription.text = "Виджет 4×1 (Полоса): выберите устройства из разных комнат для компактной строки."
+                    binding.layoutRoomSpinner.visibility = View.GONE
+                }
+                WidgetConfigTab.W2X2 -> {
+                    binding.tvTabDescription.text = "Виджет 2×2 (Климат): выберите комнату или конкретный датчик."
+                    binding.layoutRoomSpinner.visibility = View.VISIBLE
+                }
+                WidgetConfigTab.W2X1 -> {
+                    binding.tvTabDescription.text = "Виджет 2×1 (Мини): узкая плитка температуры и влажности без наслоений."
+                    binding.layoutRoomSpinner.visibility = View.VISIBLE
+                }
+            }
+            renderDeviceListForCurrentTab()
+        }
+
+        binding.btnTab4x2.setOnClickListener {
+            currentTab = WidgetConfigTab.W4X2
+            updateTabStyles()
+        }
+        binding.btnTab4x1.setOnClickListener {
+            currentTab = WidgetConfigTab.W4X1
+            updateTabStyles()
+        }
+        binding.btnTab2x2.setOnClickListener {
+            currentTab = WidgetConfigTab.W2X2
+            updateTabStyles()
+        }
+        binding.btnTab2x1.setOnClickListener {
+            currentTab = WidgetConfigTab.W2X1
+            updateTabStyles()
+        }
+
+        updateTabStyles()
+    }
+
     private fun renderSettings() {
         binding.cbShowHumidity.isChecked = dataManager.showHumidity
         binding.cbShowPressure.isChecked = dataManager.showPressure
@@ -163,8 +247,12 @@ class MainActivity : AppCompatActivity() {
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, roomTitles)
         binding.spRoomsList.adapter = adapter
 
-        // Set current selection
-        val curRoomId = dataManager.selectedRoomId
+        val curRoomId = when (currentTab) {
+            WidgetConfigTab.W2X2 -> dataManager.widget2x2RoomId
+            WidgetConfigTab.W2X1 -> dataManager.widget2x1RoomId
+            else -> dataManager.selectedRoomId
+        }
+
         if (!curRoomId.isNullOrBlank() && curRoomId != "ALL") {
             val index = availableRooms.indexOfFirst { it.id == curRoomId }
             if (index >= 0) {
@@ -176,36 +264,161 @@ class MainActivity : AppCompatActivity() {
 
         binding.spRoomsList.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                dataManager.selectedRoomId = if (position == 0) "ALL" else availableRooms.getOrNull(position - 1)?.id
-                renderDevicesForSelectedRoom()
+                val selectedId = if (position == 0) "ALL" else availableRooms.getOrNull(position - 1)?.id
+                when (currentTab) {
+                    WidgetConfigTab.W2X2 -> dataManager.widget2x2RoomId = selectedId
+                    WidgetConfigTab.W2X1 -> dataManager.widget2x1RoomId = selectedId
+                    else -> dataManager.selectedRoomId = selectedId
+                }
+                renderDeviceListForCurrentTab()
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        renderDevicesForSelectedRoom()
+        renderDeviceListForCurrentTab()
     }
 
-    private fun renderDevicesForSelectedRoom() {
-        val devices = dataManager.getDevicesForRoom(dataManager.selectedRoomId)
-        binding.layoutDevicesList.removeAllViews()
-        val enabledSet = dataManager.enabledDeviceIds
+    private class DeviceItemViewHolder(
+        val device: Device,
+        val cbEnable: CheckBox,
+        val cbTemp: CheckBox?,
+        val cbHum: CheckBox?,
+        val cbPress: CheckBox?,
+        val cbDoor: CheckBox?,
+        val cbBat: CheckBox?
+    )
 
-        if (devices.isNotEmpty()) {
-            binding.tvDevicesHeader.visibility = View.VISIBLE
-            for (dev in devices) {
-                val cb = CheckBox(this).apply {
-                    tag = dev.id
-                    val rName = availableRooms.firstOrNull { it.id == dev.room }?.name ?: ""
-                    val title = if (rName.isNotBlank() && dataManager.selectedRoomId == "ALL") "${dev.name} ($rName)" else dev.name
-                    text = title
-                    setTextColor(getColor(R.color.alice_text_white))
-                    isChecked = enabledSet.isEmpty() || enabledSet.contains(dev.id)
-                }
-                binding.layoutDevicesList.addView(cb)
-            }
+    private val deviceViewHolders = mutableListOf<DeviceItemViewHolder>()
+
+    private fun renderDeviceListForCurrentTab() {
+        binding.layoutDevicesList.removeAllViews()
+        deviceViewHolders.clear()
+
+        val allDevices = if (currentTab == WidgetConfigTab.W2X2 || currentTab == WidgetConfigTab.W2X1) {
+            val targetRoom = if (currentTab == WidgetConfigTab.W2X2) dataManager.widget2x2RoomId else dataManager.widget2x1RoomId
+            dataManager.getDevicesForRoom(targetRoom)
         } else {
-            binding.tvDevicesHeader.visibility = View.GONE
+            // For 4x2 and 4x1: multiple devices across all rooms!
+            dataManager.getAllRelevantDevices()
+        }
+
+        if (allDevices.isEmpty()) {
+            binding.tvDevicesHeader.text = "Датчики не обнаружены. Нажмите «Синхронизировать датчики»."
+            return
+        }
+
+        binding.tvDevicesHeader.text = "Устройства умного дома и показатели:"
+
+        val activeSelectedIds = when (currentTab) {
+            WidgetConfigTab.W4X2 -> dataManager.widget4x2DeviceIds
+            WidgetConfigTab.W4X1 -> dataManager.widget4x1DeviceIds
+            WidgetConfigTab.W2X2 -> setOfNotNull(dataManager.widget2x2DeviceId)
+            WidgetConfigTab.W2X1 -> setOfNotNull(dataManager.widget2x1DeviceId)
+        }
+
+        for (dev in allDevices) {
+            val rName = availableRooms.firstOrNull { it.id == dev.room }?.name ?: ""
+            val title = if (rName.isNotBlank()) "${dev.name} ($rName)" else dev.name
+
+            val isDeviceSelected = activeSelectedIds.isEmpty() || activeSelectedIds.contains(dev.id)
+            val metricPref = dataManager.getDeviceMetricSetting(dev.id)
+
+            // Card container for device
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setBackgroundResource(R.drawable.bg_tile_alice)
+                setPadding(24, 20, 24, 20)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = 12
+                }
+            }
+
+            // Master Checkbox: Device Enable
+            val cbDevice = CheckBox(this).apply {
+                text = title
+                setTextColor(getColor(R.color.alice_text_white))
+                textSize = 13f
+                isChecked = isDeviceSelected
+            }
+            card.addView(cbDevice)
+
+            // Sub-metrics layout
+            val metricsRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(32, 4, 0, 0)
+            }
+
+            var cbTemp: CheckBox? = null
+            var cbHum: CheckBox? = null
+            var cbPress: CheckBox? = null
+            var cbDoor: CheckBox? = null
+            var cbBat: CheckBox? = null
+
+            // Temperature metric checkbox
+            if (dev.getTemperature() != null || dev.isClimateSensor()) {
+                cbTemp = CheckBox(this).apply {
+                    text = "Темп."
+                    setTextColor(getColor(R.color.alice_text_light))
+                    textSize = 11f
+                    isChecked = metricPref.showTemperature
+                }
+                metricsRow.addView(cbTemp)
+            }
+
+            // Humidity metric checkbox
+            if (dev.getHumidity() != null || dev.isClimateSensor()) {
+                cbHum = CheckBox(this).apply {
+                    text = "Влажн."
+                    setTextColor(getColor(R.color.alice_text_light))
+                    textSize = 11f
+                    isChecked = metricPref.showHumidity
+                }
+                metricsRow.addView(cbHum)
+            }
+
+            // Pressure metric checkbox
+            if (dev.getPressure() != null) {
+                cbPress = CheckBox(this).apply {
+                    text = "Давл."
+                    setTextColor(getColor(R.color.alice_text_light))
+                    textSize = 11f
+                    isChecked = metricPref.showPressure
+                }
+                metricsRow.addView(cbPress)
+            }
+
+            // Door metric checkbox
+            if (dev.isOpenSensor() || dev.isDoorOrWindowOpen() != null) {
+                cbDoor = CheckBox(this).apply {
+                    text = "Дверь"
+                    setTextColor(getColor(R.color.alice_text_light))
+                    textSize = 11f
+                    isChecked = metricPref.showDoor
+                }
+                metricsRow.addView(cbDoor)
+            }
+
+            // Battery metric checkbox
+            if (dev.getBattery() != null) {
+                cbBat = CheckBox(this).apply {
+                    text = "Батарея"
+                    setTextColor(getColor(R.color.alice_text_light))
+                    textSize = 11f
+                    isChecked = metricPref.showBattery
+                }
+                metricsRow.addView(cbBat)
+            }
+
+            if (metricsRow.childCount > 0) {
+                card.addView(metricsRow)
+            }
+
+            binding.layoutDevicesList.addView(card)
+            deviceViewHolders.add(DeviceItemViewHolder(dev, cbDevice, cbTemp, cbHum, cbPress, cbDoor, cbBat))
         }
     }
 
@@ -215,22 +428,46 @@ class MainActivity : AppCompatActivity() {
         dataManager.showDoor = binding.cbShowDoor.isChecked
         dataManager.showBattery = binding.cbShowBattery.isChecked
 
-        // Collect checked devices
-        val checkedDeviceIds = mutableSetOf<String>()
-        val count = binding.layoutDevicesList.childCount
-        for (i in 0 until count) {
-            val view = binding.layoutDevicesList.getChildAt(i)
-            if (view is CheckBox && view.isChecked) {
-                val devId = view.tag as? String
-                if (devId != null) checkedDeviceIds.add(devId)
+        val selectedIds = mutableSetOf<String>()
+
+        for (holder in deviceViewHolders) {
+            val devId = holder.device.id
+            if (holder.cbEnable.isChecked) {
+                selectedIds.add(devId)
+            }
+
+            val curPref = dataManager.getDeviceMetricSetting(devId)
+            val updatedPref = WidgetDataManager.DeviceMetricSetting(
+                showTemperature = holder.cbTemp?.isChecked ?: curPref.showTemperature,
+                showHumidity = holder.cbHum?.isChecked ?: curPref.showHumidity,
+                showPressure = holder.cbPress?.isChecked ?: curPref.showPressure,
+                showDoor = holder.cbDoor?.isChecked ?: curPref.showDoor,
+                showBattery = holder.cbBat?.isChecked ?: curPref.showBattery
+            )
+            dataManager.saveDeviceMetricSetting(devId, updatedPref)
+        }
+
+        when (currentTab) {
+            WidgetConfigTab.W4X2 -> {
+                dataManager.widget4x2DeviceIds = selectedIds
+            }
+            WidgetConfigTab.W4X1 -> {
+                dataManager.widget4x1DeviceIds = selectedIds
+            }
+            WidgetConfigTab.W2X2 -> {
+                dataManager.widget2x2DeviceId = selectedIds.firstOrNull()
+            }
+            WidgetConfigTab.W2X1 -> {
+                dataManager.widget2x1DeviceId = selectedIds.firstOrNull()
             }
         }
-        if (checkedDeviceIds.isNotEmpty()) {
-            dataManager.enabledDeviceIds = checkedDeviceIds
+
+        if (selectedIds.isNotEmpty()) {
+            dataManager.enabledDeviceIds = selectedIds
         }
 
         SensorSyncWorker.notifyWidgetsToUpdate(this)
-        Toast.makeText(this, "Настройки сохранены. Виджеты обновлены!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "✅ Настройки сохранены! Виджеты обновлены.", Toast.LENGTH_SHORT).show()
     }
 
     private fun pinWidget(providerClass: Class<*>) {
@@ -341,6 +578,7 @@ class MainActivity : AppCompatActivity() {
                 SensorSyncWorker.notifyWidgetsToUpdate(this@MainActivity)
 
                 setupRoomsSpinner()
+                renderDeviceListForCurrentTab()
                 renderCachedStatus()
                 Toast.makeText(this@MainActivity, "Виджеты успешно обновлены!", Toast.LENGTH_SHORT).show()
             }.onFailure { error ->
@@ -352,7 +590,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderCachedStatus() {
         val aggregated = dataManager.getAggregatedSensorData()
-        val allDevices = dataManager.getAvailableDevices()
+        val allDevices = dataManager.getAllRelevantDevices()
 
         if (dataManager.lastSyncTimestamp > 0) {
             val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())

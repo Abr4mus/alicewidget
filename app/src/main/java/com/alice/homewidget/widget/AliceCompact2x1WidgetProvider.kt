@@ -10,7 +10,6 @@ import android.widget.RemoteViews
 import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.ui.MainActivity
-import java.util.Locale
 
 class AliceCompact2x1WidgetProvider : AppWidgetProvider() {
 
@@ -30,21 +29,26 @@ class AliceCompact2x1WidgetProvider : AppWidgetProvider() {
         ) {
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_compact_2x1)
-                val aggregated = dataManager.getAggregatedSensorData()
+                val skin = dataManager.widgetTheme
+                val data = dataManager.get2x1Data()
 
-                val title = if (aggregated.primaryRoomName.isNotBlank() && aggregated.primaryRoomName != "Дом") {
-                    aggregated.primaryRoomName
-                } else {
-                    "Климат"
-                }
-                views.setTextViewText(R.id.tvCompact2x1RoomName, title)
+                // Apply dynamic skin
+                views.setInt(R.id.rootLayoutCompact2x1, "setBackgroundResource", WidgetSkinHelper.getWidgetBackground(skin))
+                views.setInt(R.id.layoutCompact2x1Humidity, "setBackgroundResource", WidgetSkinHelper.getTileBackground(skin))
+                views.setInt(R.id.btnCompact2x1Refresh, "setBackgroundResource", WidgetSkinHelper.getBtnBackground(skin))
 
-                val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
-                views.setTextViewText(R.id.tvCompact2x1Temp, tempStr)
+                views.setTextColor(R.id.tvCompact2x1RoomName, WidgetSkinHelper.getTextColorSecondary(skin))
+                views.setTextColor(R.id.tvCompact2x1Temp, WidgetSkinHelper.getTextColorPrimary(skin))
+                views.setTextColor(R.id.tvCompact2x1Humidity, WidgetSkinHelper.getAccentHumidityColor(skin))
 
-                if (dataManager.showHumidity && aggregated.primaryHumidity != null) {
+                // Set room & temperature
+                views.setTextViewText(R.id.tvCompact2x1RoomName, data.title)
+                views.setTextViewText(R.id.tvCompact2x1Temp, data.tempText)
+
+                // Humidity metric pill
+                if (dataManager.showHumidity && data.humidityText != null) {
                     views.setViewVisibility(R.id.layoutCompact2x1Humidity, View.VISIBLE)
-                    views.setTextViewText(R.id.tvCompact2x1Humidity, String.format(Locale.US, "%.0f%%", aggregated.primaryHumidity))
+                    views.setTextViewText(R.id.tvCompact2x1Humidity, data.humidityText)
                 } else {
                     views.setViewVisibility(R.id.layoutCompact2x1Humidity, View.GONE)
                 }
@@ -57,7 +61,7 @@ class AliceCompact2x1WidgetProvider : AppWidgetProvider() {
                 )
                 views.setOnClickPendingIntent(R.id.rootLayoutCompact2x1, pendingIntent)
 
-                // Refresh click
+                // Click refresh
                 val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {
                     action = AliceHomeWidgetProvider.ACTION_REFRESH_WIDGET
                 }

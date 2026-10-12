@@ -10,7 +10,6 @@ import android.widget.RemoteViews
 import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.ui.MainActivity
-import java.util.Locale
 
 class AliceCompactWidgetProvider : AppWidgetProvider() {
 
@@ -30,21 +29,23 @@ class AliceCompactWidgetProvider : AppWidgetProvider() {
         ) {
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_compact_2x2)
-                val aggregated = dataManager.getAggregatedSensorData()
+                val skin = dataManager.widgetTheme
+                val data = dataManager.get2x2Data()
 
-                val title = if (aggregated.primaryRoomName.isNotBlank() && aggregated.primaryRoomName != "Дом") {
-                    aggregated.primaryRoomName
-                } else {
-                    "Климат"
-                }
-                views.setTextViewText(R.id.tvCompactRoomName, title)
+                // Apply dynamic skin
+                views.setInt(R.id.rootLayoutCompact, "setBackgroundResource", WidgetSkinHelper.getWidgetBackground(skin))
+                views.setInt(R.id.layoutCompactHumidity, "setBackgroundResource", WidgetSkinHelper.getTileBackground(skin))
 
-                val tempStr = aggregated.primaryTemperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
-                views.setTextViewText(R.id.tvCompactTemp, tempStr)
+                views.setTextColor(R.id.tvCompactRoomName, WidgetSkinHelper.getTextColorSecondary(skin))
+                views.setTextColor(R.id.tvCompactTemp, WidgetSkinHelper.getTextColorPrimary(skin))
+                views.setTextColor(R.id.tvCompactHumidity, WidgetSkinHelper.getAccentHumidityColor(skin))
 
-                if (dataManager.showHumidity && aggregated.primaryHumidity != null) {
+                views.setTextViewText(R.id.tvCompactRoomName, data.title)
+                views.setTextViewText(R.id.tvCompactTemp, data.tempText)
+
+                if (dataManager.showHumidity && data.humidityText != null) {
                     views.setViewVisibility(R.id.layoutCompactHumidity, View.VISIBLE)
-                    views.setTextViewText(R.id.tvCompactHumidity, String.format(Locale.US, "%.0f%%", aggregated.primaryHumidity))
+                    views.setTextViewText(R.id.tvCompactHumidity, data.humidityText)
                 } else {
                     views.setViewVisibility(R.id.layoutCompactHumidity, View.GONE)
                 }

@@ -3,7 +3,7 @@
     android:id="@+id/rootLayout4x2"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_alice_widget_glass"
+    android:background="@drawable/bg_skin_alice"
     android:orientation="vertical"
     android:padding="12dp">
 
@@ -45,7 +45,7 @@
             android:id="@+id/btnWidgetRefresh"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:background="@drawable/bg_alice_btn_circle">
+            android:background="@drawable/bg_btn_alice">
 
             <ImageView
                 android:id="@+id/ivRefreshIcon"
@@ -70,7 +70,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/bg_alice_tile"
+            android:background="@drawable/bg_tile_alice"
             android:orientation="vertical"
             android:padding="8dp">
 
@@ -115,7 +115,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_alice_tile"
+            android:background="@drawable/bg_tile_alice"
             android:orientation="vertical"
             android:padding="8dp">
 
@@ -157,7 +157,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_alice_tile"
+            android:background="@drawable/bg_tile_alice"
             android:orientation="vertical"
             android:padding="8dp"
             android:visibility="gone">
@@ -208,7 +208,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/bg_alice_tile"
+            android:background="@drawable/bg_tile_alice"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:padding="6dp"
@@ -240,7 +240,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_alice_tile"
+            android:background="@drawable/bg_tile_alice"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:padding="6dp"
@@ -280,7 +280,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/bg_alice_tile"
+            android:background="@drawable/bg_tile_alice"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:padding="6dp">
@@ -316,7 +316,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_alice_tile"
+            android:background="@drawable/bg_tile_alice"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:padding="6dp">

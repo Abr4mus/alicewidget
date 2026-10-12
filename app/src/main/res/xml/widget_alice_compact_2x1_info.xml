@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="140dp"
-    android:minHeight="40dp"
+    android:minWidth="130dp"
+    android:minHeight="38dp"
     android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
@@ -9,5 +9,5 @@
     android:previewImage="@drawable/ic_alice_app_icon"
     android:previewLayout="@layout/widget_alice_compact_2x1"
     android:initialLayout="@layout/widget_alice_compact_2x1"
-    android:resizeMode="horizontal"
+    android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />

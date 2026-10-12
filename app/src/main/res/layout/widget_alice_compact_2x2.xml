@@ -3,7 +3,7 @@
     android:id="@+id/rootLayoutCompact"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_alice_widget_glass"
+    android:background="@drawable/bg_skin_alice"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="12dp">
@@ -54,7 +54,7 @@
         android:id="@+id/layoutCompactHumidity"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_alice_tile"
+        android:background="@drawable/bg_tile_alice"
         android:gravity="center"
         android:orientation="horizontal"
         android:padding="6dp">

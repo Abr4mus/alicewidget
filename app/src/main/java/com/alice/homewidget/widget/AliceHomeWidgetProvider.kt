@@ -82,7 +82,38 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
         ) {
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_sensors_4x2)
-                val aggregated = dataManager.getAggregatedSensorData()
+                val skin = dataManager.widgetTheme
+                val aggregated = dataManager.get4x2SensorData()
+
+                // Apply dynamic skin backgrounds
+                val bgSkin = WidgetSkinHelper.getWidgetBackground(skin)
+                val bgTile = WidgetSkinHelper.getTileBackground(skin)
+                val bgBtn = WidgetSkinHelper.getBtnBackground(skin)
+
+                views.setInt(R.id.rootLayout4x2, "setBackgroundResource", bgSkin)
+                views.setInt(R.id.tileTemperature, "setBackgroundResource", bgTile)
+                views.setInt(R.id.tileHumidity, "setBackgroundResource", bgTile)
+                views.setInt(R.id.tilePressure, "setBackgroundResource", bgTile)
+                views.setInt(R.id.tileRoom1, "setBackgroundResource", bgTile)
+                views.setInt(R.id.tileRoom2, "setBackgroundResource", bgTile)
+                views.setInt(R.id.tileDoor, "setBackgroundResource", bgTile)
+                views.setInt(R.id.tileBattery, "setBackgroundResource", bgTile)
+                views.setInt(R.id.btnWidgetRefresh, "setBackgroundResource", bgBtn)
+
+                // Apply dynamic skin text colors
+                val colorPrimary = WidgetSkinHelper.getTextColorPrimary(skin)
+                val colorSecondary = WidgetSkinHelper.getTextColorSecondary(skin)
+                val colorHumidity = WidgetSkinHelper.getAccentHumidityColor(skin)
+
+                views.setTextColor(R.id.tvHouseholdName, colorPrimary)
+                views.setTextColor(R.id.tvWidgetUpdateTime, colorSecondary)
+                views.setTextColor(R.id.tvActiveRoomLabel, colorSecondary)
+                views.setTextColor(R.id.tvMainTemp, colorPrimary)
+                views.setTextColor(R.id.tvMainHumidity, colorHumidity)
+                views.setTextColor(R.id.tvRoom1Name, colorSecondary)
+                views.setTextColor(R.id.tvRoom1Value, colorPrimary)
+                views.setTextColor(R.id.tvRoom2Name, colorSecondary)
+                views.setTextColor(R.id.tvRoom2Value, colorPrimary)
 
                 // Header title
                 val title = if (aggregated.primaryRoomName.isNotBlank() && aggregated.primaryRoomName != "Дом") {
@@ -113,7 +144,7 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                     views.setViewVisibility(R.id.tileHumidity, View.GONE)
                 }
 
-                // Pressure (only if explicitly enabled and available)
+                // Pressure
                 if (dataManager.showPressure && aggregated.primaryPressure != null) {
                     views.setViewVisibility(R.id.tilePressure, View.VISIBLE)
                     views.setTextViewText(R.id.tvMainPressure, String.format(Locale.US, "%.0f", aggregated.primaryPressure))
@@ -121,7 +152,7 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                     views.setViewVisibility(R.id.tilePressure, View.GONE)
                 }
 
-                // Secondary rooms
+                // Secondary rooms / devices across different rooms
                 val otherRooms = aggregated.roomSensors
                 if (otherRooms.isNotEmpty()) {
                     views.setViewVisibility(R.id.layoutSecondaryRooms, View.VISIBLE)

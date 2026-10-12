@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top Header with Delicate Russian Icon and Version v.0.31 -->
+        <!-- Top Header with Delicate Russian Icon and Version v.0.32 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -57,7 +57,7 @@
                         android:paddingTop="2dp"
                         android:paddingEnd="6dp"
                         android:paddingBottom="2dp"
-                        android:text="v.0.31"
+                        android:text="v.0.32"
                         android:textColor="@color/alice_neon_light"
                         android:textSize="11sp"
                         android:textStyle="bold" />
@@ -129,7 +129,7 @@
                         android:layout_width="0dp"
                         android:layout_height="46dp"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_alice_tile"
+                        android:background="@drawable/bg_tile_alice"
                         android:hint="ClientID приложения"
                         android:inputType="text"
                         android:paddingStart="12dp"
@@ -182,7 +182,7 @@
                         android:layout_width="0dp"
                         android:layout_height="46dp"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_alice_tile"
+                        android:background="@drawable/bg_tile_alice"
                         android:hint="Токен появится здесь сам"
                         android:inputType="textPassword"
                         android:paddingStart="12dp"
@@ -224,7 +224,86 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- CARD 2: PIN WIDGET DIRECTLY FROM APP (INCLUDES 2x1) -->
+        <!-- CARD 2: WIDGET SKINS / THEMES SELECTOR -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            app:cardBackgroundColor="@color/alice_purple_card"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎨 Стиль оформления виджетов"
+                    android:textColor="@color/alice_text_white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Выберите скин для всех виджетов на рабочем столе:"
+                    android:textColor="@color/alice_text_muted"
+                    android:textSize="12sp" />
+
+                <RadioGroup
+                    android:id="@+id/rgThemeSelector"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp">
+
+                    <!-- Alice Theme Option -->
+                    <RadioButton
+                        android:id="@+id/rbThemeAlice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_tile_alice"
+                        android:buttonTint="@color/alice_neon_purple"
+                        android:checked="true"
+                        android:padding="10dp"
+                        android:text="💜 Стиль Яндекс / Алиса (сиреневый неон, матовое стекло)"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="13sp" />
+
+                    <!-- iOS Theme Option -->
+                    <RadioButton
+                        android:id="@+id/rbThemeIos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_ios"
+                        android:buttonTint="@color/ios_accent_blue"
+                        android:padding="10dp"
+                        android:text="🍏 Стиль iPhone / iOS (глубокое стекло Apple, 26dp)"
+                        android:textColor="@color/ios_text_primary"
+                        android:textSize="13sp" />
+
+                    <!-- Android / Material You Theme Option -->
+                    <RadioButton
+                        android:id="@+id/rbThemeAndroid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_android"
+                        android:buttonTint="@color/m3_accent_teal"
+                        android:padding="10dp"
+                        android:text="🤖 Стиль Android / Material You (пастельный сквиркл, 28dp)"
+                        android:textColor="@color/m3_text_primary"
+                        android:textSize="13sp" />
+                </RadioGroup>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- CARD 3: PIN WIDGET DIRECTLY FROM APP (INCLUDES 2x1) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -260,7 +339,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_alice_tile"
+                    android:background="@drawable/bg_tile_alice"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="10dp">
@@ -282,7 +361,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Полный обзор: климат, двери, батарейки"
+                            android:text="Полный обзор: климат комнат, двери, батарейки"
                             android:textColor="@color/alice_text_muted"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -297,12 +376,54 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
+                <!-- Widget 4x1 Pin Option -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_tile_alice"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="4 × 1 (Инфо-полоса)"
+                            android:textColor="@color/alice_text_white"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Мульти-устройства из разных комнат в одну строку"
+                            android:textColor="@color/alice_text_muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnPinWidget4x1"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:text="+ Добавить"
+                        android:textColor="@color/alice_neon_light"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
                 <!-- Widget 2x2 Pin Option -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_alice_tile"
+                    android:background="@drawable/bg_tile_alice"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="10dp">
@@ -344,7 +465,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_alice_tile"
+                    android:background="@drawable/bg_tile_alice"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="10dp">
@@ -380,52 +501,10 @@
                         android:textColor="@color/alice_neon_light"
                         android:textSize="12sp" />
                 </LinearLayout>
-
-                <!-- Widget 4x1 Pin Option -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_alice_tile"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="4 × 1 (Мини-полоса)"
-                            android:textColor="@color/alice_text_white"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Строка статуса для верха или низа экрана"
-                            android:textColor="@color/alice_text_muted"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnPinWidget4x1"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="+ Добавить"
-                        android:textColor="@color/alice_neon_light"
-                        android:textSize="12sp" />
-                </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- CARD 3: ROOM SELECTION & DEVICE METRICS -->
+        <!-- CARD 4: PER-WIDGET CONFIGURATION, MULTI-ROOM & PER-DEVICE METRICS -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -443,80 +522,177 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⚙️ Выбор комнаты и показателей"
+                    android:text="⚙️ Настройка виджетов и датчиков"
                     android:textColor="@color/alice_text_white"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
-                <!-- Room Selector Spinner -->
+                <!-- Widget Mode Selector Chips/Tabs -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Отображать данные для комнаты:"
+                    android:text="Выберите виджет для настройки:"
                     android:textColor="@color/alice_neon_light"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <Spinner
-                    android:id="@+id/spRoomsList"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="46dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@drawable/bg_alice_tile"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal">
 
+                    <Button
+                        android:id="@+id/btnTab4x2"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
+                        android:text="4×2"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnTab4x1"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:text="4×1"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="12sp" />
+
+                    <Button
+                        android:id="@+id/btnTab2x2"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:text="2×2"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="12sp" />
+
+                    <Button
+                        android:id="@+id/btnTab2x1"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:text="2×1"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvTabDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Виджет 4×2: выберите устройства из любых комнат и их показатели."
+                    android:textColor="@color/alice_text_muted"
+                    android:textSize="11sp" />
+
+                <!-- Single-Room Spinner (visible when configuring 2x2 or 2x1) -->
+                <LinearLayout
+                    android:id="@+id/layoutRoomSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Комната для отображения:"
+                        android:textColor="@color/alice_neon_light"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/spRoomsList"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/bg_tile_alice"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp" />
+                </LinearLayout>
+
+                <!-- Global Metric Filters -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Показатели в этой комнате:"
+                    android:layout_marginTop="10dp"
+                    android:text="Общие показатели:"
                     android:textColor="@color/alice_neon_light"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <!-- Checkboxes for metrics -->
-                <CheckBox
-                    android:id="@+id/cbShowHumidity"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:checked="true"
-                    android:text="💧 Влажность (%)"
-                    android:textColor="@color/alice_text_white" />
+                    android:orientation="horizontal">
 
-                <CheckBox
-                    android:id="@+id/cbShowPressure"
+                    <CheckBox
+                        android:id="@+id/cbShowHumidity"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="💧 Влажность"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="12sp" />
+
+                    <CheckBox
+                        android:id="@+id/cbShowPressure"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="false"
+                        android:text="🧭 Давление"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:checked="false"
-                    android:text="🧭 Атмосферное давление (мм рт. ст.)"
-                    android:textColor="@color/alice_text_white" />
+                    android:orientation="horizontal">
 
-                <CheckBox
-                    android:id="@+id/cbShowDoor"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="🚪 Датчик открытия дверей/окон"
-                    android:textColor="@color/alice_text_white" />
+                    <CheckBox
+                        android:id="@+id/cbShowDoor"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="🚪 Двери/окна"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="12sp" />
 
-                <CheckBox
-                    android:id="@+id/cbShowBattery"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="🔋 Уровень батареек"
-                    android:textColor="@color/alice_text_white" />
+                    <CheckBox
+                        android:id="@+id/cbShowBattery"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="🔋 Батарейки"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
-                <!-- Dynamic Devices in Selected Room -->
+                <!-- Dynamic Devices List with Individual Metric Checkboxes -->
                 <TextView
                     android:id="@+id/tvDevicesHeader"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Датчики в выбранной комнате:"
+                    android:layout_marginTop="12dp"
+                    android:text="Устройства умного дома и показатели:"
                     android:textColor="@color/alice_neon_light"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -525,9 +701,9 @@
                     android:id="@+id/layoutDevicesList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:orientation="vertical">
-                    <!-- Populated programmatically per selected room -->
+                    <!-- Populated programmatically with devices and sub-metrics -->
                 </LinearLayout>
 
                 <Button
@@ -561,7 +737,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Статус датчиков"
+                    android:text="Статус синхронизации"
                     android:textColor="@color/alice_text_white"
                     android:textSize="14sp"
                     android:textStyle="bold" />

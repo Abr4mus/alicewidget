@@ -3,68 +3,138 @@
     android:id="@+id/rootLayoutBar"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_alice_widget_glass"
+    android:background="@drawable/bg_skin_alice"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingStart="14dp"
-    android:paddingTop="6dp"
-    android:paddingEnd="14dp"
-    android:paddingBottom="6dp">
+    android:paddingStart="12dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="10dp"
+    android:paddingBottom="4dp">
 
-    <!-- Household Title -->
-    <TextView
-        android:id="@+id/tvBarHousehold"
+    <!-- Slot 1: Device 1 / Room 1 -->
+    <LinearLayout
+        android:id="@+id/layoutBarSlot1"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="Датчики"
-        android:textColor="@color/alice_text_white"
-        android:textSize="13sp"
-        android:textStyle="bold" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <!-- Temp -->
-    <TextView
-        android:id="@+id/tvBarTemp"
-        android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/tvBarHousehold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="Гостиная"
+            android:textColor="@color/alice_text_muted"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvBarTemp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="23.5°"
+            android:textColor="@color/alice_text_white"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvBarHumidity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="48%"
+            android:textColor="@color/sensor_humidity_cyan"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Slot 2: Device 2 / Room 2 -->
+    <LinearLayout
+        android:id="@+id/layoutBarSlot2"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="23.5°C"
-        android:textColor="@color/alice_text_white"
-        android:textSize="13sp"
-        android:textStyle="bold" />
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
 
-    <!-- Hum -->
-    <TextView
-        android:id="@+id/tvBarHumidity"
+        <TextView
+            android:id="@+id/tvBarSlot2Room"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="Спальня"
+            android:textColor="@color/alice_text_muted"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvBarSlot2Value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="21.0°"
+            android:textColor="@color/alice_text_white"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Slot 3: Device 3 / Room 3 or Door -->
+    <LinearLayout
+        android:id="@+id/layoutBarSlot3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text="48%"
-        android:textColor="@color/sensor_humidity_cyan"
-        android:textSize="13sp"
-        android:textStyle="bold" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <!-- Door -->
-    <TextView
-        android:id="@+id/tvBarDoor"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:text="🚪 ОК"
-        android:textColor="@color/sensor_ok_green"
-        android:textSize="12sp"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/tvBarSlot3Room"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text=""
+            android:textColor="@color/alice_text_muted"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvBarDoor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="🚪 ОК"
+            android:textColor="@color/sensor_ok_green"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <!-- Mini Refresh Button -->
     <FrameLayout
         android:id="@+id/btnBarRefresh"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_marginStart="10dp"
-        android:background="@drawable/bg_alice_btn_circle">
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_btn_alice">
 
         <ImageView
-            android:layout_width="14dp"
-            android:layout_height="14dp"
+            android:layout_width="13dp"
+            android:layout_height="13dp"
             android:layout_gravity="center"
             android:contentDescription="Обновить"
             android:src="@drawable/ic_refresh" />

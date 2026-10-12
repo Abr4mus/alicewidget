@@ -27,6 +27,29 @@
     <color name="sensor_warn_red">#EF4444</color>
     <color name="sensor_pressure_lilac">#C084FC</color>
 
+    <!-- iOS / iPhone Style Colors -->
+    <color name="ios_glass_dark">#CC1C1C1E</color>
+    <color name="ios_glass_stroke">#33FFFFFF</color>
+    <color name="ios_tile_surface">#24FFFFFF</color>
+    <color name="ios_tile_stroke">#1AFFFFFF</color>
+    <color name="ios_text_primary">#F5F5F7</color>
+    <color name="ios_text_secondary">#8E8E93</color>
+    <color name="ios_accent_blue">#0A84FF</color>
+    <color name="ios_accent_cyan">#64D2FF</color>
+    <color name="ios_accent_green">#30D158</color>
+    <color name="ios_accent_orange">#FF9F0A</color>
+
+    <!-- Android / Material You Style Colors -->
+    <color name="m3_surface_dark">#E6182220</color>
+    <color name="m3_surface_stroke">#267BD5B5</color>
+    <color name="m3_tile_surface">#2E303D3B</color>
+    <color name="m3_tile_stroke">#1A7BD5B5</color>
+    <color name="m3_text_primary">#F0F4F8</color>
+    <color name="m3_text_secondary">#9BB0C1</color>
+    <color name="m3_accent_teal">#7BD5B5</color>
+    <color name="m3_accent_sky">#A8C7FA</color>
+    <color name="m3_accent_peach">#F2B8B5</color>
+
     <!-- System -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
