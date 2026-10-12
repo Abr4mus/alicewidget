@@ -25,6 +25,15 @@
             </intent-filter>
         </activity>
 
+        <!-- Widget Instance Configuration Activity -->
+        <activity
+            android:name=".ui.WidgetConfigureActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- 4x2 Main Sensor Dashboard Widget Provider -->
         <receiver
             android:name=".widget.AliceHomeWidgetProvider"

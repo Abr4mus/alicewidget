@@ -13,6 +13,7 @@ import com.alice.homewidget.R
 import com.alice.homewidget.api.YandexApiClient
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.ui.MainActivity
+import com.alice.homewidget.ui.WidgetConfigureActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,6 +27,13 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
         val dataManager = WidgetDataManager(context)
         for (appWidgetId in appWidgetIds) {
             updateWidget(context, appWidgetManager, appWidgetId, dataManager)
+        }
+    }
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        val dataManager = WidgetDataManager(context)
+        for (appWidgetId in appWidgetIds) {
+            dataManager.deleteWidgetConfig(appWidgetId)
         }
     }
 
@@ -82,13 +90,14 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
         ) {
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_sensors_4x2)
-                val skin = dataManager.widgetTheme
-                val aggregated = dataManager.get4x2SensorData()
+                val config = dataManager.getWidgetConfig(appWidgetId, "4x2")
+                val theme = config.theme
+                val aggregated = dataManager.get4x2SensorData(appWidgetId)
 
-                // Apply dynamic skin backgrounds
-                val bgSkin = WidgetSkinHelper.getWidgetBackground(skin)
-                val bgTile = WidgetSkinHelper.getTileBackground(skin)
-                val bgBtn = WidgetSkinHelper.getBtnBackground(skin)
+                // Apply engine skin backgrounds
+                val bgSkin = WidgetRenderEngine.getThemeBackground(theme)
+                val bgTile = WidgetRenderEngine.getTileBackground(theme)
+                val bgBtn = WidgetRenderEngine.getButtonBackground(theme)
 
                 views.setInt(R.id.rootLayout4x2, "setBackgroundResource", bgSkin)
                 views.setInt(R.id.tileTemperature, "setBackgroundResource", bgTile)
@@ -99,11 +108,12 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                 views.setInt(R.id.tileDoor, "setBackgroundResource", bgTile)
                 views.setInt(R.id.tileBattery, "setBackgroundResource", bgTile)
                 views.setInt(R.id.btnWidgetRefresh, "setBackgroundResource", bgBtn)
+                views.setInt(R.id.btnWidgetConfigure, "setBackgroundResource", bgBtn)
 
-                // Apply dynamic skin text colors
-                val colorPrimary = WidgetSkinHelper.getTextColorPrimary(skin)
-                val colorSecondary = WidgetSkinHelper.getTextColorSecondary(skin)
-                val colorHumidity = WidgetSkinHelper.getAccentHumidityColor(skin)
+                // Apply typography colors
+                val colorPrimary = WidgetRenderEngine.getTextPrimaryColor(theme)
+                val colorSecondary = WidgetRenderEngine.getTextSecondaryColor(theme)
+                val colorHumidity = WidgetRenderEngine.getHumidityColor(theme)
 
                 views.setTextColor(R.id.tvHouseholdName, colorPrimary)
                 views.setTextColor(R.id.tvWidgetUpdateTime, colorSecondary)
@@ -116,12 +126,7 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                 views.setTextColor(R.id.tvRoom2Value, colorPrimary)
 
                 // Header title
-                val title = if (aggregated.primaryRoomName.isNotBlank() && aggregated.primaryRoomName != "Дом") {
-                    aggregated.primaryRoomName
-                } else {
-                    aggregated.householdName
-                }
-                views.setTextViewText(R.id.tvHouseholdName, title)
+                views.setTextViewText(R.id.tvHouseholdName, aggregated.primaryRoomName)
 
                 val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
                 val timeStr = if (aggregated.lastUpdatedTimestamp > 0) {
@@ -136,8 +141,21 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                 views.setTextViewText(R.id.tvMainTemp, tempStr)
                 views.setTextViewText(R.id.tvActiveRoomLabel, "Температура")
 
+                // Dynamic Comfort Gauge Ring (Xiaomi HyperOS / Apple iOS)
+                try {
+                    val gaugeBitmap = WidgetRenderEngine.renderComfortGauge(
+                        aggregated.primaryTemperature,
+                        aggregated.primaryHumidity,
+                        theme
+                    )
+                    views.setImageViewBitmap(R.id.ivComfortGauge, gaugeBitmap)
+                    views.setViewVisibility(R.id.ivComfortGauge, View.VISIBLE)
+                } catch (e: Exception) {
+                    views.setViewVisibility(R.id.ivComfortGauge, View.GONE)
+                }
+
                 // Humidity
-                if (dataManager.showHumidity && aggregated.primaryHumidity != null) {
+                if (aggregated.primaryHumidity != null) {
                     views.setViewVisibility(R.id.tileHumidity, View.VISIBLE)
                     views.setTextViewText(R.id.tvMainHumidity, String.format(Locale.US, "%.0f%%", aggregated.primaryHumidity))
                 } else {
@@ -145,14 +163,14 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                 }
 
                 // Pressure
-                if (dataManager.showPressure && aggregated.primaryPressure != null) {
+                if (aggregated.primaryPressure != null) {
                     views.setViewVisibility(R.id.tilePressure, View.VISIBLE)
                     views.setTextViewText(R.id.tvMainPressure, String.format(Locale.US, "%.0f", aggregated.primaryPressure))
                 } else {
                     views.setViewVisibility(R.id.tilePressure, View.GONE)
                 }
 
-                // Secondary rooms / devices across different rooms
+                // Secondary cards across rooms
                 val otherRooms = aggregated.roomSensors
                 if (otherRooms.isNotEmpty()) {
                     views.setViewVisibility(R.id.layoutSecondaryRooms, View.VISIBLE)
@@ -179,7 +197,7 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
 
                 // Door sensor
                 var hasBottomItem = false
-                if (dataManager.showDoor) {
+                if (aggregated.openDoorDeviceName != null || aggregated.isAnyDoorOpen) {
                     hasBottomItem = true
                     views.setViewVisibility(R.id.tileDoor, View.VISIBLE)
                     if (aggregated.isAnyDoorOpen) {
@@ -194,7 +212,7 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                 }
 
                 // Battery sensor
-                if (dataManager.showBattery && aggregated.lowestBatteryLevel != null) {
+                if (aggregated.lowestBatteryLevel != null) {
                     hasBottomItem = true
                     views.setViewVisibility(R.id.tileBattery, View.VISIBLE)
                     views.setTextViewText(R.id.tvBatteryStatus, String.format(Locale.US, "%.0f%%", aggregated.lowestBatteryLevel))
@@ -211,6 +229,16 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 views.setOnClickPendingIntent(R.id.headerLayout, openAppPendingIntent)
+
+                // Click Intent: Configure THIS specific widget instance
+                val configIntent = Intent(context, WidgetConfigureActivity::class.java).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                }
+                val configPendingIntent = PendingIntent.getActivity(
+                    context, appWidgetId, configIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.btnWidgetConfigure, configPendingIntent)
 
                 // Click Intent: Refresh Button
                 val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {

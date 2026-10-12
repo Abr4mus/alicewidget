@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top Header with Delicate Russian Icon and Version v.0.32 -->
+        <!-- Top Header with Delicate Russian Icon and Version v.0.33 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -57,7 +57,7 @@
                         android:paddingTop="2dp"
                         android:paddingEnd="6dp"
                         android:paddingBottom="2dp"
-                        android:text="v.0.32"
+                        android:text="v.0.33"
                         android:textColor="@color/alice_neon_light"
                         android:textSize="11sp"
                         android:textStyle="bold" />
@@ -66,13 +66,13 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Виджеты рабочего стола"
+                    android:text="Xiaomi HyperOS &amp; Apple iOS Движок"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- CARD 1: FAST 1-CLICK AUTHENTICATION & CLIENT ID -->
+        <!-- CARD 1: FAST 1-CLICK AUTHENTICATION -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -129,7 +129,7 @@
                         android:layout_width="0dp"
                         android:layout_height="46dp"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_tile_alice"
+                        android:background="@drawable/bg_tile_xiaomi"
                         android:hint="ClientID приложения"
                         android:inputType="text"
                         android:paddingStart="12dp"
@@ -182,7 +182,7 @@
                         android:layout_width="0dp"
                         android:layout_height="46dp"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_tile_alice"
+                        android:background="@drawable/bg_tile_xiaomi"
                         android:hint="Токен появится здесь сам"
                         android:inputType="textPassword"
                         android:paddingStart="12dp"
@@ -224,7 +224,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- CARD 2: WIDGET SKINS / THEMES SELECTOR -->
+        <!-- CARD 2: ACTIVE WIDGETS MANAGER (PER-WIDGET ISOLATION) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -242,7 +242,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🎨 Стиль оформления виджетов"
+                    android:text="📱 Ваши виджеты на рабочем столе"
                     android:textColor="@color/alice_text_white"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -251,7 +251,49 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Выберите скин для всех виджетов на рабочем столе:"
+                    android:text="Каждый виджет настраивается индивидуально и не влияет на остальные:"
+                    android:textColor="@color/alice_text_muted"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:id="@+id/layoutActiveWidgetsList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical">
+                    <!-- Populated programmatically with placed widgets -->
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- CARD 3: THEME ENGINE SELECTOR -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            app:cardBackgroundColor="@color/alice_purple_card"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎨 Движок оформления виджетов"
+                    android:textColor="@color/alice_text_white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Выберите стиль оформления по умолчанию для новых виджетов:"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
 
@@ -261,20 +303,18 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp">
 
-                    <!-- Alice Theme Option -->
                     <RadioButton
-                        android:id="@+id/rbThemeAlice"
+                        android:id="@+id/rbThemeXiaomi"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_tile_alice"
-                        android:buttonTint="@color/alice_neon_purple"
+                        android:background="@drawable/bg_tile_xiaomi"
+                        android:buttonTint="@color/xiaomi_accent_teal"
                         android:checked="true"
                         android:padding="10dp"
-                        android:text="💜 Стиль Яндекс / Алиса (сиреневый неон, матовое стекло)"
-                        android:textColor="@color/alice_text_white"
+                        android:text="🤖 Xiaomi HyperOS (обсидиановый акрил, кольцевой датчик)"
+                        android:textColor="@color/xiaomi_text_primary"
                         android:textSize="13sp" />
 
-                    <!-- iOS Theme Option -->
                     <RadioButton
                         android:id="@+id/rbThemeIos"
                         android:layout_width="match_parent"
@@ -283,27 +323,26 @@
                         android:background="@drawable/bg_tile_ios"
                         android:buttonTint="@color/ios_accent_blue"
                         android:padding="10dp"
-                        android:text="🍏 Стиль iPhone / iOS (глубокое стекло Apple, 26dp)"
+                        android:text="🍏 iPhone / iOS (Apple Frosted Glass 26dp, SF-минимализм)"
                         android:textColor="@color/ios_text_primary"
                         android:textSize="13sp" />
 
-                    <!-- Android / Material You Theme Option -->
                     <RadioButton
-                        android:id="@+id/rbThemeAndroid"
+                        android:id="@+id/rbThemeAlice"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_tile_android"
-                        android:buttonTint="@color/m3_accent_teal"
+                        android:background="@drawable/bg_tile_alice"
+                        android:buttonTint="@color/alice_neon_purple"
                         android:padding="10dp"
-                        android:text="🤖 Стиль Android / Material You (пастельный сквиркл, 28dp)"
-                        android:textColor="@color/m3_text_primary"
+                        android:text="💜 Яндекс / Алиса (космический фиолетовый неон)"
+                        android:textColor="@color/alice_text_white"
                         android:textSize="13sp" />
                 </RadioGroup>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- CARD 3: PIN WIDGET DIRECTLY FROM APP (INCLUDES 2x1) -->
+        <!-- CARD 4: ADD WIDGETS TO HOMESCREEN -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -330,7 +369,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Выберите формат виджета и добавьте в 1 клик на главный экран:"
+                    android:text="При добавлении сразу откроется персональная настройка устройств:"
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
 
@@ -339,7 +378,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_tile_alice"
+                    android:background="@drawable/bg_tile_xiaomi"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="10dp">
@@ -353,7 +392,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="4 × 2 (Датчики дома)"
+                            android:text="4 × 2 (Главный смарт-хаб)"
                             android:textColor="@color/alice_text_white"
                             android:textSize="13sp"
                             android:textStyle="bold" />
@@ -361,7 +400,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Полный обзор: климат комнат, двери, батарейки"
+                            android:text="Кольцевой датчик комфорта, климат комнат, двери"
                             android:textColor="@color/alice_text_muted"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -381,7 +420,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_tile_alice"
+                    android:background="@drawable/bg_tile_xiaomi"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="10dp">
@@ -403,7 +442,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Мульти-устройства из разных комнат в одну строку"
+                            android:text="Несколько устройств из разных комнат в одну строку"
                             android:textColor="@color/alice_text_muted"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -423,7 +462,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_tile_alice"
+                    android:background="@drawable/bg_tile_xiaomi"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="10dp">
@@ -445,7 +484,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Крупная температура и влажность"
+                            android:text="Крупная температура, кольцо комфорта и влажность"
                             android:textColor="@color/alice_text_muted"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -460,12 +499,12 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <!-- NEW Widget 2x1 Pin Option -->
+                <!-- Widget 2x1 Pin Option -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_tile_alice"
+                    android:background="@drawable/bg_tile_xiaomi"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="10dp">
@@ -487,7 +526,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Узкая компактная плитка с температурой"
+                            android:text="Узкая компактная плитка без наслоений"
                             android:textColor="@color/alice_text_muted"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -504,7 +543,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- CARD 4: PER-WIDGET CONFIGURATION, MULTI-ROOM & PER-DEVICE METRICS -->
+        <!-- CARD 5: PER-DEVICE METRIC SETTINGS -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -522,197 +561,35 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⚙️ Настройка виджетов и датчиков"
+                    android:text="📊 Показатели устройств умного дома"
                     android:textColor="@color/alice_text_white"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
-                <!-- Widget Mode Selector Chips/Tabs -->
                 <TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Выберите виджет для настройки:"
-                    android:textColor="@color/alice_neon_light"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnTab4x2"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="0dp"
-                        android:layout_height="38dp"
-                        android:layout_weight="1"
-                        android:text="4×2"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <Button
-                        android:id="@+id/btnTab4x1"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="38dp"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:text="4×1"
-                        android:textColor="@color/alice_text_white"
-                        android:textSize="12sp" />
-
-                    <Button
-                        android:id="@+id/btnTab2x2"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="38dp"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:text="2×2"
-                        android:textColor="@color/alice_text_white"
-                        android:textSize="12sp" />
-
-                    <Button
-                        android:id="@+id/btnTab2x1"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="38dp"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:text="2×1"
-                        android:textColor="@color/alice_text_white"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvTabDescription"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Виджет 4×2: выберите устройства из любых комнат и их показатели."
-                    android:textColor="@color/alice_text_muted"
-                    android:textSize="11sp" />
-
-                <!-- Single-Room Spinner (visible when configuring 2x2 or 2x1) -->
-                <LinearLayout
-                    android:id="@+id/layoutRoomSpinner"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Комната для отображения:"
-                        android:textColor="@color/alice_neon_light"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <Spinner
-                        android:id="@+id/spRoomsList"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_tile_alice"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp" />
-                </LinearLayout>
-
-                <!-- Global Metric Filters -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Общие показатели:"
-                    android:textColor="@color/alice_neon_light"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:orientation="horizontal">
-
-                    <CheckBox
-                        android:id="@+id/cbShowHumidity"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:checked="true"
-                        android:text="💧 Влажность"
-                        android:textColor="@color/alice_text_white"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/cbShowPressure"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:checked="false"
-                        android:text="🧭 Давление"
-                        android:textColor="@color/alice_text_white"
-                        android:textSize="12sp" />
-                </LinearLayout>
+                    android:text="Укажите, какие именно показатели выводить для каждого датчика (только доступные параметры):"
+                    android:textColor="@color/alice_text_muted"
+                    android:textSize="12sp" />
 
                 <LinearLayout
+                    android:id="@+id/layoutMainDevicesList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <CheckBox
-                        android:id="@+id/cbShowDoor"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:checked="true"
-                        android:text="🚪 Двери/окна"
-                        android:textColor="@color/alice_text_white"
-                        android:textSize="12sp" />
-
-                    <CheckBox
-                        android:id="@+id/cbShowBattery"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:checked="true"
-                        android:text="🔋 Батарейки"
-                        android:textColor="@color/alice_text_white"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Dynamic Devices List with Individual Metric Checkboxes -->
-                <TextView
-                    android:id="@+id/tvDevicesHeader"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Устройства умного дома и показатели:"
-                    android:textColor="@color/alice_neon_light"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:id="@+id/layoutDevicesList"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:orientation="vertical">
-                    <!-- Populated programmatically with devices and sub-metrics -->
+                    <!-- Populated programmatically per device -->
                 </LinearLayout>
 
                 <Button
-                    android:id="@+id/btnSaveSettings"
+                    android:id="@+id/btnSaveDeviceMetrics"
                     style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="match_parent"
                     android:layout_height="46dp"
                     android:layout_marginTop="12dp"
-                    android:text="💾 Применить настройки к виджетам"
+                    android:text="💾 Сохранить показатели устройств"
                     android:textColor="@color/alice_neon_light"
                     android:textStyle="bold" />
             </LinearLayout>

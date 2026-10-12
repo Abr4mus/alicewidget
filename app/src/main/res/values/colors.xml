@@ -27,17 +27,28 @@
     <color name="sensor_warn_red">#EF4444</color>
     <color name="sensor_pressure_lilac">#C084FC</color>
 
+    <!-- Xiaomi HyperOS Style Colors -->
+    <color name="xiaomi_obsidian_dark">#E6121418</color>
+    <color name="xiaomi_obsidian_surface">#E61A1D23</color>
+    <color name="xiaomi_tile_bg">#21FFFFFF</color>
+    <color name="xiaomi_tile_stroke">#1EFFFFFF</color>
+    <color name="xiaomi_accent_orange">#FF6900</color>
+    <color name="xiaomi_accent_teal">#00D2B4</color>
+    <color name="xiaomi_accent_blue">#38BDF8</color>
+    <color name="xiaomi_text_primary">#FFFFFF</color>
+    <color name="xiaomi_text_secondary">#9DA3AE</color>
+
     <!-- iOS / iPhone Style Colors -->
-    <color name="ios_glass_dark">#CC1C1C1E</color>
-    <color name="ios_glass_stroke">#33FFFFFF</color>
+    <color name="ios_glass_dark">#D81A1A20</color>
+    <color name="ios_glass_stroke">#38FFFFFF</color>
     <color name="ios_tile_surface">#24FFFFFF</color>
-    <color name="ios_tile_stroke">#1AFFFFFF</color>
+    <color name="ios_tile_stroke">#20FFFFFF</color>
     <color name="ios_text_primary">#F5F5F7</color>
     <color name="ios_text_secondary">#8E8E93</color>
-    <color name="ios_accent_blue">#0A84FF</color>
+    <color name="ios_accent_blue">#007AFF</color>
     <color name="ios_accent_cyan">#64D2FF</color>
-    <color name="ios_accent_green">#30D158</color>
-    <color name="ios_accent_orange">#FF9F0A</color>
+    <color name="ios_accent_green">#34C759</color>
+    <color name="ios_accent_orange">#FF9500</color>
 
     <!-- Android / Material You Style Colors -->
     <color name="m3_surface_dark">#E6182220</color>

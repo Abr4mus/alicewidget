@@ -124,12 +124,28 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Mini Configure Button -->
+    <FrameLayout
+        android:id="@+id/btnBarConfigure"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="6dp"
+        android:background="@drawable/bg_btn_xiaomi">
+
+        <ImageView
+            android:layout_width="13dp"
+            android:layout_height="13dp"
+            android:layout_gravity="center"
+            android:contentDescription="Настроить"
+            android:src="@drawable/ic_gear" />
+    </FrameLayout>
+
     <!-- Mini Refresh Button -->
     <FrameLayout
         android:id="@+id/btnBarRefresh"
         android:layout_width="26dp"
         android:layout_height="26dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="6dp"
         android:background="@drawable/bg_btn_alice">
 
         <ImageView

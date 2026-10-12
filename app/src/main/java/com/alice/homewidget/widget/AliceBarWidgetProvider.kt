@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.ui.MainActivity
+import com.alice.homewidget.ui.WidgetConfigureActivity
 
 class AliceBarWidgetProvider : AppWidgetProvider() {
 
@@ -18,6 +19,13 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
         val dataManager = WidgetDataManager(context)
         for (appWidgetId in appWidgetIds) {
             updateWidget(context, appWidgetManager, appWidgetId, dataManager)
+        }
+    }
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        val dataManager = WidgetDataManager(context)
+        for (appWidgetId in appWidgetIds) {
+            dataManager.deleteWidgetConfig(appWidgetId)
         }
     }
 
@@ -30,16 +38,18 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
         ) {
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_bar_4x1)
-                val skin = dataManager.widgetTheme
-                val slots = dataManager.get4x1BarSlots()
+                val config = dataManager.getWidgetConfig(appWidgetId, "4x1")
+                val theme = config.theme
+                val slots = dataManager.get4x1BarSlots(appWidgetId)
 
-                // Apply dynamic skin
-                views.setInt(R.id.rootLayoutBar, "setBackgroundResource", WidgetSkinHelper.getWidgetBackground(skin))
-                views.setInt(R.id.btnBarRefresh, "setBackgroundResource", WidgetSkinHelper.getBtnBackground(skin))
+                // Apply engine skin backgrounds
+                views.setInt(R.id.rootLayoutBar, "setBackgroundResource", WidgetRenderEngine.getThemeBackground(theme))
+                views.setInt(R.id.btnBarRefresh, "setBackgroundResource", WidgetRenderEngine.getButtonBackground(theme))
+                views.setInt(R.id.btnBarConfigure, "setBackgroundResource", WidgetRenderEngine.getButtonBackground(theme))
 
-                val colorPrimary = WidgetSkinHelper.getTextColorPrimary(skin)
-                val colorSecondary = WidgetSkinHelper.getTextColorSecondary(skin)
-                val colorHumidity = WidgetSkinHelper.getAccentHumidityColor(skin)
+                val colorPrimary = WidgetRenderEngine.getTextPrimaryColor(theme)
+                val colorSecondary = WidgetRenderEngine.getTextSecondaryColor(theme)
+                val colorHumidity = WidgetRenderEngine.getHumidityColor(theme)
 
                 views.setTextColor(R.id.tvBarHousehold, colorSecondary)
                 views.setTextColor(R.id.tvBarTemp, colorPrimary)
@@ -61,7 +71,7 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
                     }
                 }
 
-                // Populate Slot 2 (if available)
+                // Populate Slot 2
                 if (slots.size > 1) {
                     val s2 = slots[1]
                     views.setViewVisibility(R.id.layoutBarSlot2, View.VISIBLE)
@@ -72,7 +82,7 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
                     views.setViewVisibility(R.id.layoutBarSlot2, View.GONE)
                 }
 
-                // Populate Slot 3 (if available)
+                // Populate Slot 3
                 if (slots.size > 2) {
                     val s3 = slots[2]
                     views.setViewVisibility(R.id.layoutBarSlot3, View.VISIBLE)
@@ -91,17 +101,6 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
                     } else {
                         views.setTextColor(R.id.tvBarDoor, colorPrimary)
                     }
-                } else if (slots.size <= 2 && dataManager.showDoor) {
-                    val agg = dataManager.getAggregatedSensorData()
-                    views.setViewVisibility(R.id.layoutBarSlot3, View.VISIBLE)
-                    views.setViewVisibility(R.id.tvBarSlot3Room, View.GONE)
-                    if (agg.isAnyDoorOpen) {
-                        views.setTextViewText(R.id.tvBarDoor, "🚪 ОТКРЫТО")
-                        views.setTextColor(R.id.tvBarDoor, ContextCompat.getColor(context, R.color.sensor_warn_red))
-                    } else {
-                        views.setTextViewText(R.id.tvBarDoor, "🚪 ОК")
-                        views.setTextColor(R.id.tvBarDoor, ContextCompat.getColor(context, R.color.sensor_ok_green))
-                    }
                 } else {
                     views.setViewVisibility(R.id.layoutBarSlot3, View.GONE)
                 }
@@ -113,6 +112,16 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 views.setOnClickPendingIntent(R.id.rootLayoutBar, pendingIntent)
+
+                // Click to configure THIS widget instance
+                val configIntent = Intent(context, WidgetConfigureActivity::class.java).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                }
+                val configPendingIntent = PendingIntent.getActivity(
+                    context, appWidgetId, configIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.btnBarConfigure, configPendingIntent)
 
                 // Click refresh
                 val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {
