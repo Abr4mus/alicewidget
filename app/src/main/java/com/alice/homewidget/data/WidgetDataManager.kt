@@ -260,7 +260,7 @@ class WidgetDataManager(context: Context) {
 
         val primaryDev = targetDevices.firstOrNull { it.isClimateSensor() || it.getTemperature() != null }
             ?: targetDevices.firstOrNull()
-        val primaryRoom = rooms.firstOrNull { it.id == primaryDev?.room || it.devices.contains(primaryDev?.id) }
+        val primaryRoom = rooms.firstOrNull { it.id == primaryDev?.room || it.hasDevice(primaryDev?.id) }
             ?: rooms.firstOrNull()
 
         val primarySetting = primaryDev?.let { getDeviceMetricSetting(it.id, appWidgetId) } ?: DeviceMetricSetting()
@@ -284,7 +284,7 @@ class WidgetDataManager(context: Context) {
             val fuel = if (devSetting.showFuel && dev.hasWaterOrFuel()) dev.getWaterOrFuelLevel() else null
 
             if (t != null || h != null || p != null || bat != null || fuel != null) {
-                val rName = rooms.firstOrNull { it.id == dev.room || it.devices.contains(dev.id) }?.name ?: dev.name
+                val rName = rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) }?.name ?: dev.name
                 val extra = if (fuel != null) "Уровень: ${String.format(Locale.US, "%.0f%%", fuel)}" else null
                 roomSummaries.add(
                     RoomClimateSummary(
@@ -364,7 +364,7 @@ class WidgetDataManager(context: Context) {
 
         for (dev in targetDevices) {
             val devSetting = getDeviceMetricSetting(dev.id, appWidgetId)
-            val rName = rooms.firstOrNull { it.id == dev.room || it.devices.contains(dev.id) }?.name ?: dev.name
+            val rName = rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) }?.name ?: dev.name
 
             if (dev.hasDoorSensor() && devSetting.showDoor) {
                 val isOpen = dev.isDoorOrWindowOpen() == true
@@ -420,7 +420,7 @@ class WidgetDataManager(context: Context) {
         }
 
         val title = config?.customTitle?.ifBlank { null }
-            ?: dev?.let { d -> rooms.firstOrNull { it.id == d.room || it.devices.contains(d.id) }?.name ?: d.name }
+            ?: dev?.let { d -> rooms.firstOrNull { it.id == d.room || it.hasDevice(d.id) }?.name ?: d.name }
             ?: "Климат"
 
         val setting = dev?.let { getDeviceMetricSetting(it.id, appWidgetId) } ?: DeviceMetricSetting()

@@ -21,7 +21,7 @@ data class Room(
     @SerializedName("household_id") val householdId: String? = null,
     @SerializedName("devices") val devices: List<String>? = emptyList()
 ) {
-    fun hasDevice(devId: String): Boolean = devices?.contains(devId) == true
+    fun hasDevice(devId: String?): Boolean = !devId.isNullOrBlank() && devices?.contains(devId) == true
 }
 
 data class Device(

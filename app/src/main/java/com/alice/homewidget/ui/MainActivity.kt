@@ -151,11 +151,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        renderActiveWidgets()
-    }
-
     private fun initThemeSelector() {
         when (dataManager.defaultTheme) {
             WidgetDataManager.THEME_IOS -> binding.rbThemeIos.isChecked = true
