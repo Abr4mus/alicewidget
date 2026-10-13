@@ -168,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         when (dataManager.defaultTheme) {
             WidgetDataManager.THEME_IOS -> binding.rbThemeIos.isChecked = true
             WidgetDataManager.THEME_ALICE -> binding.rbThemeAlice.isChecked = true
+            WidgetDataManager.THEME_ANDROID -> binding.rbThemeAndroid.isChecked = true
             else -> binding.rbThemeXiaomi.isChecked = true
         }
 
@@ -175,12 +176,14 @@ class MainActivity : AppCompatActivity() {
             val theme = when (checkedId) {
                 R.id.rbThemeIos -> WidgetDataManager.THEME_IOS
                 R.id.rbThemeAlice -> WidgetDataManager.THEME_ALICE
+                R.id.rbThemeAndroid -> WidgetDataManager.THEME_ANDROID
                 else -> WidgetDataManager.THEME_XIAOMI
             }
             dataManager.defaultTheme = theme
             val name = when (theme) {
                 WidgetDataManager.THEME_IOS -> "iPhone / iOS"
                 WidgetDataManager.THEME_ALICE -> "Яндекс / Алиса"
+                WidgetDataManager.THEME_ANDROID -> "Android Material You"
                 else -> "Xiaomi HyperOS"
             }
             Toast.makeText(this, "Стиль по умолчанию: $name", Toast.LENGTH_SHORT).show()
@@ -218,6 +221,7 @@ class MainActivity : AppCompatActivity() {
             val themeName = when (config.theme) {
                 WidgetDataManager.THEME_IOS -> "Стиль iOS"
                 WidgetDataManager.THEME_ALICE -> "Стиль Алиса"
+                WidgetDataManager.THEME_ANDROID -> "Стиль Android"
                 else -> "Стиль Xiaomi"
             }
 

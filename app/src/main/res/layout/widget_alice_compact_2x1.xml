@@ -1,111 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/rootLayoutCompact2x1"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootWidgetCanvasContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg_skin_alice"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:paddingStart="10dp"
-    android:paddingTop="4dp"
-    android:paddingEnd="8dp"
-    android:paddingBottom="4dp">
+    android:layout_height="match_parent">
 
-    <!-- Left: Room & Main Temperature Metric -->
+    <!-- High-DPI Full-Card Canvas Rendered Bitmap -->
+    <ImageView
+        android:id="@+id/ivWidgetCanvas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="Виджет климата"
+        android:scaleType="fitXY" />
+
+    <!-- Transparent Touch Hotspot: Open Main App -->
+    <FrameLayout
+        android:id="@+id/btnWidgetOpenApp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Action Hotspots in Top-Right: Settings & Instant Refresh -->
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/tvCompact2x1RoomName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:includeFontPadding="false"
-            android:maxLines="1"
-            android:text="Комната"
-            android:textColor="@color/alice_text_muted"
-            android:textSize="10sp" />
-
-        <TextView
-            android:id="@+id/tvCompact2x1Temp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:includeFontPadding="false"
-            android:maxLines="1"
-            android:text="23.5°"
-            android:textColor="@color/alice_text_white"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Right: Humidity Metric Pill -->
-    <LinearLayout
-        android:id="@+id/layoutCompact2x1Humidity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:layout_marginEnd="6dp"
-        android:background="@drawable/bg_tile_alice"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="6dp"
-        android:paddingTop="3dp"
-        android:paddingEnd="6dp"
-        android:paddingBottom="3dp">
+        android:layout_gravity="top|end"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="5dp"
+        android:orientation="horizontal">
 
-        <ImageView
-            android:id="@+id/ivCompact2x1Humidity"
-            android:layout_width="11dp"
-            android:layout_height="11dp"
-            android:src="@drawable/ic_humidity" />
+        <FrameLayout
+            android:id="@+id/btnWidgetConfigure"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_btn_ripple"
+            android:clickable="true"
+            android:focusable="true">
 
-        <TextView
-            android:id="@+id/tvCompact2x1Humidity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="3dp"
-            android:includeFontPadding="false"
-            android:maxLines="1"
-            android:text="48%"
-            android:textColor="@color/sensor_humidity_cyan"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_gravity="center"
+                android:alpha="0.85"
+                android:contentDescription="Настроить"
+                android:src="@drawable/ic_gear" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/btnWidgetRefresh"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:background="@drawable/bg_btn_ripple"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_gravity="center"
+                android:alpha="0.85"
+                android:contentDescription="Обновить"
+                android:src="@drawable/ic_refresh" />
+        </FrameLayout>
     </LinearLayout>
 
-    <!-- Mini Configure Button -->
-    <FrameLayout
-        android:id="@+id/btnCompact2x1Configure"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginEnd="5dp"
-        android:background="@drawable/bg_btn_xiaomi">
-
-        <ImageView
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_gravity="center"
-            android:contentDescription="Настроить"
-            android:src="@drawable/ic_gear" />
-    </FrameLayout>
-
-    <!-- Mini Refresh Button -->
-    <FrameLayout
-        android:id="@+id/btnCompact2x1Refresh"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:background="@drawable/bg_btn_alice">
-
-        <ImageView
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_gravity="center"
-            android:contentDescription="Обновить"
-            android:src="@drawable/ic_refresh" />
-    </FrameLayout>
-
-</LinearLayout>
+</FrameLayout>

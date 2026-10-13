@@ -338,6 +338,18 @@
                         android:text="💜 Яндекс / Алиса (космический фиолетовый неон)"
                         android:textColor="@color/alice_text_white"
                         android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbThemeAndroid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_android"
+                        android:buttonTint="@color/android_accent_mint"
+                        android:padding="10dp"
+                        android:text="🤖 Android Material You (акриловый графит, пастель)"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="13sp" />
                 </RadioGroup>
             </LinearLayout>
         </androidx.cardview.widget.CardView>

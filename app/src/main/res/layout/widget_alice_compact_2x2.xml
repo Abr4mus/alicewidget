@@ -1,107 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/rootLayoutCompact"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootWidgetCanvasContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg_skin_alice"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:layout_height="match_parent">
 
-    <!-- Header (No logo) -->
-    <LinearLayout
+    <!-- High-DPI Full-Card Canvas Rendered Bitmap -->
+    <ImageView
+        android:id="@+id/ivWidgetCanvas"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="Виджет климата 2x2"
+        android:scaleType="fitXY" />
+
+    <!-- Transparent Touch Hotspot: Open Main App -->
+    <FrameLayout
+        android:id="@+id/btnWidgetOpenApp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Action Hotspots in Top-Right: Settings & Instant Refresh -->
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="6dp"
         android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/tvCompactRoomName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Климат"
-            android:textColor="@color/alice_text_white"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
         <FrameLayout
-            android:id="@+id/btnCompactConfigure"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_btn_xiaomi">
+            android:id="@+id/btnWidgetConfigure"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_btn_ripple"
+            android:clickable="true"
+            android:focusable="true">
 
             <ImageView
-                android:layout_width="12dp"
-                android:layout_height="12dp"
+                android:layout_width="13dp"
+                android:layout_height="13dp"
                 android:layout_gravity="center"
+                android:alpha="0.85"
                 android:contentDescription="Настроить"
                 android:src="@drawable/ic_gear" />
         </FrameLayout>
 
-        <ImageView
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:src="@drawable/ic_thermometer" />
+        <FrameLayout
+            android:id="@+id/btnWidgetRefresh"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_btn_ripple"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:layout_gravity="center"
+                android:alpha="0.85"
+                android:contentDescription="Обновить"
+                android:src="@drawable/ic_refresh" />
+        </FrameLayout>
     </LinearLayout>
 
-    <!-- Big Temperature Center with Gauge -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/tvCompactTemp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="23.5°"
-            android:textColor="@color/alice_text_white"
-            android:textSize="32sp"
-            android:textStyle="bold" />
-
-        <ImageView
-            android:id="@+id/ivCompactComfortGauge"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="8dp"
-            android:visibility="gone" />
-    </LinearLayout>
-
-    <!-- Bottom Humidity Metric -->
-    <LinearLayout
-        android:id="@+id/layoutCompactHumidity"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_tile_alice"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:padding="6dp">
-
-        <ImageView
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:src="@drawable/ic_humidity" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="Влажность: "
-            android:textColor="@color/alice_text_muted"
-            android:textSize="11sp" />
-
-        <TextView
-            android:id="@+id/tvCompactHumidity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="48%"
-            android:textColor="@color/sensor_humidity_cyan"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-</LinearLayout>
+</FrameLayout>

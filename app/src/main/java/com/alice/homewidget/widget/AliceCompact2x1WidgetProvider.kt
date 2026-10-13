@@ -5,7 +5,8 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.view.View
+import android.net.Uri
+import android.os.Bundle
 import android.widget.RemoteViews
 import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
@@ -19,6 +20,17 @@ class AliceCompact2x1WidgetProvider : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             updateWidget(context, appWidgetManager, appWidgetId, dataManager)
         }
+    }
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        val dataManager = WidgetDataManager(context)
+        updateWidget(context, appWidgetManager, appWidgetId, dataManager)
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
@@ -38,50 +50,48 @@ class AliceCompact2x1WidgetProvider : AppWidgetProvider() {
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_compact_2x1)
                 val config = dataManager.getWidgetConfig(appWidgetId, "2x1")
-                val theme = config.theme
                 val data = dataManager.get2x1Data(appWidgetId)
 
-                // Apply engine skin backgrounds
-                views.setInt(R.id.rootLayoutCompact2x1, "setBackgroundResource", WidgetRenderEngine.getThemeBackground(theme))
-                views.setInt(R.id.layoutCompact2x1Humidity, "setBackgroundResource", WidgetRenderEngine.getTileBackground(theme))
-                views.setInt(R.id.btnCompact2x1Refresh, "setBackgroundResource", WidgetRenderEngine.getButtonBackground(theme))
-                views.setInt(R.id.btnCompact2x1Configure, "setBackgroundResource", WidgetRenderEngine.getButtonBackground(theme))
+                // Compute high-DPI widget pixel dimensions
+                val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+                val density = context.resources.displayMetrics.density
+                val minWidthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).let { if (it > 0) it else 160 }
+                val minHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT).let { if (it > 0) it else 72 }
 
-                views.setTextColor(R.id.tvCompact2x1RoomName, WidgetRenderEngine.getTextSecondaryColor(theme))
-                views.setTextColor(R.id.tvCompact2x1Temp, WidgetRenderEngine.getTextPrimaryColor(theme))
-                views.setTextColor(R.id.tvCompact2x1Humidity, WidgetRenderEngine.getHumidityColor(theme))
+                val widthPx = (minWidthDp * density).toInt().coerceIn(240, 1080)
+                val heightPx = (minHeightDp * density).toInt().coerceIn(100, 600)
 
-                // Set room & temperature
-                views.setTextViewText(R.id.tvCompact2x1RoomName, data.title)
-                views.setTextViewText(R.id.tvCompact2x1Temp, data.tempText)
+                // Render full card via Custom Canvas Graphics Engine
+                val bitmap = WidgetRenderEngine.render2x1WidgetBitmap(
+                    context, widthPx, heightPx, data, config.theme
+                )
+                views.setImageViewBitmap(R.id.ivWidgetCanvas, bitmap)
 
-                // Humidity metric pill
-                if (data.humidityText != null) {
-                    views.setViewVisibility(R.id.layoutCompact2x1Humidity, View.VISIBLE)
-                    views.setTextViewText(R.id.tvCompact2x1Humidity, data.humidityText)
-                } else {
-                    views.setViewVisibility(R.id.layoutCompact2x1Humidity, View.GONE)
+                // 1. Click Hotspot: Open Main App
+                val appIntent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
-
-                // Click to open main app
-                val intent = Intent(context, MainActivity::class.java)
-                val pendingIntent = PendingIntent.getActivity(
-                    context, 0, intent,
+                val appPendingIntent = PendingIntent.getActivity(
+                    context, 0, appIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                views.setOnClickPendingIntent(R.id.rootLayoutCompact2x1, pendingIntent)
+                views.setOnClickPendingIntent(R.id.btnWidgetOpenApp, appPendingIntent)
 
-                // Click to configure THIS widget instance
+                // 2. Click Hotspot: Configure THIS specific widget instance
+                // Unique data URI prevents Android PendingIntent collisions between different widgets
                 val configIntent = Intent(context, WidgetConfigureActivity::class.java).apply {
+                    action = "com.alice.homewidget.CONFIGURE_WIDGET_$appWidgetId"
+                    this.data = Uri.parse("alice://widget/$appWidgetId")
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
                 val configPendingIntent = PendingIntent.getActivity(
                     context, appWidgetId, configIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                views.setOnClickPendingIntent(R.id.btnCompact2x1Configure, configPendingIntent)
+                views.setOnClickPendingIntent(R.id.btnWidgetConfigure, configPendingIntent)
 
-                // Click refresh
+                // 3. Click Hotspot: Refresh
                 val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {
                     action = AliceHomeWidgetProvider.ACTION_REFRESH_WIDGET
                 }
@@ -89,7 +99,7 @@ class AliceCompact2x1WidgetProvider : AppWidgetProvider() {
                     context, appWidgetId, refreshIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                views.setOnClickPendingIntent(R.id.btnCompact2x1Refresh, refreshPendingIntent)
+                views.setOnClickPendingIntent(R.id.btnWidgetRefresh, refreshPendingIntent)
 
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {

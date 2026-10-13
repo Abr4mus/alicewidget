@@ -5,9 +5,9 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.view.View
+import android.net.Uri
+import android.os.Bundle
 import android.widget.RemoteViews
-import androidx.core.content.ContextCompat
 import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.ui.MainActivity
@@ -20,6 +20,17 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             updateWidget(context, appWidgetManager, appWidgetId, dataManager)
         }
+    }
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        val dataManager = WidgetDataManager(context)
+        updateWidget(context, appWidgetManager, appWidgetId, dataManager)
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
@@ -39,91 +50,47 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_alice_bar_4x1)
                 val config = dataManager.getWidgetConfig(appWidgetId, "4x1")
-                val theme = config.theme
                 val slots = dataManager.get4x1BarSlots(appWidgetId)
 
-                // Apply engine skin backgrounds
-                views.setInt(R.id.rootLayoutBar, "setBackgroundResource", WidgetRenderEngine.getThemeBackground(theme))
-                views.setInt(R.id.btnBarRefresh, "setBackgroundResource", WidgetRenderEngine.getButtonBackground(theme))
-                views.setInt(R.id.btnBarConfigure, "setBackgroundResource", WidgetRenderEngine.getButtonBackground(theme))
+                // Compute high-DPI widget pixel dimensions
+                val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+                val density = context.resources.displayMetrics.density
+                val minWidthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).let { if (it > 0) it else 320 }
+                val minHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT).let { if (it > 0) it else 72 }
 
-                val colorPrimary = WidgetRenderEngine.getTextPrimaryColor(theme)
-                val colorSecondary = WidgetRenderEngine.getTextSecondaryColor(theme)
-                val colorHumidity = WidgetRenderEngine.getHumidityColor(theme)
+                val widthPx = (minWidthDp * density).toInt().coerceIn(320, 1440)
+                val heightPx = (minHeightDp * density).toInt().coerceIn(80, 500)
 
-                views.setTextColor(R.id.tvBarHousehold, colorSecondary)
-                views.setTextColor(R.id.tvBarTemp, colorPrimary)
-                views.setTextColor(R.id.tvBarHumidity, colorHumidity)
+                // Render full card via Custom Canvas Graphics Engine
+                val bitmap = WidgetRenderEngine.render4x1WidgetBitmap(
+                    context, widthPx, heightPx, slots, config.theme
+                )
+                views.setImageViewBitmap(R.id.ivWidgetCanvas, bitmap)
 
-                views.setTextColor(R.id.tvBarSlot2Room, colorSecondary)
-                views.setTextColor(R.id.tvBarSlot2Value, colorPrimary)
-
-                // Populate Slot 1
-                if (slots.isNotEmpty()) {
-                    val s1 = slots[0]
-                    views.setTextViewText(R.id.tvBarHousehold, s1.roomName)
-                    views.setTextViewText(R.id.tvBarTemp, s1.mainText)
-                    if (s1.secondaryText != null) {
-                        views.setViewVisibility(R.id.tvBarHumidity, View.VISIBLE)
-                        views.setTextViewText(R.id.tvBarHumidity, s1.secondaryText)
-                    } else {
-                        views.setViewVisibility(R.id.tvBarHumidity, View.GONE)
-                    }
+                // 1. Click Hotspot: Open Main App
+                val appIntent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
-
-                // Populate Slot 2
-                if (slots.size > 1) {
-                    val s2 = slots[1]
-                    views.setViewVisibility(R.id.layoutBarSlot2, View.VISIBLE)
-                    views.setTextViewText(R.id.tvBarSlot2Room, s2.roomName)
-                    val s2Text = if (s2.secondaryText != null) "${s2.mainText} ${s2.secondaryText}" else s2.mainText
-                    views.setTextViewText(R.id.tvBarSlot2Value, s2Text)
-                } else {
-                    views.setViewVisibility(R.id.layoutBarSlot2, View.GONE)
-                }
-
-                // Populate Slot 3
-                if (slots.size > 2) {
-                    val s3 = slots[2]
-                    views.setViewVisibility(R.id.layoutBarSlot3, View.VISIBLE)
-                    if (s3.roomName.isNotBlank()) {
-                        views.setViewVisibility(R.id.tvBarSlot3Room, View.VISIBLE)
-                        views.setTextViewText(R.id.tvBarSlot3Room, s3.roomName)
-                    } else {
-                        views.setViewVisibility(R.id.tvBarSlot3Room, View.GONE)
-                    }
-                    val s3Text = if (s3.secondaryText != null) "${s3.mainText} ${s3.secondaryText}" else s3.mainText
-                    views.setTextViewText(R.id.tvBarDoor, s3Text)
-                    if (s3.isDoorAlert) {
-                        views.setTextColor(R.id.tvBarDoor, ContextCompat.getColor(context, R.color.sensor_warn_red))
-                    } else if (s3.isDoor) {
-                        views.setTextColor(R.id.tvBarDoor, ContextCompat.getColor(context, R.color.sensor_ok_green))
-                    } else {
-                        views.setTextColor(R.id.tvBarDoor, colorPrimary)
-                    }
-                } else {
-                    views.setViewVisibility(R.id.layoutBarSlot3, View.GONE)
-                }
-
-                // Click to open main app
-                val intent = Intent(context, MainActivity::class.java)
-                val pendingIntent = PendingIntent.getActivity(
-                    context, 0, intent,
+                val appPendingIntent = PendingIntent.getActivity(
+                    context, 0, appIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                views.setOnClickPendingIntent(R.id.rootLayoutBar, pendingIntent)
+                views.setOnClickPendingIntent(R.id.btnWidgetOpenApp, appPendingIntent)
 
-                // Click to configure THIS widget instance
+                // 2. Click Hotspot: Configure THIS specific widget instance
                 val configIntent = Intent(context, WidgetConfigureActivity::class.java).apply {
+                    action = "com.alice.homewidget.CONFIGURE_WIDGET_$appWidgetId"
+                    this.data = Uri.parse("alice://widget/$appWidgetId")
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
                 val configPendingIntent = PendingIntent.getActivity(
                     context, appWidgetId, configIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                views.setOnClickPendingIntent(R.id.btnBarConfigure, configPendingIntent)
+                views.setOnClickPendingIntent(R.id.btnWidgetConfigure, configPendingIntent)
 
-                // Click refresh
+                // 3. Click Hotspot: Refresh
                 val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {
                     action = AliceHomeWidgetProvider.ACTION_REFRESH_WIDGET
                 }
@@ -131,7 +98,7 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
                     context, appWidgetId, refreshIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                views.setOnClickPendingIntent(R.id.btnBarRefresh, refreshPendingIntent)
+                views.setOnClickPendingIntent(R.id.btnWidgetRefresh, refreshPendingIntent)
 
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {

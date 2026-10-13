@@ -1,373 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/rootLayout4x2"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootWidgetCanvasContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg_skin_alice"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:layout_height="match_parent">
 
-    <!-- Header Row (Clean, NO LOGO IMAGE) -->
-    <LinearLayout
-        android:id="@+id/headerLayout"
+    <!-- High-DPI Full-Card Canvas Rendered Bitmap -->
+    <ImageView
+        android:id="@+id/ivWidgetCanvas"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="Главный смарт-хаб датчиков"
+        android:scaleType="fitXY" />
+
+    <!-- Transparent Touch Hotspot: Open Main App -->
+    <FrameLayout
+        android:id="@+id/btnWidgetOpenApp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Action Hotspots in Top-Right: Settings & Instant Refresh -->
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingBottom="8dp">
+        android:layout_gravity="top|end"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="horizontal">
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvHouseholdName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Датчики"
-                android:textColor="@color/alice_text_white"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvWidgetUpdateTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Обновлено только что"
-                android:textColor="@color/alice_text_muted"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <!-- Settings Button to open WidgetConfigureActivity for THIS widget -->
         <FrameLayout
             android:id="@+id/btnWidgetConfigure"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_btn_xiaomi">
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="5dp"
+            android:background="@drawable/bg_btn_ripple"
+            android:clickable="true"
+            android:focusable="true">
 
             <ImageView
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
                 android:layout_gravity="center"
+                android:alpha="0.85"
                 android:contentDescription="Настроить этот виджет"
                 android:src="@drawable/ic_gear" />
         </FrameLayout>
 
-        <!-- Refresh Button -->
         <FrameLayout
             android:id="@+id/btnWidgetRefresh"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@drawable/bg_btn_alice">
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@drawable/bg_btn_ripple"
+            android:clickable="true"
+            android:focusable="true">
 
             <ImageView
-                android:id="@+id/ivRefreshIcon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
                 android:layout_gravity="center"
+                android:alpha="0.85"
                 android:contentDescription="Обновить"
                 android:src="@drawable/ic_refresh" />
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Climate Main Cards Row -->
-    <LinearLayout
-        android:id="@+id/layoutMainMetrics"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <!-- Temperature Tile -->
-        <LinearLayout
-            android:id="@+id/tileTemperature"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_alice"
-            android:orientation="vertical"
-            android:padding="8dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tvActiveRoomLabel"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:text="Температура"
-                    android:textColor="@color/alice_text_muted"
-                    android:textSize="10sp" />
-
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:src="@drawable/ic_thermometer" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tvMainTemp"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="23.5°"
-                    android:textColor="@color/alice_text_white"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <ImageView
-                    android:id="@+id/ivComfortGauge"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:visibility="gone" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Humidity Tile -->
-        <LinearLayout
-            android:id="@+id/tileHumidity"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_alice"
-            android:orientation="vertical"
-            android:padding="8dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Влажность"
-                    android:textColor="@color/alice_text_muted"
-                    android:textSize="10sp" />
-
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:src="@drawable/ic_humidity" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvMainHumidity"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="48%"
-                android:textColor="@color/sensor_humidity_cyan"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Pressure Tile (Hidden if disabled) -->
-        <LinearLayout
-            android:id="@+id/tilePressure"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_alice"
-            android:orientation="vertical"
-            android:padding="8dp"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Давление"
-                    android:textColor="@color/alice_text_muted"
-                    android:textSize="10sp" />
-
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:src="@drawable/ic_pressure" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvMainPressure"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="752"
-                android:textColor="@color/alice_text_light"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Secondary Rooms Summary Row -->
-    <LinearLayout
-        android:id="@+id/layoutSecondaryRooms"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:orientation="horizontal">
-
-        <!-- Room 1 Tile -->
-        <LinearLayout
-            android:id="@+id/tileRoom1"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_alice"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="6dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/tvRoom1Name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/alice_text_muted"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/tvRoom1Value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/alice_text_white"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Room 2 Tile -->
-        <LinearLayout
-            android:id="@+id/tileRoom2"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_alice"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="6dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/tvRoom2Name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/alice_text_muted"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/tvRoom2Value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/alice_text_white"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Bottom Status Row: Door & Battery -->
-    <LinearLayout
-        android:id="@+id/layoutBottomStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:orientation="horizontal">
-
-        <!-- Door Sensor Tile -->
-        <LinearLayout
-            android:id="@+id/tileDoor"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_alice"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="6dp">
-
-            <ImageView
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:src="@drawable/ic_door" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_weight="1"
-                android:text="Дверь"
-                android:textColor="@color/alice_text_muted"
-                android:textSize="10sp" />
-
-            <TextView
-                android:id="@+id/tvDoorStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Закрыта"
-                android:textColor="@color/sensor_ok_green"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Battery Status Tile -->
-        <LinearLayout
-            android:id="@+id/tileBattery"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_alice"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="6dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="🔋 Батарея"
-                android:textColor="@color/alice_text_muted"
-                android:textSize="10sp" />
-
-            <TextView
-                android:id="@+id/tvBatteryStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="100%"
-                android:textColor="@color/alice_text_light"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-    </LinearLayout>
-
-</LinearLayout>
+</FrameLayout>

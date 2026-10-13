@@ -28,6 +28,7 @@ class WidgetDataManager(context: Context) {
         const val THEME_XIAOMI = "XIAOMI"
         const val THEME_IOS = "IOS"
         const val THEME_ALICE = "ALICE"
+        const val THEME_ANDROID = "ANDROID"
         private const val KEY_DEFAULT_THEME = "widget_default_theme"
 
         // Active widget tracking
