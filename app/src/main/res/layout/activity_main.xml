@@ -57,18 +57,11 @@
                         android:paddingTop="2dp"
                         android:paddingEnd="6dp"
                         android:paddingBottom="2dp"
-                        android:text="v.0.33"
+                        android:text="v.0.35"
                         android:textColor="@color/alice_neon_light"
                         android:textSize="11sp"
                         android:textStyle="bold" />
                 </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Xiaomi HyperOS &amp; Apple iOS Движок"
-                    android:textColor="@color/alice_text_muted"
-                    android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
 
@@ -350,6 +343,18 @@
                         android:text="🤖 Android Material You (акриловый графит, пастель)"
                         android:textColor="@color/alice_text_white"
                         android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbThemeNothing"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_xiaomi"
+                        android:buttonTint="@color/white"
+                        android:padding="10dp"
+                        android:text="⚫ Nothing OS (монохромный хай-тек, матричный шрифт)"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="13sp" />
                 </RadioGroup>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -385,26 +390,76 @@
                     android:textColor="@color/alice_text_muted"
                     android:textSize="12sp" />
 
-                <!-- Widget 4x2 Pin Option -->
+                <!-- Visual Aspect-Ratio Silhouette Grid -->
+                <!-- Row 1: 4x2 and 4x1 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_tile_xiaomi"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
+                    android:orientation="horizontal">
 
+                    <!-- 4x2 Silhouette Card -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/bg_tile_xiaomi"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <!-- Physical 4x2 Silhouette Box -->
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:background="@drawable/bg_widget_silhouette"
+                            android:padding="6dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <!-- Mini Comfort Ring -->
+                                <TextView
+                                    android:layout_width="38dp"
+                                    android:layout_height="38dp"
+                                    android:background="@drawable/bg_alice_btn_circle"
+                                    android:gravity="center"
+                                    android:text="23°"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <!-- Mini Sub-card Bars -->
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="14dp"
+                                        android:background="#22FFFFFF" />
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="14dp"
+                                        android:layout_marginTop="4dp"
+                                        android:background="#22FFFFFF" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </FrameLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="4 × 2 (Главный смарт-хаб)"
+                            android:layout_marginTop="8dp"
+                            android:text="4 × 2 Хаб"
                             android:textColor="@color/alice_text_white"
                             android:textSize="13sp"
                             android:textStyle="bold" />
@@ -412,41 +467,162 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Кольцевой датчик комфорта, климат комнат, двери"
+                            android:text="Климат + сенсоры"
                             android:textColor="@color/alice_text_muted"
+                            android:textSize="10sp" />
+
+                        <Button
+                            android:id="@+id/btnPinWidget4x2"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:layout_marginTop="8dp"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:text="+ Добавить"
+                            android:textColor="@color/alice_neon_light"
                             android:textSize="11sp" />
                     </LinearLayout>
 
-                    <Button
-                        android:id="@+id/btnPinWidget4x2"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="+ Добавить"
-                        android:textColor="@color/alice_neon_light"
-                        android:textSize="12sp" />
+                    <!-- 4x1 Silhouette Card -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_tile_xiaomi"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <!-- Physical 4x1 Silhouette Ribbon -->
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="28dp"
+                                android:background="@drawable/bg_widget_silhouette"
+                                android:gravity="center"
+                                android:orientation="horizontal"
+                                android:paddingStart="4dp"
+                                android:paddingEnd="4dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:text="🌡 22°"
+                                    android:textColor="@color/alice_text_light"
+                                    android:textSize="9sp" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:text="💧 45%"
+                                    android:textColor="@color/alice_text_light"
+                                    android:textSize="9sp" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:text="🚪 Закр"
+                                    android:textColor="@color/sensor_ok_green"
+                                    android:textSize="8sp" />
+                            </LinearLayout>
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="4 × 1 Полоса"
+                            android:textColor="@color/alice_text_white"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Инфо-лента в ряд"
+                            android:textColor="@color/alice_text_muted"
+                            android:textSize="10sp" />
+
+                        <Button
+                            android:id="@+id/btnPinWidget4x1"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:layout_marginTop="8dp"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:text="+ Добавить"
+                            android:textColor="@color/alice_neon_light"
+                            android:textSize="11sp" />
+                    </LinearLayout>
                 </LinearLayout>
 
-                <!-- Widget 4x1 Pin Option -->
+                <!-- Row 2: 2x2 and 2x1 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_tile_xiaomi"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
 
+                    <!-- 2x2 Silhouette Card -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/bg_tile_xiaomi"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <!-- Physical 2x2 Square Silhouette Box -->
+                        <FrameLayout
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:background="@drawable/bg_widget_silhouette"
+                            android:padding="4dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="24°"
+                                    android:textColor="@color/white"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="💧 50%"
+                                    android:textColor="@color/alice_text_muted"
+                                    android:textSize="8sp" />
+                            </LinearLayout>
+                        </FrameLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="4 × 1 (Инфо-полоса)"
+                            android:layout_marginTop="8dp"
+                            android:text="2 × 2 Климат"
                             android:textColor="@color/alice_text_white"
                             android:textSize="13sp"
                             android:textStyle="bold" />
@@ -454,41 +630,76 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Несколько устройств из разных комнат в одну строку"
+                            android:text="Кольцо комфорта"
                             android:textColor="@color/alice_text_muted"
+                            android:textSize="10sp" />
+
+                        <Button
+                            android:id="@+id/btnPinWidget2x2"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:layout_marginTop="8dp"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:text="+ Добавить"
+                            android:textColor="@color/alice_neon_light"
                             android:textSize="11sp" />
                     </LinearLayout>
 
-                    <Button
-                        android:id="@+id/btnPinWidget4x1"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="+ Добавить"
-                        android:textColor="@color/alice_neon_light"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Widget 2x2 Pin Option -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_tile_xiaomi"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
-
+                    <!-- 2x1 Silhouette Card -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_tile_xiaomi"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <!-- Physical 2x1 Silhouette Box -->
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:paddingTop="10dp"
+                            android:paddingBottom="10dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="32dp"
+                                android:background="@drawable/bg_widget_silhouette"
+                                android:gravity="center"
+                                android:orientation="horizontal"
+                                android:paddingStart="6dp"
+                                android:paddingEnd="6dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:text="23°"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:text="💧 48%"
+                                    android:textColor="@color/sensor_humidity_cyan"
+                                    android:textSize="9sp" />
+                            </LinearLayout>
+                        </FrameLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="2 × 2 (Климат комнаты)"
+                            android:layout_marginTop="8dp"
+                            android:text="2 × 1 Мини"
                             android:textColor="@color/alice_text_white"
                             android:textSize="13sp"
                             android:textStyle="bold" />
@@ -496,61 +707,22 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Крупная температура, кольцо комфорта и влажность"
+                            android:text="Узкая компакт-плитка"
                             android:textColor="@color/alice_text_muted"
+                            android:textSize="10sp" />
+
+                        <Button
+                            android:id="@+id/btnPinWidget2x1"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:layout_marginTop="8dp"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:text="+ Добавить"
+                            android:textColor="@color/alice_neon_light"
                             android:textSize="11sp" />
                     </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnPinWidget2x2"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="+ Добавить"
-                        android:textColor="@color/alice_neon_light"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Widget 2x1 Pin Option -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_tile_xiaomi"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="2 × 1 (Мини-климат)"
-                            android:textColor="@color/alice_text_white"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Узкая компактная плитка без наслоений"
-                            android:textColor="@color/alice_text_muted"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnPinWidget2x1"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="+ Добавить"
-                        android:textColor="@color/alice_neon_light"
-                        android:textSize="12sp" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>

@@ -1,8 +1,9 @@
 package com.alice.homewidget.ui
 
 import android.appwidget.AppWidgetManager
-import android.content.Context
+import android.content.ComponentName
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -15,6 +16,7 @@ import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.databinding.ActivityWidgetConfigureBinding
 import com.alice.homewidget.model.Device
+import com.alice.homewidget.model.Room
 import com.alice.homewidget.widget.AliceBarWidgetProvider
 import com.alice.homewidget.widget.AliceCompact2x1WidgetProvider
 import com.alice.homewidget.widget.AliceCompactWidgetProvider
@@ -35,14 +37,25 @@ class WidgetConfigureActivity : AppCompatActivity() {
         val cbHum: CheckBox?,
         val cbPress: CheckBox?,
         val cbDoor: CheckBox?,
-        val cbBat: CheckBox?
+        val cbBat: CheckBox?,
+        val cbFuel: CheckBox?,
+        val cbPower: CheckBox?
     )
 
-    private val viewHolders = mutableListOf<DeviceConfigViewHolder>()
+    private class RoomGroup(
+        val roomId: String?,
+        val roomName: String,
+        val containerView: View,
+        val roomCheckBox: CheckBox,
+        val deviceHolders: MutableList<DeviceConfigViewHolder> = mutableListOf()
+    )
+
+    private val roomGroups = mutableListOf<RoomGroup>()
+    private val allDeviceHolders = mutableListOf<DeviceConfigViewHolder>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setResult(RESULT_CANCELED) // Default in case user cancels or navigates back
+        setResult(RESULT_CANCELED) // Default in case user backs out
 
         binding = ActivityWidgetConfigureBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -72,6 +85,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
             WidgetDataManager.THEME_IOS -> binding.rbConfigThemeIos.isChecked = true
             WidgetDataManager.THEME_ALICE -> binding.rbConfigThemeAlice.isChecked = true
             WidgetDataManager.THEME_ANDROID -> binding.rbConfigThemeAndroid.isChecked = true
+            WidgetDataManager.THEME_NOTHING -> binding.rbConfigThemeNothing.isChecked = true
             else -> binding.rbConfigThemeXiaomi.isChecked = true
         }
 
@@ -79,7 +93,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
         binding.etConfigTitle.setText(config.customTitle ?: "")
 
         renderRoomChips(config)
-        renderDevicesList(config)
+        renderGroupedDevicesList(config)
 
         binding.btnConfigSave.setOnClickListener {
             saveAndFinish()
@@ -90,9 +104,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
         binding.layoutRoomChips.removeAllViews()
         val rooms = dataManager.getAvailableRooms()
 
-        // Chip for "All Rooms"
         addRoomChip("Все комнаты", null)
-
         for (room in rooms) {
             addRoomChip(room.name, room.id)
         }
@@ -119,23 +131,23 @@ class WidgetConfigureActivity : AppCompatActivity() {
             setOnClickListener {
                 selectedRoomFilter = roomId
                 renderRoomChips(dataManager.getWidgetConfig(appWidgetId))
-                filterDeviceCards()
+                filterRoomsAndDevices()
             }
         }
         binding.layoutRoomChips.addView(chip)
     }
 
-    private fun filterDeviceCards() {
-        for (holder in viewHolders) {
-            val devRoom = holder.device.room
-            val matches = selectedRoomFilter == null || devRoom == selectedRoomFilter
-            holder.cardView.visibility = if (matches) View.VISIBLE else View.GONE
+    private fun filterRoomsAndDevices() {
+        for (group in roomGroups) {
+            val matches = selectedRoomFilter == null || group.roomId == selectedRoomFilter
+            group.containerView.visibility = if (matches) View.VISIBLE else View.GONE
         }
     }
 
-    private fun renderDevicesList(config: WidgetDataManager.WidgetInstanceConfig) {
+    private fun renderGroupedDevicesList(config: WidgetDataManager.WidgetInstanceConfig) {
         binding.layoutConfigDevicesList.removeAllViews()
-        viewHolders.clear()
+        roomGroups.clear()
+        allDeviceHolders.clear()
 
         val allDevices = dataManager.getAllRelevantDevices()
         val rooms = dataManager.getAvailableRooms()
@@ -153,114 +165,225 @@ class WidgetConfigureActivity : AppCompatActivity() {
 
         val selectedIds = config.selectedDeviceIds
 
-        for (dev in allDevices) {
-            val rName = rooms.firstOrNull { it.id == dev.room }?.name ?: ""
-            val title = if (rName.isNotBlank()) "[$rName] ${dev.name}" else dev.name
-
-            val isSelected = if (selectedIds.isEmpty()) {
-                // Default: select climate sensors
-                dev.isClimateSensor() || dev.getTemperature() != null
-            } else {
-                selectedIds.contains(dev.id)
+        // Group devices by room
+        val roomsWithDevices = mutableListOf<Pair<Room?, List<Device>>>()
+        for (room in rooms) {
+            val devInRoom = allDevices.filter { it.room == room.id || room.devices.contains(it.id) }
+            if (devInRoom.isNotEmpty()) {
+                roomsWithDevices.add(room to devInRoom)
             }
+        }
+        // Devices without a room
+        val unassigned = allDevices.filter { dev ->
+            rooms.none { it.id == dev.room || it.devices.contains(dev.id) }
+        }
+        if (unassigned.isNotEmpty()) {
+            roomsWithDevices.add(null to unassigned)
+        }
 
-            val metricPref = dataManager.getDeviceMetricSetting(dev.id)
+        for ((room, devList) in roomsWithDevices) {
+            val rName = room?.name ?: "Другие устройства"
+            val rId = room?.id
 
-            // Card Container
-            val card = LinearLayout(this).apply {
+            // Room Card Container
+            val roomCard = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 setBackgroundResource(R.drawable.bg_tile_xiaomi)
-                setPadding(24, 20, 24, 20)
+                setPadding(20, 16, 20, 16)
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    topMargin = 12
+                    topMargin = 14
                 }
             }
 
-            // Master Checkbox: Include device in THIS widget
-            val cbDevice = CheckBox(this).apply {
-                text = title
-                setTextColor(getColor(R.color.white))
-                textSize = 13.5f
-                isChecked = isSelected
-            }
-            card.addView(cbDevice)
-
-            // Sub-metrics layout (ONLY metrics that this device actually physically supports!)
-            val metricsRow = LinearLayout(this).apply {
+            // Room Header with Master CheckBox
+            val roomHeader = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
-                setPadding(32, 6, 0, 0)
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, 0, 0, 8)
             }
 
-            var cbTemp: CheckBox? = null
-            var cbHum: CheckBox? = null
-            var cbPress: CheckBox? = null
-            var cbDoor: CheckBox? = null
-            var cbBat: CheckBox? = null
+            val cbRoom = CheckBox(this).apply {
+                text = "🏠 $rName"
+                setTextColor(getColor(R.color.white))
+                textSize = 14.5f
+                setTypeface(null, Typeface.BOLD)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            roomHeader.addView(cbRoom)
 
-            // 1. Temperature
-            if (dev.getTemperature() != null || dev.isClimateSensor()) {
-                cbTemp = CheckBox(this).apply {
-                    text = "Темп."
-                    setTextColor(getColor(R.color.alice_text_light))
-                    textSize = 11.5f
-                    isChecked = metricPref.showTemperature
+            val countTv = TextView(this).apply {
+                text = "${devList.size} устр."
+                setTextColor(getColor(R.color.alice_neon_light))
+                textSize = 11.5f
+            }
+            roomHeader.addView(countTv)
+            roomCard.addView(roomHeader)
+
+            val groupHolders = mutableListOf<DeviceConfigViewHolder>()
+            val group = RoomGroup(rId, rName, roomCard, cbRoom, groupHolders)
+            roomGroups.add(group)
+
+            // Child devices in this room
+            for (dev in devList) {
+                val isSelected = if (selectedIds.isEmpty()) {
+                    dev.isClimateSensor() || dev.hasTemperature()
+                } else {
+                    selectedIds.contains(dev.id)
                 }
-                metricsRow.addView(cbTemp)
-            }
 
-            // 2. Humidity
-            if (dev.getHumidity() != null || dev.isClimateSensor()) {
-                cbHum = CheckBox(this).apply {
-                    text = "Влажн."
-                    setTextColor(getColor(R.color.alice_text_light))
-                    textSize = 11.5f
-                    isChecked = metricPref.showHumidity
+                val metricPref = dataManager.getDeviceMetricSetting(dev.id)
+
+                val devContainer = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(16, 10, 12, 10)
+                    setBackgroundColor(0x12FFFFFF)
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        topMargin = 6
+                    }
                 }
-                metricsRow.addView(cbHum)
-            }
 
-            // 3. Pressure (Only if barometer exists on this device!)
-            if (dev.getPressure() != null) {
-                cbPress = CheckBox(this).apply {
-                    text = "Давл."
+                // Device Master CheckBox
+                val cbDevice = CheckBox(this).apply {
+                    text = dev.name
                     setTextColor(getColor(R.color.alice_text_light))
-                    textSize = 11.5f
-                    isChecked = metricPref.showPressure
+                    textSize = 13.5f
+                    isChecked = isSelected
                 }
-                metricsRow.addView(cbPress)
-            }
+                devContainer.addView(cbDevice)
 
-            // 4. Door opening (Only if contact/door sensor exists on this device!)
-            if (dev.isOpenSensor() || dev.isDoorOrWindowOpen() != null) {
-                cbDoor = CheckBox(this).apply {
-                    text = "Дверь"
-                    setTextColor(getColor(R.color.alice_text_light))
-                    textSize = 11.5f
-                    isChecked = metricPref.showDoor
+                // Sub-metrics layout (STRICTLY metrics physically supported by this device!)
+                val metricsRow = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    setPadding(28, 4, 0, 0)
                 }
-                metricsRow.addView(cbDoor)
-            }
 
-            // 5. Battery level (Only if battery is reported on this device!)
-            if (dev.getBattery() != null) {
-                cbBat = CheckBox(this).apply {
-                    text = "Батарея"
-                    setTextColor(getColor(R.color.alice_text_light))
-                    textSize = 11.5f
-                    isChecked = metricPref.showBattery
+                var cbTemp: CheckBox? = null
+                var cbHum: CheckBox? = null
+                var cbPress: CheckBox? = null
+                var cbDoor: CheckBox? = null
+                var cbBat: CheckBox? = null
+                var cbFuel: CheckBox? = null
+                var cbPower: CheckBox? = null
+
+                // 1. Temperature (strictly if device has it)
+                if (dev.hasTemperature()) {
+                    cbTemp = CheckBox(this).apply {
+                        text = "Темп."
+                        setTextColor(getColor(R.color.alice_text_muted))
+                        textSize = 11.5f
+                        isChecked = metricPref.showTemperature
+                    }
+                    metricsRow.addView(cbTemp)
                 }
-                metricsRow.addView(cbBat)
+
+                // 2. Humidity (strictly if device has humidity property!)
+                if (dev.hasHumidity()) {
+                    cbHum = CheckBox(this).apply {
+                        text = "Влажн."
+                        setTextColor(getColor(R.color.alice_text_muted))
+                        textSize = 11.5f
+                        isChecked = metricPref.showHumidity
+                    }
+                    metricsRow.addView(cbHum)
+                }
+
+                // 3. Pressure (strictly if barometer exists)
+                if (dev.hasPressure()) {
+                    cbPress = CheckBox(this).apply {
+                        text = "Давл."
+                        setTextColor(getColor(R.color.alice_text_muted))
+                        textSize = 11.5f
+                        isChecked = metricPref.showPressure
+                    }
+                    metricsRow.addView(cbPress)
+                }
+
+                // 4. Door (contact / open sensor)
+                if (dev.hasDoorSensor()) {
+                    cbDoor = CheckBox(this).apply {
+                        text = "Дверь"
+                        setTextColor(getColor(R.color.alice_text_muted))
+                        textSize = 11.5f
+                        isChecked = metricPref.showDoor
+                    }
+                    metricsRow.addView(cbDoor)
+                }
+
+                // 5. Battery (if reported)
+                if (dev.hasBattery()) {
+                    cbBat = CheckBox(this).apply {
+                        text = "Батарея"
+                        setTextColor(getColor(R.color.alice_text_muted))
+                        textSize = 11.5f
+                        isChecked = metricPref.showBattery
+                    }
+                    metricsRow.addView(cbBat)
+                }
+
+                // 6. Fuel / Water Level (cars, tanks)
+                if (dev.hasWaterOrFuel()) {
+                    cbFuel = CheckBox(this).apply {
+                        text = "Уровень"
+                        setTextColor(getColor(R.color.alice_text_muted))
+                        textSize = 11.5f
+                        isChecked = metricPref.showFuel
+                    }
+                    metricsRow.addView(cbFuel)
+                }
+
+                // 7. Power (sockets, relays)
+                if (dev.hasPower()) {
+                    cbPower = CheckBox(this).apply {
+                        text = "Мощность"
+                        setTextColor(getColor(R.color.alice_text_muted))
+                        textSize = 11.5f
+                        isChecked = metricPref.showPower
+                    }
+                    metricsRow.addView(cbPower)
+                }
+
+                if (metricsRow.childCount > 0) {
+                    devContainer.addView(metricsRow)
+                }
+
+                roomCard.addView(devContainer)
+
+                val holder = DeviceConfigViewHolder(
+                    dev, devContainer, cbDevice, cbTemp, cbHum, cbPress, cbDoor, cbBat, cbFuel, cbPower
+                )
+                groupHolders.add(holder)
+                allDeviceHolders.add(holder)
+
+                // When individual device checkbox changes, update room checkbox
+                cbDevice.setOnCheckedChangeListener { _, _ ->
+                    val allChecked = groupHolders.all { it.cbEnable.isChecked }
+                    val noneChecked = groupHolders.none { it.cbEnable.isChecked }
+                    if (allChecked) {
+                        cbRoom.isChecked = true
+                    } else if (noneChecked) {
+                        cbRoom.isChecked = false
+                    }
+                }
             }
 
-            if (metricsRow.childCount > 0) {
-                card.addView(metricsRow)
+            // Sync initial state of Room CheckBox
+            cbRoom.isChecked = groupHolders.isNotEmpty() && groupHolders.all { it.cbEnable.isChecked }
+
+            // When Room CheckBox is toggled, check/uncheck all devices in this room
+            cbRoom.setOnClickListener {
+                val targetState = cbRoom.isChecked
+                for (h in groupHolders) {
+                    h.cbEnable.isChecked = targetState
+                }
             }
 
-            binding.layoutConfigDevicesList.addView(card)
-            viewHolders.add(DeviceConfigViewHolder(dev, card, cbDevice, cbTemp, cbHum, cbPress, cbDoor, cbBat))
+            binding.layoutConfigDevicesList.addView(roomCard)
         }
     }
 
@@ -269,13 +392,14 @@ class WidgetConfigureActivity : AppCompatActivity() {
             R.id.rbConfigThemeIos -> WidgetDataManager.THEME_IOS
             R.id.rbConfigThemeAlice -> WidgetDataManager.THEME_ALICE
             R.id.rbConfigThemeAndroid -> WidgetDataManager.THEME_ANDROID
+            R.id.rbConfigThemeNothing -> WidgetDataManager.THEME_NOTHING
             else -> WidgetDataManager.THEME_XIAOMI
         }
 
         val customTitle = binding.etConfigTitle.text.toString().trim().ifBlank { null }
         val chosenDeviceIds = mutableListOf<String>()
 
-        for (holder in viewHolders) {
+        for (holder in allDeviceHolders) {
             val devId = holder.device.id
             if (holder.cbEnable.isChecked) {
                 chosenDeviceIds.add(devId)
@@ -289,7 +413,9 @@ class WidgetConfigureActivity : AppCompatActivity() {
                 showPressure = holder.cbPress?.isChecked ?: currentSetting.showPressure,
                 showDoor = holder.cbDoor?.isChecked ?: currentSetting.showDoor,
                 showLeak = currentSetting.showLeak,
-                showBattery = holder.cbBat?.isChecked ?: currentSetting.showBattery
+                showBattery = holder.cbBat?.isChecked ?: currentSetting.showBattery,
+                showFuel = holder.cbFuel?.isChecked ?: currentSetting.showFuel,
+                showPower = holder.cbPower?.isChecked ?: currentSetting.showPower
             )
             dataManager.saveDeviceMetricSetting(devId, newSetting)
         }
@@ -303,13 +429,40 @@ class WidgetConfigureActivity : AppCompatActivity() {
         )
         dataManager.saveWidgetConfig(config)
 
-        // Update the widget immediately across all potential providers for this ID
+        // Update ONLY the exact provider corresponding to this widget instance (eliminating provider overwrite bug!)
         val appWidgetManager = AppWidgetManager.getInstance(this)
         if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-            AliceHomeWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
-            AliceBarWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
-            AliceCompactWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
-            AliceCompact2x1WidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+            val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
+            val providerClass = info?.provider?.className
+
+            when (providerClass) {
+                AliceHomeWidgetProvider::class.java.name -> {
+                    AliceHomeWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+                }
+                AliceBarWidgetProvider::class.java.name -> {
+                    AliceBarWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+                }
+                AliceCompactWidgetProvider::class.java.name -> {
+                    AliceCompactWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+                }
+                AliceCompact2x1WidgetProvider::class.java.name -> {
+                    AliceCompact2x1WidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+                }
+                else -> {
+                    // Fallback: match by registered app widget IDs
+                    val p4x2 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceHomeWidgetProvider::class.java))
+                    val p4x1 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceBarWidgetProvider::class.java))
+                    val p2x2 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceCompactWidgetProvider::class.java))
+                    val p2x1 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceCompact2x1WidgetProvider::class.java))
+
+                    when {
+                        p4x2.contains(appWidgetId) -> AliceHomeWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+                        p4x1.contains(appWidgetId) -> AliceBarWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+                        p2x2.contains(appWidgetId) -> AliceCompactWidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+                        p2x1.contains(appWidgetId) -> AliceCompact2x1WidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
+                    }
+                }
+            }
         }
 
         val resultIntent = Intent().apply {

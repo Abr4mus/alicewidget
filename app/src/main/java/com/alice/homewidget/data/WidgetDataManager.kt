@@ -29,6 +29,7 @@ class WidgetDataManager(context: Context) {
         const val THEME_IOS = "IOS"
         const val THEME_ALICE = "ALICE"
         const val THEME_ANDROID = "ANDROID"
+        const val THEME_NOTHING = "NOTHING"
         private const val KEY_DEFAULT_THEME = "widget_default_theme"
 
         // Active widget tracking
@@ -131,7 +132,9 @@ class WidgetDataManager(context: Context) {
         val showPressure: Boolean = false,
         val showDoor: Boolean = true,
         val showLeak: Boolean = true,
-        val showBattery: Boolean = true
+        val showBattery: Boolean = true,
+        val showFuel: Boolean = true,
+        val showPower: Boolean = true
     )
 
     fun getDeviceMetricSetting(deviceId: String): DeviceMetricSetting {
@@ -141,7 +144,9 @@ class WidgetDataManager(context: Context) {
         val door = prefs.getBoolean("dev_${deviceId}_door", true)
         val leak = prefs.getBoolean("dev_${deviceId}_leak", true)
         val bat = prefs.getBoolean("dev_${deviceId}_bat", true)
-        return DeviceMetricSetting(temp, hum, press, door, leak, bat)
+        val fuel = prefs.getBoolean("dev_${deviceId}_fuel", true)
+        val power = prefs.getBoolean("dev_${deviceId}_power", true)
+        return DeviceMetricSetting(temp, hum, press, door, leak, bat, fuel, power)
     }
 
     fun saveDeviceMetricSetting(deviceId: String, setting: DeviceMetricSetting) {
@@ -152,6 +157,8 @@ class WidgetDataManager(context: Context) {
             .putBoolean("dev_${deviceId}_door", setting.showDoor)
             .putBoolean("dev_${deviceId}_leak", setting.showLeak)
             .putBoolean("dev_${deviceId}_bat", setting.showBattery)
+            .putBoolean("dev_${deviceId}_fuel", setting.showFuel)
+            .putBoolean("dev_${deviceId}_power", setting.showPower)
             .apply()
     }
 
@@ -178,11 +185,7 @@ class WidgetDataManager(context: Context) {
     }
 
     fun getAllRelevantDevices(): List<Device> {
-        val allDevices = getCachedUserInfo()?.devices ?: return emptyList()
-        return allDevices.filter {
-            it.isClimateSensor() || it.isOpenSensor() || it.isLeakSensor() ||
-            it.getTemperature() != null || it.getHumidity() != null || it.getBattery() != null
-        }
+        return getCachedUserInfo()?.devices ?: emptyList()
     }
 
     fun getDevicesForRoom(roomId: String?): List<Device> {
@@ -222,9 +225,9 @@ class WidgetDataManager(context: Context) {
             ?: rooms.firstOrNull()
 
         val primarySetting = primaryDev?.let { getDeviceMetricSetting(it.id) } ?: DeviceMetricSetting()
-        val primaryTemp = if (primarySetting.showTemperature) primaryDev?.getTemperature() else null
-        val primaryHum = if (primarySetting.showHumidity) primaryDev?.getHumidity() else null
-        val primaryPress = if (primarySetting.showPressure) primaryDev?.getPressure() else null
+        val primaryTemp = if (primarySetting.showTemperature && primaryDev?.hasTemperature() == true) primaryDev.getTemperature() else null
+        val primaryHum = if (primarySetting.showHumidity && primaryDev?.hasHumidity() == true) primaryDev.getHumidity() else null
+        val primaryPress = if (primarySetting.showPressure && primaryDev?.hasPressure() == true) primaryDev.getPressure() else null
 
         val primaryRoomName = config?.customTitle?.ifBlank { null }
             ?: primaryRoom?.name ?: primaryDev?.name ?: "Климат"
@@ -235,19 +238,24 @@ class WidgetDataManager(context: Context) {
 
         for (dev in otherDevs) {
             val devSetting = getDeviceMetricSetting(dev.id)
-            val t = if (devSetting.showTemperature) dev.getTemperature() else null
-            val h = if (devSetting.showHumidity) dev.getHumidity() else null
-            val p = if (devSetting.showPressure) dev.getPressure() else null
+            val t = if (devSetting.showTemperature && dev.hasTemperature()) dev.getTemperature() else null
+            val h = if (devSetting.showHumidity && dev.hasHumidity()) dev.getHumidity() else null
+            val p = if (devSetting.showPressure && dev.hasPressure()) dev.getPressure() else null
+            val bat = if (devSetting.showBattery && dev.hasBattery()) dev.getBattery() else null
+            val fuel = if (devSetting.showFuel && dev.hasWaterOrFuel()) dev.getWaterOrFuelLevel() else null
 
-            if (t != null || h != null || p != null) {
+            if (t != null || h != null || p != null || bat != null || fuel != null) {
                 val rName = rooms.firstOrNull { it.id == dev.room || it.devices.contains(dev.id) }?.name ?: dev.name
+                val extra = if (fuel != null) "Уровень: ${String.format(Locale.US, "%.0f%%", fuel)}" else null
                 roomSummaries.add(
                     RoomClimateSummary(
                         roomId = dev.room ?: dev.id,
                         roomName = rName,
                         temperature = t,
                         humidity = h,
-                        pressure = p
+                        pressure = p,
+                        battery = bat,
+                        extraInfo = extra
                     )
                 )
                 if (roomSummaries.size >= 2) break
@@ -290,15 +298,16 @@ class WidgetDataManager(context: Context) {
         val roomName: String,
         val mainText: String,
         val secondaryText: String? = null,
+        val iconType: String = "temp", // "temp", "hum", "door", "fuel", "bat", "power"
         val isDoor: Boolean = false,
         val isDoorAlert: Boolean = false
     )
 
     fun get4x1BarSlots(appWidgetId: Int = 0): List<BarSlotItem> {
         val cached = getCachedUserInfo() ?: return listOf(
-            BarSlotItem("Гостиная", "22.5°", "48%"),
-            BarSlotItem("Спальня", "21.0°", null),
-            BarSlotItem("", "🚪 ОК", isDoor = true)
+            BarSlotItem("Гостиная", "22.5°", "48%", iconType = "temp"),
+            BarSlotItem("Спальня", "21.0°", "52%", iconType = "temp"),
+            BarSlotItem("Безопасность", "Закрыто", null, iconType = "door", isDoor = true)
         )
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "4x1") else null
@@ -309,7 +318,7 @@ class WidgetDataManager(context: Context) {
         val targetDevices = if (selectedIds.isNotEmpty()) {
             allDevices.filter { selectedIds.contains(it.id) }
         } else {
-            allDevices.filter { it.isClimateSensor() || it.isOpenSensor() }
+            allDevices.filter { it.isClimateSensor() || it.isOpenSensor() || it.hasTemperature() }
         }
 
         val result = mutableListOf<BarSlotItem>()
@@ -318,24 +327,33 @@ class WidgetDataManager(context: Context) {
             val devSetting = getDeviceMetricSetting(dev.id)
             val rName = rooms.firstOrNull { it.id == dev.room || it.devices.contains(dev.id) }?.name ?: dev.name
 
-            if (dev.isOpenSensor() && devSetting.showDoor) {
+            if (dev.hasDoorSensor() && devSetting.showDoor) {
                 val isOpen = dev.isDoorOrWindowOpen() == true
-                result.add(BarSlotItem(rName, if (isOpen) "🚪 ОТКРЫТО" else "🚪 ОК", isDoor = true, isDoorAlert = isOpen))
+                result.add(BarSlotItem(rName, if (isOpen) "ОТКРЫТО!" else "Закрыто", iconType = "door", isDoor = true, isDoorAlert = isOpen))
+            } else if (dev.hasWaterOrFuel() && devSetting.showFuel) {
+                val f = dev.getWaterOrFuelLevel()?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
+                result.add(BarSlotItem(rName, f, "Уровень", iconType = "fuel"))
+            } else if (dev.hasPower() && devSetting.showPower) {
+                val p = dev.getPower()?.let { String.format(Locale.US, "%.0f Вт", it) } ?: ""
+                result.add(BarSlotItem(rName, p, null, iconType = "power"))
             } else {
-                val t = if (devSetting.showTemperature) dev.getTemperature() else null
-                val h = if (devSetting.showHumidity) dev.getHumidity() else null
+                val t = if (devSetting.showTemperature && dev.hasTemperature()) dev.getTemperature() else null
+                val h = if (devSetting.showHumidity && dev.hasHumidity()) dev.getHumidity() else null
 
                 if (t != null || h != null) {
                     val tStr = t?.let { String.format(Locale.US, "%.1f°", it) } ?: ""
                     val hStr = h?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
-                    result.add(BarSlotItem(rName, tStr, hStr.ifEmpty { null }))
+                    result.add(BarSlotItem(rName, tStr, hStr.ifEmpty { null }, iconType = "temp"))
+                } else if (dev.hasBattery() && devSetting.showBattery) {
+                    val b = dev.getBattery()?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
+                    result.add(BarSlotItem(rName, b, null, iconType = "bat"))
                 }
             }
             if (result.size >= 3) break
         }
 
         if (result.isEmpty()) {
-            result.add(BarSlotItem("Климат", "22.5°", "48%"))
+            result.add(BarSlotItem("Климат", "22.5°", "48%", iconType = "temp"))
         }
 
         return result
@@ -367,11 +385,40 @@ class WidgetDataManager(context: Context) {
             ?: "Климат"
 
         val setting = dev?.let { getDeviceMetricSetting(it.id) } ?: DeviceMetricSetting()
-        val temp = if (setting.showTemperature) dev?.getTemperature() else null
-        val hum = if (setting.showHumidity) dev?.getHumidity() else null
 
-        val tempStr = temp?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
-        val humStr = hum?.let { String.format(Locale.US, "%.0f%%", it) }
+        val tempStr: String
+        val humStr: String?
+
+        when {
+            dev != null && dev.hasDoorSensor() && setting.showDoor -> {
+                tempStr = if (dev.isDoorOrWindowOpen() == true) "ОТКРЫТО!" else "Закрыто"
+                humStr = null
+            }
+            dev != null && dev.hasWaterOrFuel() && setting.showFuel -> {
+                tempStr = dev.getWaterOrFuelLevel()?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
+                humStr = "Уровень"
+            }
+            dev != null && dev.hasPower() && setting.showPower -> {
+                tempStr = dev.getPower()?.let { String.format(Locale.US, "%.0f Вт", it) } ?: "-- Вт"
+                humStr = null
+            }
+            dev != null && dev.hasTemperature() && setting.showTemperature -> {
+                val temp = dev.getTemperature()
+                tempStr = temp?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
+                val hum = if (setting.showHumidity && dev.hasHumidity()) dev.getHumidity() else null
+                humStr = hum?.let { String.format(Locale.US, "%.0f%%", it) }
+            }
+            dev != null && dev.hasBattery() && setting.showBattery -> {
+                tempStr = dev.getBattery()?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
+                humStr = "Батарея"
+            }
+            else -> {
+                val temp = if (setting.showTemperature && dev?.hasTemperature() == true) dev.getTemperature() else null
+                val hum = if (setting.showHumidity && dev?.hasHumidity() == true) dev.getHumidity() else null
+                tempStr = temp?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
+                humStr = hum?.let { String.format(Locale.US, "%.0f%%", it) }
+            }
+        }
 
         return Compact2x1Data(title, tempStr, humStr)
     }

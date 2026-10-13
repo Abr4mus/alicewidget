@@ -129,6 +129,18 @@
                         android:text="🤖 Android Material You (акриловый графит, пастель)"
                         android:textColor="@color/alice_text_white"
                         android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbConfigThemeNothing"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_xiaomi"
+                        android:buttonTint="@color/white"
+                        android:padding="10dp"
+                        android:text="🔴 Nothing OS (монохромный хай-тек, минимализм)"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="13sp" />
                 </RadioGroup>
 
                 <TextView
