@@ -110,6 +110,42 @@ object WidgetRenderEngine {
             okGreen = 0xFF82D9BC.toInt(),
             cornerRadiusDp = 26f
         )
+        WidgetDataManager.THEME_YANDEX_WHITE -> ThemePalette(
+            // Pure White Yandex: milk-white surface, dark charcoal typography, Yandex Yellow, Red & Green accents
+            bgStart = 0xFCFFFFFF.toInt(),
+            bgEnd = 0xF5F0F2F6.toInt(),
+            borderTop = 0xA0FFFFFF.toInt(),
+            borderBottom = 0x24000000.toInt(),
+            tileBg = 0x0F000000.toInt(),        // Subtle soft gray pod
+            tileBorder = 0x1A000000.toInt(),    // Clean thin pod stroke
+            textPrimary = 0xFF19191D.toInt(),   // Deep Charcoal
+            textSecondary = 0xFF767B87.toInt(), // Slate Gray
+            accentComfort = 0xFF00B350.toInt(), // Yandex Fresh Mint Green
+            accentWarm = 0xFFFC3F1D.toInt(),    // Yandex Red
+            accentCold = 0xFF0077FF.toInt(),    // Yandex Azure Blue
+            alertRed = 0xFFFC3F1D.toInt(),
+            okGreen = 0xFF00B350.toInt(),
+            isGlassmorphism = false,            // Clean solid porcelain look
+            cornerRadiusDp = 26f
+        )
+        WidgetDataManager.THEME_FLUENT_PASTEL -> ThemePalette(
+            // Microsoft Fluent Design: gentle blush pastel-pink into dreamy azure blue gradient with frosted acrylic
+            bgStart = 0xF04E2448.toInt(),       // Soft glowing pastel mauve-pink
+            bgEnd = 0xF61C3660.toInt(),         // Deep dreamy azure blue
+            borderTop = 0xB8FFFFFF.toInt(),     // Fluent Specular highlight
+            borderBottom = 0x30FFFFFF.toInt(),
+            tileBg = 0x22FFFFFF.toInt(),        // Translucent acrylic glass sub-tiles
+            tileBorder = 0x48FFFFFF.toInt(),
+            textPrimary = 0xFFFFFFFF.toInt(),   // Crisp Pure White
+            textSecondary = 0xFFE0E7FF.toInt(), // Soft Sky Lavender
+            accentComfort = 0xFF2ED573.toInt(), // Neon Seafoam
+            accentWarm = 0xFFFF7597.toInt(),    // Soft Pastel Coral Pink
+            accentCold = 0xFF70A1FF.toInt(),    // Dreamy Sky Azure
+            alertRed = 0xFFFF4757.toInt(),
+            okGreen = 0xFF2ED573.toInt(),
+            isGlassmorphism = true,
+            cornerRadiusDp = 26f
+        )
         else -> ThemePalette( // THEME_XIAOMI (HyperOS)
             bgStart = 0xEE16181E.toInt(),
             bgEnd = 0xF60C0D11.toInt(),
@@ -395,7 +431,7 @@ object WidgetRenderEngine {
             color = textColor
             textSize = rect.height() * 0.46f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            if (palette.isGlassmorphism) {
+            if (palette.isGlassmorphism && (Color.red(textColor) + Color.green(textColor) + Color.blue(textColor) > 300)) {
                 setShadowLayer(2f * canvas.density, 0f, 1f * canvas.density, 0x80000000.toInt())
             }
         }
@@ -952,4 +988,39 @@ object WidgetRenderEngine {
     fun getTextSecondaryColor(theme: String): Int = getThemePalette(theme).textSecondary
     fun getAccentColor(theme: String): Int = getThemePalette(theme).accentComfort
     fun getHumidityColor(theme: String): Int = getThemePalette(theme).accentCold
+
+    fun renderDisabledWidgetBitmap(
+        context: Context,
+        widthPx: Int,
+        heightPx: Int
+    ): Bitmap {
+        val w = widthPx.coerceAtLeast(200)
+        val h = heightPx.coerceAtLeast(100)
+        val density = context.resources.displayMetrics.density
+        val palette = getThemePalette(WidgetDataManager.THEME_XIAOMI)
+
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        val cornerRadius = palette.cornerRadiusDp * density
+        drawSquircleCard(canvas, RectF(0f, 0f, w.toFloat(), h.toFloat()), cornerRadius, palette)
+
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textSize = (13f * density).coerceIn(12f, 15f * density)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+        }
+        val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF9DA3AE.toInt()
+            textSize = (10f * density).coerceIn(9f, 12f * density)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            textAlign = Paint.Align.CENTER
+        }
+
+        canvas.drawText("Виджет отключен в приложении", w / 2f, h / 2f - 4f * density, textPaint)
+        canvas.drawText("Нажмите для настройки или удалите с экрана", w / 2f, h / 2f + 16f * density, subPaint)
+
+        return bitmap
+    }
 }

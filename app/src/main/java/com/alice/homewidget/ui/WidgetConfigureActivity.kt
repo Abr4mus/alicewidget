@@ -144,25 +144,32 @@ class WidgetConfigureActivity : AppCompatActivity() {
             "Настройка виджета"
         }
 
-        val config = dataManager.getWidgetConfig(appWidgetId)
+        try {
+            val config = dataManager.getWidgetConfig(appWidgetId)
 
-        // Set theme selection
-        when (config.theme) {
-            WidgetDataManager.THEME_IOS -> binding.rbConfigThemeIos.isChecked = true
-            WidgetDataManager.THEME_ALICE -> binding.rbConfigThemeAlice.isChecked = true
-            WidgetDataManager.THEME_ANDROID -> binding.rbConfigThemeAndroid.isChecked = true
-            WidgetDataManager.THEME_NOTHING -> binding.rbConfigThemeNothing.isChecked = true
-            else -> binding.rbConfigThemeXiaomi.isChecked = true
-        }
+            // Set theme selection
+            when (config.theme) {
+                WidgetDataManager.THEME_IOS -> binding.rbConfigThemeIos.isChecked = true
+                WidgetDataManager.THEME_ALICE -> binding.rbConfigThemeAlice.isChecked = true
+                WidgetDataManager.THEME_YANDEX_WHITE -> binding.rbConfigThemeYandexWhite.isChecked = true
+                WidgetDataManager.THEME_FLUENT_PASTEL -> binding.rbConfigThemeFluentPastel.isChecked = true
+                WidgetDataManager.THEME_ANDROID -> binding.rbConfigThemeAndroid.isChecked = true
+                WidgetDataManager.THEME_NOTHING -> binding.rbConfigThemeNothing.isChecked = true
+                else -> binding.rbConfigThemeXiaomi.isChecked = true
+            }
 
-        // Set custom title if previously saved
-        binding.etConfigTitle.setText(config.customTitle ?: "")
+            // Set custom title if previously saved
+            binding.etConfigTitle.setText(config.customTitle ?: "")
 
-        renderRoomChips(config)
-        renderGroupedDevicesList(config)
+            renderRoomChips(config)
+            renderGroupedDevicesList(config)
 
-        binding.btnConfigSave.setOnClickListener {
-            saveAndFinish()
+            binding.btnConfigSave.setOnClickListener {
+                saveAndFinish()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Ошибка при загрузке настроек: ${e.localizedMessage ?: e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -177,22 +184,32 @@ class WidgetConfigureActivity : AppCompatActivity() {
     }
 
     private fun addRoomChip(label: String, roomId: String?) {
-        val chip = Button(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+        val density = resources.displayMetrics.density
+        val isSelected = selectedRoomFilter == roomId
+        val chip = TextView(this).apply {
             text = label
-            textSize = 12f
-            val isSelected = selectedRoomFilter == roomId
-            if (isSelected) {
-                setTextColor(getColor(R.color.white))
-                setBackgroundColor(getColor(R.color.alice_neon_purple))
-            } else {
-                setTextColor(getColor(R.color.alice_text_light))
-                setBackgroundColor(0x22FFFFFF)
+            textSize = 12.5f
+            gravity = Gravity.CENTER
+            setPadding((14 * density).toInt(), (6 * density).toInt(), (14 * density).toInt(), (6 * density).toInt())
+            val bg = GradientDrawable().apply {
+                cornerRadius = 18f * density
+                if (isSelected) {
+                    setColor(getColor(R.color.alice_neon_purple))
+                } else {
+                    setColor(0x22FFFFFF)
+                    setStroke((1f * density).toInt(), 0x30FFFFFF)
+                }
             }
+            background = bg
+            setTextColor(if (isSelected) Color.WHITE else getColor(R.color.alice_text_light))
+            setTypeface(null, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                (38 * resources.displayMetrics.density).toInt()
+                (36 * density).toInt()
             ).apply {
-                marginEnd = (8 * resources.displayMetrics.density).toInt()
+                marginEnd = (8 * density).toInt()
+                topMargin = (4 * density).toInt()
+                bottomMargin = (4 * density).toInt()
             }
             setOnClickListener {
                 selectedRoomFilter = roomId
@@ -235,13 +252,13 @@ class WidgetConfigureActivity : AppCompatActivity() {
         // Group devices by room
         val roomsWithDevices = mutableListOf<Pair<Room?, List<Device>>>()
         for (room in rooms) {
-            val devInRoom = allDevices.filter { it.room == room.id || room.devices.contains(it.id) }
+            val devInRoom = allDevices.filter { it.room == room.id || room.hasDevice(it.id) }
             if (devInRoom.isNotEmpty()) {
                 roomsWithDevices.add(room to devInRoom)
             }
         }
         val unassigned = allDevices.filter { dev ->
-            rooms.none { it.id == dev.room || it.devices.contains(dev.id) }
+            rooms.none { it.id == dev.room || it.hasDevice(dev.id) }
         }
         if (unassigned.isNotEmpty()) {
             roomsWithDevices.add(null to unassigned)
@@ -555,6 +572,8 @@ class WidgetConfigureActivity : AppCompatActivity() {
         val theme = when (binding.rgConfigTheme.checkedRadioButtonId) {
             R.id.rbConfigThemeIos -> WidgetDataManager.THEME_IOS
             R.id.rbConfigThemeAlice -> WidgetDataManager.THEME_ALICE
+            R.id.rbConfigThemeYandexWhite -> WidgetDataManager.THEME_YANDEX_WHITE
+            R.id.rbConfigThemeFluentPastel -> WidgetDataManager.THEME_FLUENT_PASTEL
             R.id.rbConfigThemeAndroid -> WidgetDataManager.THEME_ANDROID
             R.id.rbConfigThemeNothing -> WidgetDataManager.THEME_NOTHING
             else -> WidgetDataManager.THEME_XIAOMI

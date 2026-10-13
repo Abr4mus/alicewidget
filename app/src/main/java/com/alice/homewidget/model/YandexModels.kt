@@ -16,34 +16,36 @@ data class Household(
 )
 
 data class Room(
-    @SerializedName("id") val id: String,
-    @SerializedName("name") val name: String,
+    @SerializedName("id") val id: String = "",
+    @SerializedName("name") val name: String = "",
     @SerializedName("household_id") val householdId: String? = null,
-    @SerializedName("devices") val devices: List<String> = emptyList()
-)
+    @SerializedName("devices") val devices: List<String>? = emptyList()
+) {
+    fun hasDevice(devId: String): Boolean = devices?.contains(devId) == true
+}
 
 data class Device(
-    @SerializedName("id") val id: String,
-    @SerializedName("name") val name: String,
-    @SerializedName("type") val type: String,
+    @SerializedName("id") val id: String = "",
+    @SerializedName("name") val name: String = "",
+    @SerializedName("type") val type: String? = null,
     @SerializedName("room") val room: String? = null,
     @SerializedName("state") val state: String? = null,
-    @SerializedName("properties") val properties: List<DeviceProperty> = emptyList(),
-    @SerializedName("capabilities") val capabilities: List<DeviceCapability> = emptyList()
+    @SerializedName("properties") val properties: List<DeviceProperty>? = emptyList(),
+    @SerializedName("capabilities") val capabilities: List<DeviceCapability>? = emptyList()
 ) {
     fun hasFloatProperty(instance: String): Boolean {
-        return properties.any {
+        return properties?.any {
             it.type == "devices.properties.float" &&
             (it.state?.instance == instance || it.parameters?.instance == instance)
-        }
+        } ?: false
     }
 
     fun getFloatProperty(instance: String): Double? {
-        val prop = properties.firstOrNull {
+        val prop = properties?.firstOrNull {
             it.type == "devices.properties.float" &&
             (it.state?.instance == instance || it.parameters?.instance == instance)
-        }
-        return prop?.state?.value?.let {
+        } ?: return null
+        return prop.state?.value?.let {
             when (it) {
                 is Number -> it.toDouble()
                 is String -> it.toDoubleOrNull()
@@ -53,11 +55,11 @@ data class Device(
     }
 
     fun getEventProperty(instance: String): String? {
-        val prop = properties.firstOrNull {
+        val prop = properties?.firstOrNull {
             it.type == "devices.properties.event" &&
             (it.state?.instance == instance || it.parameters?.instance == instance)
-        }
-        return prop?.state?.value?.toString()
+        } ?: return null
+        return prop.state?.value?.toString()
     }
 
     // Physical Sensor Values
@@ -78,28 +80,28 @@ data class Device(
     fun hasWaterOrFuel(): Boolean = (hasFloatProperty("water_level") || hasFloatProperty("fuel_level")) && getWaterOrFuelLevel() != null
 
     // Door / Contact sensors
-    fun hasDoorSensor(): Boolean = properties.any { it.state?.instance == "open" || it.parameters?.instance == "open" } || type.contains("sensor.open")
+    fun hasDoorSensor(): Boolean = (properties?.any { it.state?.instance == "open" || it.parameters?.instance == "open" } == true) || (type?.contains("sensor.open") == true)
     fun isDoorOrWindowOpen(): Boolean? {
         val openState = getEventProperty("open") ?: return null
         return openState == "opened" || openState == "open"
     }
 
     // Water Leak sensors
-    fun hasLeakSensor(): Boolean = properties.any { it.state?.instance == "water_leak" || it.parameters?.instance == "water_leak" } || type.contains("sensor.water_leak")
+    fun hasLeakSensor(): Boolean = (properties?.any { it.state?.instance == "water_leak" || it.parameters?.instance == "water_leak" } == true) || (type?.contains("sensor.water_leak") == true)
     fun hasWaterLeak(): Boolean? {
         val leakState = getEventProperty("water_leak") ?: return null
         return leakState == "leak"
     }
 
     // On/Off State (Sockets, Switches, Lights, Auto)
-    fun isOnOffDevice(): Boolean = capabilities.any { it.type == "devices.capabilities.on_off" }
+    fun isOnOffDevice(): Boolean = capabilities?.any { it.type == "devices.capabilities.on_off" } ?: false
     fun isTurnedOn(): Boolean? {
-        val cap = capabilities.firstOrNull { it.type == "devices.capabilities.on_off" }
+        val cap = capabilities?.firstOrNull { it.type == "devices.capabilities.on_off" }
         return (cap?.state?.value as? Boolean)
     }
 
     fun isClimateSensor(): Boolean {
-        return (type.contains("sensor.climate") || type.contains("sensor.temp")) && (hasTemperature() || hasHumidity())
+        return (type?.contains("sensor.climate") == true || type?.contains("sensor.temp") == true) && (hasTemperature() || hasHumidity())
     }
 
     fun isOpenSensor(): Boolean = hasDoorSensor()

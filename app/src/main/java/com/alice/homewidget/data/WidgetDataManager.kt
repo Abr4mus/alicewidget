@@ -30,10 +30,13 @@ class WidgetDataManager(context: Context) {
         const val THEME_ALICE = "ALICE"
         const val THEME_ANDROID = "ANDROID"
         const val THEME_NOTHING = "NOTHING"
+        const val THEME_YANDEX_WHITE = "YANDEX_WHITE"
+        const val THEME_FLUENT_PASTEL = "FLUENT_PASTEL"
         private const val KEY_DEFAULT_THEME = "widget_default_theme"
 
         // Active widget tracking
         private const val KEY_CONFIGURED_WIDGET_IDS = "configured_widget_ids_set"
+        private const val KEY_REMOVED_WIDGET_IDS = "removed_widget_ids_set"
     }
 
     var clientId: String
@@ -106,6 +109,9 @@ class WidgetDataManager(context: Context) {
         val currentSet = prefs.getStringSet(KEY_CONFIGURED_WIDGET_IDS, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         currentSet.add(config.appWidgetId.toString())
         prefs.edit().putStringSet(KEY_CONFIGURED_WIDGET_IDS, currentSet).apply()
+
+        // Un-remove if previously removed
+        setWidgetRemoved(config.appWidgetId, false)
     }
 
     fun getAllConfiguredWidgetIds(): List<Int> {
@@ -113,11 +119,28 @@ class WidgetDataManager(context: Context) {
         return set.mapNotNull { it.toIntOrNull() }
     }
 
+    fun isWidgetRemoved(appWidgetId: Int): Boolean {
+        val set = prefs.getStringSet(KEY_REMOVED_WIDGET_IDS, emptySet()) ?: emptySet()
+        return set.contains(appWidgetId.toString())
+    }
+
+    fun setWidgetRemoved(appWidgetId: Int, removed: Boolean) {
+        val currentSet = prefs.getStringSet(KEY_REMOVED_WIDGET_IDS, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        if (removed) {
+            currentSet.add(appWidgetId.toString())
+        } else {
+            currentSet.remove(appWidgetId.toString())
+        }
+        prefs.edit().putStringSet(KEY_REMOVED_WIDGET_IDS, currentSet).apply()
+    }
+
     fun hasWidgetConfig(appWidgetId: Int): Boolean {
         return prefs.contains("w_${appWidgetId}_dev_ids")
     }
 
     fun deleteWidgetConfig(appWidgetId: Int) {
+        setWidgetRemoved(appWidgetId, true)
+
         val editor = prefs.edit()
             .remove("w_${appWidgetId}_theme")
             .remove("w_${appWidgetId}_dev_ids")
@@ -208,7 +231,7 @@ class WidgetDataManager(context: Context) {
         val all = getAllRelevantDevices()
         if (roomId.isNullOrBlank() || roomId == "ALL") return all
         val room = getAvailableRooms().firstOrNull { it.id == roomId }
-        return all.filter { dev -> dev.room == roomId || room?.devices?.contains(dev.id) == true }
+        return all.filter { dev -> dev.room == roomId || room?.hasDevice(dev.id) == true }
     }
 
     // --- 4x2 Widget Data per Widget Instance ---

@@ -57,7 +57,7 @@
                         android:paddingTop="2dp"
                         android:paddingEnd="6dp"
                         android:paddingBottom="2dp"
-                        android:text="v.0.36"
+                        android:text="v.0.37"
                         android:textColor="@color/alice_neon_light"
                         android:textSize="11sp"
                         android:textStyle="bold" />
@@ -329,6 +329,30 @@
                         android:buttonTint="@color/alice_neon_purple"
                         android:padding="10dp"
                         android:text="💜 Яндекс / Алиса (космический фиолетовый неон)"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbThemeYandexWhite"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_yandex_white"
+                        android:buttonTint="@color/yandex_white_accent_yellow"
+                        android:padding="10dp"
+                        android:text="⚪ Белый Яндекс (светлый стиль, чистый фарфор)"
+                        android:textColor="@color/yandex_white_text_charcoal"
+                        android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbThemeFluentPastel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_fluent_pastel"
+                        android:buttonTint="@color/fluent_pastel_pink"
+                        android:padding="10dp"
+                        android:text="🌸 Fluent Pastel (нежный розово-голубой градиент)"
                         android:textColor="@color/alice_text_white"
                         android:textSize="13sp" />
 

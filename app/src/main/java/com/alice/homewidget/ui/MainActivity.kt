@@ -151,10 +151,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        renderActiveWidgets()
+    }
+
     private fun initThemeSelector() {
         when (dataManager.defaultTheme) {
             WidgetDataManager.THEME_IOS -> binding.rbThemeIos.isChecked = true
             WidgetDataManager.THEME_ALICE -> binding.rbThemeAlice.isChecked = true
+            WidgetDataManager.THEME_YANDEX_WHITE -> binding.rbThemeYandexWhite.isChecked = true
+            WidgetDataManager.THEME_FLUENT_PASTEL -> binding.rbThemeFluentPastel.isChecked = true
             WidgetDataManager.THEME_ANDROID -> binding.rbThemeAndroid.isChecked = true
             WidgetDataManager.THEME_NOTHING -> binding.rbThemeNothing.isChecked = true
             else -> binding.rbThemeXiaomi.isChecked = true
@@ -164,6 +171,8 @@ class MainActivity : AppCompatActivity() {
             val theme = when (checkedId) {
                 R.id.rbThemeIos -> WidgetDataManager.THEME_IOS
                 R.id.rbThemeAlice -> WidgetDataManager.THEME_ALICE
+                R.id.rbThemeYandexWhite -> WidgetDataManager.THEME_YANDEX_WHITE
+                R.id.rbThemeFluentPastel -> WidgetDataManager.THEME_FLUENT_PASTEL
                 R.id.rbThemeAndroid -> WidgetDataManager.THEME_ANDROID
                 R.id.rbThemeNothing -> WidgetDataManager.THEME_NOTHING
                 else -> WidgetDataManager.THEME_XIAOMI
@@ -172,6 +181,8 @@ class MainActivity : AppCompatActivity() {
             val name = when (theme) {
                 WidgetDataManager.THEME_IOS -> "iPhone / iOS"
                 WidgetDataManager.THEME_ALICE -> "Яндекс / Алиса"
+                WidgetDataManager.THEME_YANDEX_WHITE -> "Белый Яндекс"
+                WidgetDataManager.THEME_FLUENT_PASTEL -> "Fluent Pastel"
                 WidgetDataManager.THEME_ANDROID -> "Android Material You"
                 WidgetDataManager.THEME_NOTHING -> "Nothing OS"
                 else -> "Xiaomi HyperOS"
@@ -190,10 +201,10 @@ class MainActivity : AppCompatActivity() {
         val p2x1 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceCompact2x1WidgetProvider::class.java))
 
         val allPlaced = mutableListOf<Pair<Int, String>>()
-        p4x2.forEach { allPlaced.add(it to "4 × 2 (Главный смарт-хаб)") }
-        p4x1.forEach { allPlaced.add(it to "4 × 1 (Инфо-полоса)") }
-        p2x2.forEach { allPlaced.add(it to "2 × 2 (Климат)") }
-        p2x1.forEach { allPlaced.add(it to "2 × 1 (Мини-климат)") }
+        p4x2.forEach { if (!dataManager.isWidgetRemoved(it)) allPlaced.add(it to "4 × 2 (Главный смарт-хаб)") }
+        p4x1.forEach { if (!dataManager.isWidgetRemoved(it)) allPlaced.add(it to "4 × 1 (Инфо-полоса)") }
+        p2x2.forEach { if (!dataManager.isWidgetRemoved(it)) allPlaced.add(it to "2 × 2 (Климат)") }
+        p2x1.forEach { if (!dataManager.isWidgetRemoved(it)) allPlaced.add(it to "2 × 1 (Мини-климат)") }
 
         if (allPlaced.isEmpty()) {
             val emptyTv = TextView(this).apply {
@@ -211,6 +222,8 @@ class MainActivity : AppCompatActivity() {
             val themeName = when (config.theme) {
                 WidgetDataManager.THEME_IOS -> "Стиль iOS"
                 WidgetDataManager.THEME_ALICE -> "Стиль Алиса"
+                WidgetDataManager.THEME_YANDEX_WHITE -> "Стиль Белый Яндекс"
+                WidgetDataManager.THEME_FLUENT_PASTEL -> "Стиль Fluent Pastel"
                 WidgetDataManager.THEME_ANDROID -> "Стиль Android"
                 WidgetDataManager.THEME_NOTHING -> "Стиль Nothing"
                 else -> "Стиль Xiaomi"
@@ -288,11 +301,12 @@ class MainActivity : AppCompatActivity() {
                 setOnClickListener {
                     AlertDialog.Builder(this@MainActivity)
                         .setTitle("Удалить виджет #${widgetId}?")
-                        .setMessage("Сбросить индивидуальные настройки этого виджета?\n(Чтобы убрать его с экрана полностью, перетащите его в корзину лаунчера)")
+                        .setMessage("Удалить этот виджет из списка настроек и отключить его на рабочем столе?")
                         .setPositiveButton("Удалить") { _, _ ->
                             dataManager.deleteWidgetConfig(widgetId)
+                            AliceHomeWidgetProvider.clearWidget(this@MainActivity, appWidgetManager, widgetId)
                             renderActiveWidgets()
-                            Toast.makeText(this@MainActivity, "Виджет #${widgetId} удален из настроек", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Виджет #${widgetId} удален", Toast.LENGTH_SHORT).show()
                         }
                         .setNegativeButton("Отмена", null)
                         .show()

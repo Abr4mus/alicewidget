@@ -133,5 +133,41 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                 e.printStackTrace()
             }
         }
+
+        fun clearWidget(
+            context: Context,
+            appWidgetManager: AppWidgetManager,
+            appWidgetId: Int
+        ) {
+            try {
+                val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
+                val layoutId = when (info?.provider?.className) {
+                    AliceBarWidgetProvider::class.java.name -> R.layout.widget_alice_bar_4x1
+                    AliceCompactWidgetProvider::class.java.name -> R.layout.widget_alice_compact_2x2
+                    AliceCompact2x1WidgetProvider::class.java.name -> R.layout.widget_alice_compact_2x1
+                    else -> R.layout.widget_alice_sensors_4x2
+                }
+
+                val views = RemoteViews(context.packageName, layoutId)
+                val density = context.resources.displayMetrics.density
+                val bitmap = WidgetRenderEngine.renderDisabledWidgetBitmap(context, (340 * density).toInt(), (150 * density).toInt())
+                views.setImageViewBitmap(R.id.ivWidgetCanvas, bitmap)
+
+                val configIntent = Intent(context, WidgetConfigureActivity::class.java).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val pi = PendingIntent.getActivity(
+                    context, appWidgetId, configIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.btnWidgetOpenApp, pi)
+                views.setOnClickPendingIntent(R.id.btnWidgetConfigure, pi)
+
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 }

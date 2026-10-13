@@ -63,6 +63,17 @@
     <color name="m3_accent_sky">#A8C7FA</color>
     <color name="m3_accent_peach">#F2B8B5</color>
 
+    <!-- Yandex White Style Colors -->
+    <color name="yandex_white_surface">#F8F9FA</color>
+    <color name="yandex_white_accent_yellow">#FFCC00</color>
+    <color name="yandex_white_accent_red">#FC3F1D</color>
+    <color name="yandex_white_text_charcoal">#19191D</color>
+
+    <!-- Fluent Pastel Style Colors -->
+    <color name="fluent_pastel_pink">#FF7597</color>
+    <color name="fluent_pastel_blue">#70A1FF</color>
+    <color name="fluent_pastel_mint">#2ED573</color>
+
     <!-- System -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>

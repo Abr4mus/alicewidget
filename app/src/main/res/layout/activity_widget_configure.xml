@@ -119,6 +119,30 @@
                         android:textSize="13sp" />
 
                     <RadioButton
+                        android:id="@+id/rbConfigThemeYandexWhite"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_yandex_white"
+                        android:buttonTint="@color/yandex_white_accent_yellow"
+                        android:padding="10dp"
+                        android:text="⚪ Белый Яндекс (светлый стиль, чистый фарфор)"
+                        android:textColor="@color/yandex_white_text_charcoal"
+                        android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbConfigThemeFluentPastel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_tile_fluent_pastel"
+                        android:buttonTint="@color/fluent_pastel_pink"
+                        android:padding="10dp"
+                        android:text="🌸 Fluent Pastel (нежный розово-голубой градиент)"
+                        android:textColor="@color/alice_text_white"
+                        android:textSize="13sp" />
+
+                    <RadioButton
                         android:id="@+id/rbConfigThemeAndroid"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
