@@ -42,20 +42,20 @@ object WidgetRenderEngine {
 
     fun getThemePalette(theme: String): ThemePalette = when (theme) {
         WidgetDataManager.THEME_IOS -> ThemePalette(
-            // Apple iOS 18 Liquid Glass: translucent multi-stop frosted glass with top specular refraction
-            bgStart = 0xDE22242B.toInt(),
-            bgEnd = 0xEE121318.toInt(),
-            borderTop = 0x85FFFFFF.toInt(),    // Crisp specular glass edge
-            borderBottom = 0x22FFFFFF.toInt(),
-            tileBg = 0x28FFFFFF.toInt(),       // Frosted sub-compartments
-            tileBorder = 0x38FFFFFF.toInt(),
-            textPrimary = 0xFFF5F5F7.toInt(),  // SF Pro White
-            textSecondary = 0xFF9E9EA6.toInt(), // SF Pro Subtitle
-            accentComfort = 0xFF34C759.toInt(), // Apple Comfort Green
-            accentWarm = 0xFFFF9500.toInt(),    // Apple Amber
-            accentCold = 0xFF007AFF.toInt(),    // Apple System Blue
-            alertRed = 0xFFFF3B30.toInt(),
-            okGreen = 0xFF34C759.toInt(),
+            // Apple iOS 18 Liquid Glass: crystal-clear frosted glass with top specular refraction and chamfered rim
+            bgStart = 0x501F232B.toInt(),       // High transparency dark-frosted glass (~31% opacity)
+            bgEnd = 0x6612141A.toInt(),         // Gentle translucent gradient (~40% opacity)
+            borderTop = 0xDBFFFFFF.toInt(),     // Brilliant specular glass edge highlight ("ребро")
+            borderBottom = 0x24FFFFFF.toInt(),  // Soft bottom refraction edge
+            tileBg = 0x22FFFFFF.toInt(),        // Translucent frosted glass sub-compartments
+            tileBorder = 0x48FFFFFF.toInt(),    // Frosted glass pod border
+            textPrimary = 0xFFFFFFFF.toInt(),   // Pure SF Pro White
+            textSecondary = 0xFFD2D5DC.toInt(), // High-clarity SF Pro Silver Subtitle
+            accentComfort = 0xFF30D158.toInt(), // Apple System Green
+            accentWarm = 0xFFFF9F0A.toInt(),    // Apple System Amber
+            accentCold = 0xFF0A84FF.toInt(),    // Apple System Blue
+            alertRed = 0xFFFF453A.toInt(),      // Apple System Red
+            okGreen = 0xFF30D158.toInt(),
             isGlassmorphism = true,
             cornerRadiusDp = 26f
         )
@@ -131,9 +131,9 @@ object WidgetRenderEngine {
     private fun getComfortInfo(temp: Double?, palette: ThemePalette): Triple<Int, String, String> {
         val t = temp ?: 22.0
         return when {
-            t < 20.0 -> Triple(palette.accentCold, "❄️ Прохладно", "Низкая")
-            t in 20.0..24.5 -> Triple(palette.accentComfort, "🌿 Комфортно", "Норма")
-            else -> Triple(palette.accentWarm, "🔥 Тепло", "Высокая")
+            t < 20.0 -> Triple(palette.accentCold, "Прохладно", "Низкая")
+            t in 20.0..24.5 -> Triple(palette.accentComfort, "Комфортно", "Норма")
+            else -> Triple(palette.accentWarm, "Тепло", "Высокая")
         }
     }
 
@@ -147,20 +147,17 @@ object WidgetRenderEngine {
         isSubTile: Boolean = false
     ) {
         if (!isSubTile && palette.isGlassmorphism) {
-            // Apple iOS 18 Multi-Stop Frosted Glass Sheen
-            val diffusePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.FILL
-                shader = LinearGradient(
-                    rect.left, rect.top, rect.right, rect.bottom,
-                    intArrayOf(0x35FFFFFF.toInt(), 0x14FFFFFF.toInt(), 0x08000000.toInt()),
-                    floatArrayOf(0f, 0.45f, 1f),
-                    Shader.TileMode.CLAMP
-                )
+            // 1. Soft Ambient Drop Shadow underneath the floating glass card
+            val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 2.5f
+                color = 0x2E000000.toInt()
             }
-            canvas.drawRoundRect(rect, cornerRadius, cornerRadius, diffusePaint)
+            val shadowRect = RectF(rect.left + 0.8f, rect.top + 1.8f, rect.right - 0.8f, rect.bottom)
+            canvas.drawRoundRect(shadowRect, cornerRadius, cornerRadius, shadowPaint)
         }
 
-        // Base Tint Background
+        // 2. Base Translucent Glass Background
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
             shader = LinearGradient(
@@ -172,21 +169,94 @@ object WidgetRenderEngine {
         }
         canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint)
 
-        // Specular Edge Refraction Stroke (Bright on top, fading on bottom)
+        // 3. Apple Frosted Glass Diffusion & Specular Sheen ("Блюр" и рассеянный свет)
+        if (palette.isGlassmorphism) {
+            if (!isSubTile) {
+                // Multi-stop diagonal specular glass sheen
+                val diffusePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    shader = LinearGradient(
+                        rect.left, rect.top, rect.right, rect.bottom,
+                        intArrayOf(
+                            0x36FFFFFF.toInt(),
+                            0x14FFFFFF.toInt(),
+                            0x02FFFFFF.toInt(),
+                            0x0C000000.toInt()
+                        ),
+                        floatArrayOf(0f, 0.35f, 0.70f, 1f),
+                        Shader.TileMode.CLAMP
+                    )
+                }
+                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, diffusePaint)
+
+                // Top-edge light shelf (верхнее световое преломление в верхней трети стекла)
+                val topLightH = rect.height() * 0.38f
+                val topLightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    shader = LinearGradient(
+                        rect.left, rect.top, rect.left, rect.top + topLightH,
+                        0x24FFFFFF.toInt(),
+                        0x00FFFFFF.toInt(),
+                        Shader.TileMode.CLAMP
+                    )
+                }
+                canvas.save()
+                canvas.clipRect(rect)
+                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, topLightPaint)
+                canvas.restore()
+            } else {
+                // Frosted sub-compartment delicate sheen
+                val subSheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    shader = LinearGradient(
+                        rect.left, rect.top, rect.left, rect.bottom,
+                        0x18FFFFFF.toInt(),
+                        0x04FFFFFF.toInt(),
+                        Shader.TileMode.CLAMP
+                    )
+                }
+                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, subSheenPaint)
+            }
+        }
+
+        // 4. Primary Specular Beveled Glass Edge ("Ребро" со спекулярным световым бликом)
         val strokeWidth = if (isSubTile) 1.2f else 2.2f
         val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             this.strokeWidth = strokeWidth
             shader = LinearGradient(
-                rect.left, rect.top, rect.left, rect.bottom,
+                rect.left, rect.top, rect.right, rect.bottom,
                 if (isSubTile) palette.tileBorder else palette.borderTop,
-                if (isSubTile) Color.argb(15, 255, 255, 255) else palette.borderBottom,
+                if (isSubTile) Color.argb(16, 255, 255, 255) else palette.borderBottom,
                 Shader.TileMode.CLAMP
             )
         }
         val inset = strokeWidth / 2f
         val strokeRect = RectF(rect.left + inset, rect.top + inset, rect.right - inset, rect.bottom - inset)
         canvas.drawRoundRect(strokeRect, cornerRadius - inset, cornerRadius - inset, strokePaint)
+
+        // 5. Inset Chamfer Refraction ("Внутренняя грань/ребро" для глубины стеклянного среза)
+        if (!isSubTile && palette.isGlassmorphism) {
+            val innerStrokeW = 1.0f
+            val innerInset = strokeWidth + innerStrokeW / 2f
+            val innerRect = RectF(
+                rect.left + innerInset,
+                rect.top + innerInset,
+                rect.right - innerInset,
+                rect.bottom - innerInset
+            )
+            val innerBevelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                this.strokeWidth = innerStrokeW
+                shader = LinearGradient(
+                    innerRect.left, innerRect.top, innerRect.left, innerRect.bottom,
+                    intArrayOf(0x55FFFFFF.toInt(), 0x10FFFFFF.toInt(), 0x00FFFFFF.toInt()),
+                    floatArrayOf(0f, 0.35f, 0.70f),
+                    Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawRoundRect(innerRect, cornerRadius - innerInset, cornerRadius - innerInset, innerBevelPaint)
+        }
     }
 
     fun drawComfortGaugeRing(
@@ -283,10 +353,32 @@ object WidgetRenderEngine {
         }
         canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint)
 
+        if (palette.isGlassmorphism) {
+            val pillSheen = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                shader = LinearGradient(
+                    rect.left, rect.top, rect.left, rect.bottom,
+                    0x20FFFFFF.toInt(),
+                    0x03FFFFFF.toInt(),
+                    Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawRoundRect(rect, cornerRadius, cornerRadius, pillSheen)
+        }
+
         val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = 1.2f
-            color = palette.tileBorder
+            if (palette.isGlassmorphism) {
+                shader = LinearGradient(
+                    rect.left, rect.top, rect.right, rect.bottom,
+                    palette.tileBorder,
+                    Color.argb(20, 255, 255, 255),
+                    Shader.TileMode.CLAMP
+                )
+            } else {
+                color = palette.tileBorder
+            }
         }
         canvas.drawRoundRect(rect, cornerRadius, cornerRadius, strokePaint)
 
@@ -303,6 +395,9 @@ object WidgetRenderEngine {
             color = textColor
             textSize = rect.height() * 0.46f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            if (palette.isGlassmorphism) {
+                setShadowLayer(2f * canvas.density, 0f, 1f * canvas.density, 0x80000000.toInt())
+            }
         }
         val fontMetrics = textPaint.fontMetrics
         val textY = rect.centerY() - (fontMetrics.ascent + fontMetrics.descent) / 2f
@@ -386,6 +481,9 @@ object WidgetRenderEngine {
             color = palette.textSecondary
             textSize = (11f * density).coerceIn(10f, 14f * density)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            if (palette.isGlassmorphism) {
+                setShadowLayer(3f * density, 0f, 1.2f * density, 0x90000000.toInt())
+            }
         }
         val maxTitleW = w - padLeft - actionHotspotWidth - 10f * density
         val safeTitle = ellipsizeText(data.title, titlePaint, maxTitleW)
@@ -397,6 +495,9 @@ object WidgetRenderEngine {
             color = palette.textPrimary
             textSize = (h * 0.44f).coerceIn(22f * density, 34f * density)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            if (palette.isGlassmorphism) {
+                setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
+            }
         }
         val tempY = h - padBottom - 2f * density
         canvas.drawText(data.tempText, padLeft, tempY, tempPaint)
@@ -448,49 +549,64 @@ object WidgetRenderEngine {
 
         val pad = 14f * density
 
-        // 1. Top Title
+        // 1. Top Title (Dynamic size auto-scaling to fit room name without truncation)
+        val maxTitleW = w - pad - 64f * density
+        var titleSize = 13f * density
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textSecondary
-            textSize = 12f * density
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            if (palette.isGlassmorphism) {
+                setShadowLayer(3f * density, 0f, 1.2f * density, 0x90000000.toInt())
+            }
         }
-        val safeTitle = ellipsizeText(data.title, titlePaint, w - pad * 2 - 68f * density)
-        canvas.drawText(safeTitle, pad, pad + 12f * density, titlePaint)
+        while (titleSize > 8.5f * density) {
+            titlePaint.textSize = titleSize
+            if (titlePaint.measureText(data.title) <= maxTitleW) break
+            titleSize -= 0.5f * density
+        }
+        val safeTitle = ellipsizeText(data.title, titlePaint, maxTitleW)
+        canvas.drawText(safeTitle, pad, pad + titleSize, titlePaint)
 
         // 2. Central Comfort Ring Gauge
         val rawTemp = data.tempText.replace("°", "").toDoubleOrNull()
         val cx = w / 2f
-        val cy = h * 0.47f
-        val gaugeRadius = (min(w, h) * 0.26f).coerceIn(24f * density, 52f * density)
-        val strokeWidth = 5.5f * density
+        val cy = h * 0.44f
+        val gaugeRadius = (min(w, h) * 0.24f).coerceIn(22f * density, 48f * density)
+        val strokeWidth = 5f * density
 
         drawComfortGaugeRing(canvas, cx, cy, gaugeRadius, strokeWidth, rawTemp, palette, showStatusText = false)
 
         // 3. Big Temperature Inside Ring
         val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textPrimary
-            textSize = (gaugeRadius * 0.68f).coerceIn(16f * density, 27f * density)
+            textSize = (gaugeRadius * 0.70f).coerceIn(16f * density, 28f * density)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
+            if (palette.isGlassmorphism) {
+                setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
+            }
         }
         val fontMetrics = tempPaint.fontMetrics
-        val tempY = cy - (fontMetrics.ascent + fontMetrics.descent) / 2f
+        val tempY = cy - 2f * density - (fontMetrics.ascent + fontMetrics.descent) / 2f
         canvas.drawText(data.tempText, cx, tempY, tempPaint)
 
-        // 4. Clarifying Comfort Status under Gauge
+        // 4. Clarifying Comfort Status inside open bottom arc of gauge (Zero collision with bottom pill!)
         val (comfortColor, comfortText) = getComfortInfo(rawTemp, palette)
         val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = comfortColor
-            textSize = 10f * density
+            textSize = (gaugeRadius * 0.28f).coerceIn(8.5f * density, 11f * density)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
+            if (palette.isGlassmorphism) {
+                setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
         }
-        canvas.drawText(comfortText, cx, cy + gaugeRadius + 12f * density, statusPaint)
+        canvas.drawText(comfortText, cx, cy + gaugeRadius * 0.58f, statusPaint)
 
-        // 5. Bottom Frosted Glass Pill
+        // 5. Bottom Frosted Glass Pill (ample breathing room and perfectly spaced)
         if (data.humidityText != null) {
-            val pillH = 22f * density
-            val pillW = 66f * density
+            val pillH = 24f * density
+            val pillW = 72f * density
             val pillRect = RectF(cx - pillW / 2f, h - pad - pillH, cx + pillW / 2f, h - pad)
             drawGlassPill(context, canvas, pillRect, R.drawable.ic_humidity, data.humidityText, palette.accentCold, palette)
         }
@@ -545,6 +661,9 @@ object WidgetRenderEngine {
             val roomPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = palette.textSecondary
                 textSize = 9.5f * density
+                if (palette.isGlassmorphism) {
+                    setShadowLayer(2.5f * density, 0f, 1f * density, 0x90000000.toInt())
+                }
             }
             val roomName = ellipsizeText(slot.roomName, roomPaint, slotW - innerPad * 2)
             canvas.drawText(roomName, slotLeft + innerPad, padTop + innerPad + roomPaint.textSize, roomPaint)
@@ -563,6 +682,9 @@ object WidgetRenderEngine {
                     color = doorColor
                     textSize = 12.5f * density
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    if (palette.isGlassmorphism) {
+                        setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
+                    }
                 }
                 canvas.drawText(slot.mainText, startX, contentY, doorPaint)
             } else {
@@ -576,6 +698,9 @@ object WidgetRenderEngine {
                     color = palette.textPrimary
                     textSize = 15f * density
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    if (palette.isGlassmorphism) {
+                        setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+                    }
                 }
                 canvas.drawText(slot.mainText, startX, contentY, tempPaint)
                 startX += tempPaint.measureText(slot.mainText) + 6f * density
@@ -590,6 +715,9 @@ object WidgetRenderEngine {
                         color = palette.accentCold
                         textSize = 12f * density
                         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                        if (palette.isGlassmorphism) {
+                            setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
+                        }
                     }
                     canvas.drawText(slot.secondaryText, startX, contentY, humPaint)
                 }
@@ -632,6 +760,9 @@ object WidgetRenderEngine {
             color = palette.textPrimary
             textSize = 13.5f * density
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            if (palette.isGlassmorphism) {
+                setShadowLayer(3f * density, 0f, 1.2f * density, 0x90000000.toInt())
+            }
         }
         val headerTitle = ellipsizeText(data.primaryRoomName, titlePaint, w - padLeft - 76f * density)
         canvas.drawText(headerTitle, padLeft, padTop + 13f * density, titlePaint)
@@ -645,6 +776,9 @@ object WidgetRenderEngine {
         val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textSecondary
             textSize = 9.5f * density
+            if (palette.isGlassmorphism) {
+                setShadowLayer(2f * density, 0f, 1f * density, 0x85000000.toInt())
+            }
         }
         canvas.drawText(updateTimeStr, padLeft, padTop + 24f * density, subPaint)
 
@@ -663,6 +797,9 @@ object WidgetRenderEngine {
             color = palette.textPrimary
             textSize = (leftCardRect.height() * 0.35f).coerceIn(20f * density, 30f * density)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            if (palette.isGlassmorphism) {
+                setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
+            }
         }
         val tempStr = data.primaryTemperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
         val tempY = leftCardRect.top + innerPad + tempPaint.textSize
@@ -680,6 +817,9 @@ object WidgetRenderEngine {
             color = comfortColor
             textSize = 9.5f * density
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            if (palette.isGlassmorphism) {
+                setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
         }
         canvas.drawText(comfortText, leftCardRect.left + innerPad, tempY + statusPaint.textSize + 4f * density, statusPaint)
 
@@ -720,6 +860,9 @@ object WidgetRenderEngine {
                 val rNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = palette.textSecondary
                     textSize = 10f * density
+                    if (palette.isGlassmorphism) {
+                        setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
+                    }
                 }
                 val rSafeName = ellipsizeText(room.roomName, rNamePaint, rightW * 0.45f)
                 canvas.drawText(rSafeName, rightLeft + 8f * density, currentY + 16f * density, rNamePaint)
@@ -728,6 +871,9 @@ object WidgetRenderEngine {
                     color = palette.textPrimary
                     textSize = 11.5f * density
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    if (palette.isGlassmorphism) {
+                        setShadowLayer(2.5f * density, 0f, 1f * density, 0x85000000.toInt())
+                    }
                 }
                 val rTemp = room.temperature?.let { String.format(Locale.US, "%.1f°", it) } ?: ""
                 val rHum = room.humidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""

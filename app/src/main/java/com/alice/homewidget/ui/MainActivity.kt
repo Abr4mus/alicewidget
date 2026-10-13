@@ -47,18 +47,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var dataManager: WidgetDataManager
     private val apiClient = YandexApiClient()
 
-    private class DeviceMetricsHolder(
-        val device: Device,
-        val cbTemp: CheckBox?,
-        val cbHum: CheckBox?,
-        val cbPress: CheckBox?,
-        val cbDoor: CheckBox?,
-        val cbBat: CheckBox?,
-        val cbFuel: CheckBox?,
-        val cbPower: CheckBox?
-    )
-
-    private val deviceHolders = mutableListOf<DeviceMetricsHolder>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,14 +58,12 @@ class MainActivity : AppCompatActivity() {
         initViews()
         initThemeSelector()
         renderActiveWidgets()
-        renderDevicesList()
         renderCachedStatus()
     }
 
     override fun onResume() {
         super.onResume()
         renderActiveWidgets()
-        renderDevicesList()
     }
 
     private fun initViews() {
@@ -152,10 +138,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnPinWidget2x1.setOnClickListener { pinWidget(AliceCompact2x1WidgetProvider::class.java) }
         binding.btnPinWidget4x1.setOnClickListener { pinWidget(AliceBarWidgetProvider::class.java) }
 
-        // Save device metrics
-        binding.btnSaveDeviceMetrics.setOnClickListener {
-            saveDeviceMetrics()
-        }
 
         // Open official Yandex app
         binding.btnOpenYandexApp.setOnClickListener {
@@ -322,260 +304,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun renderDevicesList() {
-        binding.layoutMainDevicesList.removeAllViews()
-        deviceHolders.clear()
-
-        val allDevices = dataManager.getAllRelevantDevices()
-        val rooms = dataManager.getAvailableRooms()
-
-        if (allDevices.isEmpty()) {
-            val emptyTv = TextView(this).apply {
-                text = "Датчики ещё не загружены. Нажмите «Синхронизировать датчики» выше."
-                setTextColor(getColor(R.color.alice_text_muted))
-                textSize = 12f
-                setPadding(8, 8, 8, 8)
-            }
-            binding.layoutMainDevicesList.addView(emptyTv)
-            return
-        }
-
-        // Group devices by room
-        val roomsWithDevices = mutableListOf<Pair<Room?, List<Device>>>()
-        for (room in rooms) {
-            val devInRoom = allDevices.filter { it.room == room.id || room.devices.contains(it.id) }
-            if (devInRoom.isNotEmpty()) {
-                roomsWithDevices.add(room to devInRoom)
-            }
-        }
-        val unassigned = allDevices.filter { dev ->
-            rooms.none { it.id == dev.room || it.devices.contains(dev.id) }
-        }
-        if (unassigned.isNotEmpty()) {
-            roomsWithDevices.add(null to unassigned)
-        }
-
-        for ((room, devList) in roomsWithDevices) {
-            val rName = room?.name ?: "Другие устройства"
-
-            // Room Card Container
-            val roomCard = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setBackgroundResource(R.drawable.bg_tile_xiaomi)
-                setPadding(20, 16, 20, 16)
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = 12
-                }
-            }
-
-            // Room Header with Master CheckBox
-            val roomHeader = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                setPadding(0, 0, 0, 8)
-            }
-
-            val cbRoom = CheckBox(this).apply {
-                text = "🏠 $rName"
-                setTextColor(getColor(R.color.white))
-                textSize = 14f
-                setTypeface(null, Typeface.BOLD)
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            }
-            roomHeader.addView(cbRoom)
-
-            val countTv = TextView(this).apply {
-                text = "${devList.size} устр."
-                setTextColor(getColor(R.color.alice_neon_light))
-                textSize = 11.5f
-            }
-            roomHeader.addView(countTv)
-            roomCard.addView(roomHeader)
-
-            val roomHolders = mutableListOf<DeviceMetricsHolder>()
-
-            // Child devices in this room
-            for (dev in devList) {
-                val metricPref = dataManager.getDeviceMetricSetting(dev.id)
-
-                val devContainer = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(16, 8, 12, 8)
-                    setBackgroundColor(0x12FFFFFF)
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        topMargin = 6
-                    }
-                }
-
-                val titleTv = TextView(this).apply {
-                    text = dev.name
-                    setTextColor(getColor(R.color.white))
-                    textSize = 13f
-                    setTypeface(null, Typeface.BOLD)
-                }
-                devContainer.addView(titleTv)
-
-                val metricsRow = LinearLayout(this).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    setPadding(0, 6, 0, 0)
-                }
-
-                var cbTemp: CheckBox? = null
-                var cbHum: CheckBox? = null
-                var cbPress: CheckBox? = null
-                var cbDoor: CheckBox? = null
-                var cbBat: CheckBox? = null
-                var cbFuel: CheckBox? = null
-                var cbPower: CheckBox? = null
-
-                // 1. Temperature (strictly if device has it)
-                if (dev.hasTemperature()) {
-                    cbTemp = CheckBox(this).apply {
-                        text = "Темп."
-                        setTextColor(getColor(R.color.alice_text_light))
-                        textSize = 11.5f
-                        isChecked = metricPref.showTemperature
-                    }
-                    metricsRow.addView(cbTemp)
-                }
-
-                // 2. Humidity (strictly if humidity exists)
-                if (dev.hasHumidity()) {
-                    cbHum = CheckBox(this).apply {
-                        text = "Влажн."
-                        setTextColor(getColor(R.color.alice_text_light))
-                        textSize = 11.5f
-                        isChecked = metricPref.showHumidity
-                    }
-                    metricsRow.addView(cbHum)
-                }
-
-                // 3. Pressure
-                if (dev.hasPressure()) {
-                    cbPress = CheckBox(this).apply {
-                        text = "Давл."
-                        setTextColor(getColor(R.color.alice_text_light))
-                        textSize = 11.5f
-                        isChecked = metricPref.showPressure
-                    }
-                    metricsRow.addView(cbPress)
-                }
-
-                // 4. Door
-                if (dev.hasDoorSensor()) {
-                    cbDoor = CheckBox(this).apply {
-                        text = "Дверь"
-                        setTextColor(getColor(R.color.alice_text_light))
-                        textSize = 11.5f
-                        isChecked = metricPref.showDoor
-                    }
-                    metricsRow.addView(cbDoor)
-                }
-
-                // 5. Battery
-                if (dev.hasBattery()) {
-                    cbBat = CheckBox(this).apply {
-                        text = "Батарея"
-                        setTextColor(getColor(R.color.alice_text_light))
-                        textSize = 11.5f
-                        isChecked = metricPref.showBattery
-                    }
-                    metricsRow.addView(cbBat)
-                }
-
-                // 6. Fuel / Water Level
-                if (dev.hasWaterOrFuel()) {
-                    cbFuel = CheckBox(this).apply {
-                        text = "Уровень"
-                        setTextColor(getColor(R.color.alice_text_light))
-                        textSize = 11.5f
-                        isChecked = metricPref.showFuel
-                    }
-                    metricsRow.addView(cbFuel)
-                }
-
-                // 7. Power
-                if (dev.hasPower()) {
-                    cbPower = CheckBox(this).apply {
-                        text = "Мощность"
-                        setTextColor(getColor(R.color.alice_text_light))
-                        textSize = 11.5f
-                        isChecked = metricPref.showPower
-                    }
-                    metricsRow.addView(cbPower)
-                }
-
-                if (metricsRow.childCount > 0) {
-                    devContainer.addView(metricsRow)
-                }
-
-                roomCard.addView(devContainer)
-
-                val holder = DeviceMetricsHolder(dev, cbTemp, cbHum, cbPress, cbDoor, cbBat, cbFuel, cbPower)
-                deviceHolders.add(holder)
-                roomHolders.add(holder)
-
-                // Bidirectional sync for checkboxes
-                val allDeviceCheckboxes = listOfNotNull(cbTemp, cbHum, cbPress, cbDoor, cbBat, cbFuel, cbPower)
-                allDeviceCheckboxes.forEach { cb ->
-                    cb.setOnCheckedChangeListener { _, _ ->
-                        val allSubBoxes = roomHolders.flatMap { h ->
-                            listOfNotNull(h.cbTemp, h.cbHum, h.cbPress, h.cbDoor, h.cbBat, h.cbFuel, h.cbPower)
-                        }
-                        if (allSubBoxes.isNotEmpty()) {
-                            if (allSubBoxes.all { it.isChecked }) cbRoom.isChecked = true
-                            else if (allSubBoxes.none { it.isChecked }) cbRoom.isChecked = false
-                        }
-                    }
-                }
-            }
-
-            // Initial sync of cbRoom
-            val allRoomBoxes = roomHolders.flatMap { h ->
-                listOfNotNull(h.cbTemp, h.cbHum, h.cbPress, h.cbDoor, h.cbBat, h.cbFuel, h.cbPower)
-            }
-            cbRoom.isChecked = allRoomBoxes.isNotEmpty() && allRoomBoxes.all { it.isChecked }
-
-            cbRoom.setOnClickListener {
-                val target = cbRoom.isChecked
-                roomHolders.forEach { h ->
-                    listOfNotNull(h.cbTemp, h.cbHum, h.cbPress, h.cbDoor, h.cbBat, h.cbFuel, h.cbPower).forEach {
-                        it.isChecked = target
-                    }
-                }
-            }
-
-            binding.layoutMainDevicesList.addView(roomCard)
-        }
-    }
-
-    private fun saveDeviceMetrics() {
-        for (holder in deviceHolders) {
-            val devId = holder.device.id
-            val cur = dataManager.getDeviceMetricSetting(devId)
-            val updated = WidgetDataManager.DeviceMetricSetting(
-                showTemperature = holder.cbTemp?.isChecked ?: cur.showTemperature,
-                showHumidity = holder.cbHum?.isChecked ?: cur.showHumidity,
-                showPressure = holder.cbPress?.isChecked ?: cur.showPressure,
-                showDoor = holder.cbDoor?.isChecked ?: cur.showDoor,
-                showLeak = cur.showLeak,
-                showBattery = holder.cbBat?.isChecked ?: cur.showBattery,
-                showFuel = holder.cbFuel?.isChecked ?: cur.showFuel,
-                showPower = holder.cbPower?.isChecked ?: cur.showPower
-            )
-            dataManager.saveDeviceMetricSetting(devId, updated)
-        }
-
-        SensorSyncWorker.notifyWidgetsToUpdate(this)
-        Toast.makeText(this, "✅ Показатели устройств сохранены и применены!", Toast.LENGTH_SHORT).show()
-    }
-
     private fun pinWidget(providerClass: Class<*>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val appWidgetManager = getSystemService(AppWidgetManager::class.java)
@@ -683,7 +411,6 @@ class MainActivity : AppCompatActivity() {
                 SensorSyncWorker.notifyWidgetsToUpdate(this@MainActivity)
 
                 renderActiveWidgets()
-                renderDevicesList()
                 renderCachedStatus()
                 Toast.makeText(this@MainActivity, "Виджеты успешно обновлены!", Toast.LENGTH_SHORT).show()
             }.onFailure { error ->

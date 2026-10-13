@@ -113,19 +113,29 @@ class WidgetDataManager(context: Context) {
         return set.mapNotNull { it.toIntOrNull() }
     }
 
+    fun hasWidgetConfig(appWidgetId: Int): Boolean {
+        return prefs.contains("w_${appWidgetId}_dev_ids")
+    }
+
     fun deleteWidgetConfig(appWidgetId: Int) {
-        prefs.edit()
+        val editor = prefs.edit()
             .remove("w_${appWidgetId}_theme")
             .remove("w_${appWidgetId}_dev_ids")
             .remove("w_${appWidgetId}_title")
-            .apply()
+
+        for (key in prefs.all.keys) {
+            if (key.startsWith("w_${appWidgetId}_dev_")) {
+                editor.remove(key)
+            }
+        }
+        editor.apply()
 
         val currentSet = prefs.getStringSet(KEY_CONFIGURED_WIDGET_IDS, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         currentSet.remove(appWidgetId.toString())
         prefs.edit().putStringSet(KEY_CONFIGURED_WIDGET_IDS, currentSet).apply()
     }
 
-    // --- Individual Device Metric Settings ---
+    // --- Individual Device Metric Settings (Per-Widget Isolated) ---
     data class DeviceMetricSetting(
         val showTemperature: Boolean = true,
         val showHumidity: Boolean = true,
@@ -137,28 +147,34 @@ class WidgetDataManager(context: Context) {
         val showPower: Boolean = true
     )
 
-    fun getDeviceMetricSetting(deviceId: String): DeviceMetricSetting {
-        val temp = prefs.getBoolean("dev_${deviceId}_temp", true)
-        val hum = prefs.getBoolean("dev_${deviceId}_hum", true)
-        val press = prefs.getBoolean("dev_${deviceId}_press", false)
-        val door = prefs.getBoolean("dev_${deviceId}_door", true)
-        val leak = prefs.getBoolean("dev_${deviceId}_leak", true)
-        val bat = prefs.getBoolean("dev_${deviceId}_bat", true)
-        val fuel = prefs.getBoolean("dev_${deviceId}_fuel", true)
-        val power = prefs.getBoolean("dev_${deviceId}_power", true)
+    fun getDeviceMetricSetting(deviceId: String, appWidgetId: Int = 0): DeviceMetricSetting {
+        val prefix = if (appWidgetId > 0 && prefs.contains("w_${appWidgetId}_dev_${deviceId}_temp")) {
+            "w_${appWidgetId}_dev_${deviceId}_"
+        } else {
+            "dev_${deviceId}_"
+        }
+        val temp = prefs.getBoolean("${prefix}temp", true)
+        val hum = prefs.getBoolean("${prefix}hum", true)
+        val press = prefs.getBoolean("${prefix}press", false)
+        val door = prefs.getBoolean("${prefix}door", true)
+        val leak = prefs.getBoolean("${prefix}leak", true)
+        val bat = prefs.getBoolean("${prefix}bat", true)
+        val fuel = prefs.getBoolean("${prefix}fuel", true)
+        val power = prefs.getBoolean("${prefix}power", true)
         return DeviceMetricSetting(temp, hum, press, door, leak, bat, fuel, power)
     }
 
-    fun saveDeviceMetricSetting(deviceId: String, setting: DeviceMetricSetting) {
-        prefs.edit()
-            .putBoolean("dev_${deviceId}_temp", setting.showTemperature)
-            .putBoolean("dev_${deviceId}_hum", setting.showHumidity)
-            .putBoolean("dev_${deviceId}_press", setting.showPressure)
-            .putBoolean("dev_${deviceId}_door", setting.showDoor)
-            .putBoolean("dev_${deviceId}_leak", setting.showLeak)
-            .putBoolean("dev_${deviceId}_bat", setting.showBattery)
-            .putBoolean("dev_${deviceId}_fuel", setting.showFuel)
-            .putBoolean("dev_${deviceId}_power", setting.showPower)
+    fun saveDeviceMetricSetting(deviceId: String, setting: DeviceMetricSetting, appWidgetId: Int = 0) {
+        val editor = prefs.edit()
+        val prefix = if (appWidgetId > 0) "w_${appWidgetId}_dev_${deviceId}_" else "dev_${deviceId}_"
+        editor.putBoolean("${prefix}temp", setting.showTemperature)
+            .putBoolean("${prefix}hum", setting.showHumidity)
+            .putBoolean("${prefix}press", setting.showPressure)
+            .putBoolean("${prefix}door", setting.showDoor)
+            .putBoolean("${prefix}leak", setting.showLeak)
+            .putBoolean("${prefix}bat", setting.showBattery)
+            .putBoolean("${prefix}fuel", setting.showFuel)
+            .putBoolean("${prefix}power", setting.showPower)
             .apply()
     }
 
@@ -224,7 +240,7 @@ class WidgetDataManager(context: Context) {
         val primaryRoom = rooms.firstOrNull { it.id == primaryDev?.room || it.devices.contains(primaryDev?.id) }
             ?: rooms.firstOrNull()
 
-        val primarySetting = primaryDev?.let { getDeviceMetricSetting(it.id) } ?: DeviceMetricSetting()
+        val primarySetting = primaryDev?.let { getDeviceMetricSetting(it.id, appWidgetId) } ?: DeviceMetricSetting()
         val primaryTemp = if (primarySetting.showTemperature && primaryDev?.hasTemperature() == true) primaryDev.getTemperature() else null
         val primaryHum = if (primarySetting.showHumidity && primaryDev?.hasHumidity() == true) primaryDev.getHumidity() else null
         val primaryPress = if (primarySetting.showPressure && primaryDev?.hasPressure() == true) primaryDev.getPressure() else null
@@ -237,7 +253,7 @@ class WidgetDataManager(context: Context) {
         val roomSummaries = mutableListOf<RoomClimateSummary>()
 
         for (dev in otherDevs) {
-            val devSetting = getDeviceMetricSetting(dev.id)
+            val devSetting = getDeviceMetricSetting(dev.id, appWidgetId)
             val t = if (devSetting.showTemperature && dev.hasTemperature()) dev.getTemperature() else null
             val h = if (devSetting.showHumidity && dev.hasHumidity()) dev.getHumidity() else null
             val p = if (devSetting.showPressure && dev.hasPressure()) dev.getPressure() else null
@@ -266,7 +282,7 @@ class WidgetDataManager(context: Context) {
         var anyDoorOpen = false
         var openDoorName: String? = null
         for (dev in targetDevices) {
-            val devSetting = getDeviceMetricSetting(dev.id)
+            val devSetting = getDeviceMetricSetting(dev.id, appWidgetId)
             if (devSetting.showDoor && dev.isDoorOrWindowOpen() == true) {
                 anyDoorOpen = true
                 openDoorName = dev.name
@@ -275,7 +291,7 @@ class WidgetDataManager(context: Context) {
         }
 
         // Lowest battery (only from devices selected for this widget)
-        val lowestBattery = targetDevices.filter { getDeviceMetricSetting(it.id).showBattery }
+        val lowestBattery = targetDevices.filter { getDeviceMetricSetting(it.id, appWidgetId).showBattery }
             .mapNotNull { it.getBattery() }.minOrNull()
 
         return AggregatedSensorData(
@@ -324,7 +340,7 @@ class WidgetDataManager(context: Context) {
         val result = mutableListOf<BarSlotItem>()
 
         for (dev in targetDevices) {
-            val devSetting = getDeviceMetricSetting(dev.id)
+            val devSetting = getDeviceMetricSetting(dev.id, appWidgetId)
             val rName = rooms.firstOrNull { it.id == dev.room || it.devices.contains(dev.id) }?.name ?: dev.name
 
             if (dev.hasDoorSensor() && devSetting.showDoor) {
@@ -384,7 +400,7 @@ class WidgetDataManager(context: Context) {
             ?: dev?.let { d -> rooms.firstOrNull { it.id == d.room || it.devices.contains(d.id) }?.name ?: d.name }
             ?: "Климат"
 
-        val setting = dev?.let { getDeviceMetricSetting(it.id) } ?: DeviceMetricSetting()
+        val setting = dev?.let { getDeviceMetricSetting(it.id, appWidgetId) } ?: DeviceMetricSetting()
 
         val tempStr: String
         val humStr: String?

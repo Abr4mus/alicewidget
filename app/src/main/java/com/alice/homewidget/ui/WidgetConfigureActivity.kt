@@ -2,12 +2,16 @@ package com.alice.homewidget.ui
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -21,6 +25,7 @@ import com.alice.homewidget.widget.AliceBarWidgetProvider
 import com.alice.homewidget.widget.AliceCompact2x1WidgetProvider
 import com.alice.homewidget.widget.AliceCompactWidgetProvider
 import com.alice.homewidget.widget.AliceHomeWidgetProvider
+import com.google.android.material.materialswitch.MaterialSwitch
 
 class WidgetConfigureActivity : AppCompatActivity() {
 
@@ -29,24 +34,85 @@ class WidgetConfigureActivity : AppCompatActivity() {
     private var appWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
     private var selectedRoomFilter: String? = null // null means "ALL"
 
+    /**
+     * Large tactile pill button for choosing physical device metrics in HyperOS style.
+     */
+    class MetricPill(
+        val context: Context,
+        val metricKey: String,
+        val label: String,
+        initialChecked: Boolean,
+        val onStateChanged: (Boolean) -> Unit
+    ) {
+        var isChecked: Boolean = initialChecked
+            private set
+
+        val view: TextView = TextView(context).apply {
+            text = label
+            textSize = 12.5f
+            gravity = Gravity.CENTER
+            val density = resources.displayMetrics.density
+            setPadding(
+                (14 * density).toInt(),
+                (7 * density).toInt(),
+                (14 * density).toInt(),
+                (7 * density).toInt()
+            )
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                (36 * density).toInt()
+            ).apply {
+                marginEnd = (8 * density).toInt()
+                topMargin = (4 * density).toInt()
+                bottomMargin = (4 * density).toInt()
+            }
+            updateVisual()
+            setOnClickListener {
+                setChecked(!isChecked, notify = true)
+            }
+        }
+
+        fun setChecked(checked: Boolean, notify: Boolean = false) {
+            if (isChecked != checked) {
+                isChecked = checked
+                updateVisual()
+                if (notify) onStateChanged(isChecked)
+            }
+        }
+
+        private fun updateVisual() {
+            val density = context.resources.displayMetrics.density
+            val bg = GradientDrawable().apply {
+                cornerRadius = 18f * density
+                if (isChecked) {
+                    setColor(0xFF00D2B4.toInt()) // HyperOS Cyan Teal
+                } else {
+                    setColor(0x1AFFFFFF)
+                    setStroke((1f * density).toInt(), 0x30FFFFFF)
+                }
+            }
+            view.background = bg
+            view.setTextColor(if (isChecked) Color.WHITE else 0xFF8E95A3.toInt())
+            view.setTypeface(null, if (isChecked) Typeface.BOLD else Typeface.NORMAL)
+        }
+    }
+
     private class DeviceConfigViewHolder(
         val device: Device,
         val cardView: View,
-        val cbEnable: CheckBox,
-        val cbTemp: CheckBox?,
-        val cbHum: CheckBox?,
-        val cbPress: CheckBox?,
-        val cbDoor: CheckBox?,
-        val cbBat: CheckBox?,
-        val cbFuel: CheckBox?,
-        val cbPower: CheckBox?
-    )
+        val switchDevice: MaterialSwitch,
+        val metricsContainer: ViewGroup,
+        val pills: List<MetricPill>
+    ) {
+        fun getPill(key: String): MetricPill? = pills.firstOrNull { it.metricKey == key }
+        val isEnabled: Boolean get() = switchDevice.isChecked
+    }
 
     private class RoomGroup(
         val roomId: String?,
         val roomName: String,
         val containerView: View,
-        val roomCheckBox: CheckBox,
+        val switchRoom: MaterialSwitch,
         val deviceHolders: MutableList<DeviceConfigViewHolder> = mutableListOf()
     )
 
@@ -55,7 +121,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setResult(RESULT_CANCELED) // Default in case user backs out
+        setResult(RESULT_CANCELED)
 
         binding = ActivityWidgetConfigureBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -113,7 +179,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
     private fun addRoomChip(label: String, roomId: String?) {
         val chip = Button(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = label
-            textSize = 11.5f
+            textSize = 12f
             val isSelected = selectedRoomFilter == roomId
             if (isSelected) {
                 setTextColor(getColor(R.color.white))
@@ -124,7 +190,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
             }
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                (36 * resources.displayMetrics.density).toInt()
+                (38 * resources.displayMetrics.density).toInt()
             ).apply {
                 marginEnd = (8 * resources.displayMetrics.density).toInt()
             }
@@ -163,6 +229,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
             return
         }
 
+        val hasSavedConfig = dataManager.hasWidgetConfig(appWidgetId)
         val selectedIds = config.selectedDeviceIds
 
         // Group devices by room
@@ -173,7 +240,6 @@ class WidgetConfigureActivity : AppCompatActivity() {
                 roomsWithDevices.add(room to devInRoom)
             }
         }
-        // Devices without a room
         val unassigned = allDevices.filter { dev ->
             rooms.none { it.id == dev.room || it.devices.contains(dev.id) }
         }
@@ -181,206 +247,304 @@ class WidgetConfigureActivity : AppCompatActivity() {
             roomsWithDevices.add(null to unassigned)
         }
 
+        val density = resources.displayMetrics.density
+
         for ((room, devList) in roomsWithDevices) {
             val rName = room?.name ?: "Другие устройства"
             val rId = room?.id
 
-            // Room Card Container
+            // Room Card Container (HyperOS Rounded Glass Tile)
             val roomCard = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 setBackgroundResource(R.drawable.bg_tile_xiaomi)
-                setPadding(20, 16, 20, 16)
+                setPadding((18 * density).toInt(), (16 * density).toInt(), (18 * density).toInt(), (16 * density).toInt())
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    topMargin = 14
+                    topMargin = (14 * density).toInt()
                 }
             }
 
-            // Room Header with Master CheckBox
+            // Room Header with Large Material Switch
             val roomHeader = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                setPadding(0, 0, 0, 8)
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, 0, 0, (10 * density).toInt())
             }
 
-            val cbRoom = CheckBox(this).apply {
-                text = "🏠 $rName"
-                setTextColor(getColor(R.color.white))
-                textSize = 14.5f
-                setTypeface(null, Typeface.BOLD)
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            val iconTv = TextView(this).apply {
+                text = "🏠"
+                textSize = 18f
             }
-            roomHeader.addView(cbRoom)
+            roomHeader.addView(iconTv)
+
+            val roomTitleTv = TextView(this).apply {
+                text = " $rName"
+                setTextColor(Color.WHITE)
+                textSize = 16f
+                setTypeface(null, Typeface.BOLD)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = (6 * density).toInt()
+                }
+            }
+            roomHeader.addView(roomTitleTv)
 
             val countTv = TextView(this).apply {
                 text = "${devList.size} устр."
                 setTextColor(getColor(R.color.alice_neon_light))
                 textSize = 11.5f
+                setBackgroundResource(R.drawable.bg_alice_chip)
+                setPadding((8 * density).toInt(), (2 * density).toInt(), (8 * density).toInt(), (2 * density).toInt())
             }
             roomHeader.addView(countTv)
+
+            // Large Room Switch
+            val switchRoom = MaterialSwitch(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    marginStart = (10 * density).toInt()
+                }
+            }
+            roomHeader.addView(switchRoom)
             roomCard.addView(roomHeader)
 
             val groupHolders = mutableListOf<DeviceConfigViewHolder>()
-            val group = RoomGroup(rId, rName, roomCard, cbRoom, groupHolders)
+            val group = RoomGroup(rId, rName, roomCard, switchRoom, groupHolders)
             roomGroups.add(group)
 
-            // Child devices in this room
+            // Devices in this room
             for (dev in devList) {
-                val isSelected = if (selectedIds.isEmpty()) {
-                    dev.isClimateSensor() || dev.hasTemperature()
-                } else {
+                val isSelected = if (hasSavedConfig) {
                     selectedIds.contains(dev.id)
+                } else {
+                    // Default for brand new widget
+                    dev.isClimateSensor() || dev.hasTemperature() || dev.hasDoorSensor()
                 }
 
-                val metricPref = dataManager.getDeviceMetricSetting(dev.id)
+                val metricPref = dataManager.getDeviceMetricSetting(dev.id, appWidgetId)
 
-                val devContainer = LinearLayout(this).apply {
+                // Device Container Card (HyperOS Inset Tile)
+                val devCard = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL
-                    setPadding(16, 10, 12, 10)
-                    setBackgroundColor(0x12FFFFFF)
+                    setPadding((16 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
+                    val bgDrawable = GradientDrawable().apply {
+                        cornerRadius = 14f * density
+                        setColor(0x18FFFFFF)
+                    }
+                    background = bgDrawable
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                     ).apply {
-                        topMargin = 6
+                        topMargin = (8 * density).toInt()
                     }
                 }
 
-                // Device Master CheckBox
-                val cbDevice = CheckBox(this).apply {
+                // Device Header Row (Icon + Name + Subtitle + Large MaterialSwitch)
+                val devHeader = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+
+                // Device Icon
+                val devIcon = when {
+                    dev.hasDoorSensor() -> "🚪"
+                    dev.hasWaterOrFuel() -> "⛽"
+                    dev.hasPower() -> "⚡"
+                    dev.hasTemperature() -> "🌡️"
+                    dev.hasBattery() -> "🔋"
+                    else -> "💡"
+                }
+
+                val devIconTv = TextView(this).apply {
+                    text = devIcon
+                    textSize = 16f
+                }
+                devHeader.addView(devIconTv)
+
+                val devInfoLayout = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                        marginStart = (8 * density).toInt()
+                        marginEnd = (8 * density).toInt()
+                    }
+                }
+
+                val devNameTv = TextView(this).apply {
                     text = dev.name
-                    setTextColor(getColor(R.color.alice_text_light))
-                    textSize = 13.5f
+                    setTextColor(Color.WHITE)
+                    textSize = 14.5f
+                    setTypeface(null, Typeface.BOLD)
+                    maxLines = 1
+                }
+                devInfoLayout.addView(devNameTv)
+
+                // Subtitle preview of current state
+                val stateDesc = when {
+                    dev.hasTemperature() && dev.getTemperature() != null -> {
+                        val t = "${dev.getTemperature()}°C"
+                        val h = dev.getHumidity()?.let { " • $it%" } ?: ""
+                        "$t$h"
+                    }
+                    dev.hasDoorSensor() -> if (dev.isDoorOrWindowOpen() == true) "ОТКРЫТО!" else "Закрыто"
+                    dev.hasWaterOrFuel() -> dev.getWaterOrFuelLevel()?.let { "Уровень: ${it.toInt()}%" } ?: ""
+                    dev.hasPower() -> dev.getPower()?.let { "${it.toInt()} Вт" } ?: ""
+                    dev.hasBattery() -> dev.getBattery()?.let { "Заряд: $it%" } ?: ""
+                    else -> ""
+                }
+
+                if (stateDesc.isNotBlank()) {
+                    val devStateTv = TextView(this).apply {
+                        text = stateDesc
+                        setTextColor(getColor(R.color.alice_text_muted))
+                        textSize = 11f
+                    }
+                    devInfoLayout.addView(devStateTv)
+                }
+                devHeader.addView(devInfoLayout)
+
+                // Large Device Switch ("Включить в виджет")
+                val switchDevice = MaterialSwitch(this).apply {
                     isChecked = isSelected
                 }
-                devContainer.addView(cbDevice)
+                devHeader.addView(switchDevice)
+                devHeader.setOnClickListener {
+                    switchDevice.performClick()
+                }
+                devCard.addView(devHeader)
 
-                // Sub-metrics layout (STRICTLY metrics physically supported by this device!)
-                val metricsRow = LinearLayout(this).apply {
+                // Metrics Row (Tactile Pill Chips)
+                val metricsContainer = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
-                    setPadding(28, 4, 0, 0)
+                    setPadding((4 * density).toInt(), (8 * density).toInt(), 0, 0)
+                    alpha = if (isSelected) 1.0f else 0.35f
                 }
 
-                var cbTemp: CheckBox? = null
-                var cbHum: CheckBox? = null
-                var cbPress: CheckBox? = null
-                var cbDoor: CheckBox? = null
-                var cbBat: CheckBox? = null
-                var cbFuel: CheckBox? = null
-                var cbPower: CheckBox? = null
+                val pills = mutableListOf<MetricPill>()
 
-                // 1. Temperature (strictly if device has it)
+                fun createPill(key: String, label: String, initialChecked: Boolean): MetricPill {
+                    lateinit var pillRef: MetricPill
+                    pillRef = MetricPill(this@WidgetConfigureActivity, key, label, initialChecked) { isCheckedNow ->
+                        if (isCheckedNow) {
+                            // Turning on ANY metric -> turn on device and turn on room!
+                            if (!switchDevice.isChecked) {
+                                switchDevice.isChecked = true
+                                metricsContainer.alpha = 1.0f
+                            }
+                            switchRoom.isChecked = true
+                        } else {
+                            // If all pills turned off -> turn off device
+                            val anyPillActive = pills.any { it.isChecked }
+                            if (!anyPillActive) {
+                                switchDevice.isChecked = false
+                                metricsContainer.alpha = 0.35f
+                                val anyDevActive = groupHolders.any { it.switchDevice.isChecked }
+                                if (!anyDevActive) switchRoom.isChecked = false
+                            }
+                        }
+                    }
+                    return pillRef
+                }
+
+                // 1. Temperature
                 if (dev.hasTemperature()) {
-                    cbTemp = CheckBox(this).apply {
-                        text = "Темп."
-                        setTextColor(getColor(R.color.alice_text_muted))
-                        textSize = 11.5f
-                        isChecked = metricPref.showTemperature
-                    }
-                    metricsRow.addView(cbTemp)
+                    val p = createPill("temp", "🌡️ Темп.", isSelected && metricPref.showTemperature)
+                    pills.add(p)
+                    metricsContainer.addView(p.view)
                 }
 
-                // 2. Humidity (strictly if device has humidity property!)
+                // 2. Humidity
                 if (dev.hasHumidity()) {
-                    cbHum = CheckBox(this).apply {
-                        text = "Влажн."
-                        setTextColor(getColor(R.color.alice_text_muted))
-                        textSize = 11.5f
-                        isChecked = metricPref.showHumidity
-                    }
-                    metricsRow.addView(cbHum)
+                    val p = createPill("hum", "💧 Влажн.", isSelected && metricPref.showHumidity)
+                    pills.add(p)
+                    metricsContainer.addView(p.view)
                 }
 
-                // 3. Pressure (strictly if barometer exists)
+                // 3. Pressure
                 if (dev.hasPressure()) {
-                    cbPress = CheckBox(this).apply {
-                        text = "Давл."
-                        setTextColor(getColor(R.color.alice_text_muted))
-                        textSize = 11.5f
-                        isChecked = metricPref.showPressure
-                    }
-                    metricsRow.addView(cbPress)
+                    val p = createPill("press", "📊 Давл.", isSelected && metricPref.showPressure)
+                    pills.add(p)
+                    metricsContainer.addView(p.view)
                 }
 
-                // 4. Door (contact / open sensor)
+                // 4. Door
                 if (dev.hasDoorSensor()) {
-                    cbDoor = CheckBox(this).apply {
-                        text = "Дверь"
-                        setTextColor(getColor(R.color.alice_text_muted))
-                        textSize = 11.5f
-                        isChecked = metricPref.showDoor
-                    }
-                    metricsRow.addView(cbDoor)
+                    val p = createPill("door", "🚪 Дверь", isSelected && metricPref.showDoor)
+                    pills.add(p)
+                    metricsContainer.addView(p.view)
                 }
 
-                // 5. Battery (if reported)
+                // 5. Battery
                 if (dev.hasBattery()) {
-                    cbBat = CheckBox(this).apply {
-                        text = "Батарея"
-                        setTextColor(getColor(R.color.alice_text_muted))
-                        textSize = 11.5f
-                        isChecked = metricPref.showBattery
-                    }
-                    metricsRow.addView(cbBat)
+                    val p = createPill("bat", "🔋 Батарея", isSelected && metricPref.showBattery)
+                    pills.add(p)
+                    metricsContainer.addView(p.view)
                 }
 
-                // 6. Fuel / Water Level (cars, tanks)
+                // 6. Fuel / Water Level
                 if (dev.hasWaterOrFuel()) {
-                    cbFuel = CheckBox(this).apply {
-                        text = "Уровень"
-                        setTextColor(getColor(R.color.alice_text_muted))
-                        textSize = 11.5f
-                        isChecked = metricPref.showFuel
-                    }
-                    metricsRow.addView(cbFuel)
+                    val p = createPill("fuel", "⛽ Уровень", isSelected && metricPref.showFuel)
+                    pills.add(p)
+                    metricsContainer.addView(p.view)
                 }
 
-                // 7. Power (sockets, relays)
+                // 7. Power
                 if (dev.hasPower()) {
-                    cbPower = CheckBox(this).apply {
-                        text = "Мощность"
-                        setTextColor(getColor(R.color.alice_text_muted))
-                        textSize = 11.5f
-                        isChecked = metricPref.showPower
-                    }
-                    metricsRow.addView(cbPower)
+                    val p = createPill("power", "⚡ Мощность", isSelected && metricPref.showPower)
+                    pills.add(p)
+                    metricsContainer.addView(p.view)
                 }
 
-                if (metricsRow.childCount > 0) {
-                    devContainer.addView(metricsRow)
+                if (pills.isNotEmpty()) {
+                    devCard.addView(metricsContainer)
                 }
 
-                roomCard.addView(devContainer)
+                roomCard.addView(devCard)
 
-                val holder = DeviceConfigViewHolder(
-                    dev, devContainer, cbDevice, cbTemp, cbHum, cbPress, cbDoor, cbBat, cbFuel, cbPower
-                )
+                val holder = DeviceConfigViewHolder(dev, devCard, switchDevice, metricsContainer, pills)
                 groupHolders.add(holder)
                 allDeviceHolders.add(holder)
 
-                // When individual device checkbox changes, update room checkbox
-                cbDevice.setOnCheckedChangeListener { _, _ ->
-                    val allChecked = groupHolders.all { it.cbEnable.isChecked }
-                    val noneChecked = groupHolders.none { it.cbEnable.isChecked }
-                    if (allChecked) {
-                        cbRoom.isChecked = true
-                    } else if (noneChecked) {
-                        cbRoom.isChecked = false
+                // When Device Switch is clicked by user:
+                switchDevice.setOnClickListener {
+                    val devActive = switchDevice.isChecked
+                    metricsContainer.alpha = if (devActive) 1.0f else 0.35f
+
+                    if (devActive) {
+                        // Check all available physical metric pills
+                        pills.forEach { it.setChecked(true) }
+                        // Room MUST turn on when ANY device is enabled
+                        switchRoom.isChecked = true
+                    } else {
+                        // Uncheck all metric pills when device is disabled
+                        pills.forEach { it.setChecked(false) }
+                        // If no devices enabled in room, turn off room switch
+                        val anyDevInRoom = groupHolders.any { it.switchDevice.isChecked }
+                        if (!anyDevInRoom) {
+                            switchRoom.isChecked = false
+                        }
                     }
                 }
             }
 
-            // Sync initial state of Room CheckBox
-            cbRoom.isChecked = groupHolders.isNotEmpty() && groupHolders.all { it.cbEnable.isChecked }
+            // Initial state of Room Switch: ON if ANY device in room is enabled!
+            switchRoom.isChecked = groupHolders.any { it.switchDevice.isChecked }
 
-            // When Room CheckBox is toggled, check/uncheck all devices in this room
-            cbRoom.setOnClickListener {
-                val targetState = cbRoom.isChecked
+            // When Room Switch is clicked by user:
+            switchRoom.setOnClickListener {
+                val roomActive = switchRoom.isChecked
                 for (h in groupHolders) {
-                    h.cbEnable.isChecked = targetState
+                    h.switchDevice.isChecked = roomActive
+                    h.metricsContainer.alpha = if (roomActive) 1.0f else 0.35f
+                    h.pills.forEach { it.setChecked(roomActive) }
                 }
+            }
+
+            roomHeader.setOnClickListener {
+                switchRoom.performClick()
             }
 
             binding.layoutConfigDevicesList.addView(roomCard)
@@ -401,23 +565,22 @@ class WidgetConfigureActivity : AppCompatActivity() {
 
         for (holder in allDeviceHolders) {
             val devId = holder.device.id
-            if (holder.cbEnable.isChecked) {
+            if (holder.isEnabled) {
                 chosenDeviceIds.add(devId)
             }
 
-            // Save individual metrics for this device
-            val currentSetting = dataManager.getDeviceMetricSetting(devId)
+            // Save individual metrics for this device STRICTLY ISOLATED to this widget instance!
             val newSetting = WidgetDataManager.DeviceMetricSetting(
-                showTemperature = holder.cbTemp?.isChecked ?: currentSetting.showTemperature,
-                showHumidity = holder.cbHum?.isChecked ?: currentSetting.showHumidity,
-                showPressure = holder.cbPress?.isChecked ?: currentSetting.showPressure,
-                showDoor = holder.cbDoor?.isChecked ?: currentSetting.showDoor,
-                showLeak = currentSetting.showLeak,
-                showBattery = holder.cbBat?.isChecked ?: currentSetting.showBattery,
-                showFuel = holder.cbFuel?.isChecked ?: currentSetting.showFuel,
-                showPower = holder.cbPower?.isChecked ?: currentSetting.showPower
+                showTemperature = holder.getPill("temp")?.isChecked ?: true,
+                showHumidity = holder.getPill("hum")?.isChecked ?: true,
+                showPressure = holder.getPill("press")?.isChecked ?: false,
+                showDoor = holder.getPill("door")?.isChecked ?: true,
+                showLeak = true,
+                showBattery = holder.getPill("bat")?.isChecked ?: true,
+                showFuel = holder.getPill("fuel")?.isChecked ?: true,
+                showPower = holder.getPill("power")?.isChecked ?: true
             )
-            dataManager.saveDeviceMetricSetting(devId, newSetting)
+            dataManager.saveDeviceMetricSetting(devId, newSetting, appWidgetId)
         }
 
         // Save isolated config for THIS specific widget instance
@@ -429,7 +592,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
         )
         dataManager.saveWidgetConfig(config)
 
-        // Update ONLY the exact provider corresponding to this widget instance (eliminating provider overwrite bug!)
+        // Update ONLY the exact provider corresponding to this widget instance
         val appWidgetManager = AppWidgetManager.getInstance(this)
         if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
             val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
@@ -469,7 +632,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         }
         setResult(RESULT_OK, resultIntent)
-        Toast.makeText(this, "✅ Виджет успешно настроен и обновлён!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "✅ Настройки виджета #${appWidgetId} сохранены!", Toast.LENGTH_SHORT).show()
         finish()
     }
 }
