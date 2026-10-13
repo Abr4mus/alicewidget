@@ -51,6 +51,8 @@
     <color name="ios_accent_orange">#FF9500</color>
 
     <!-- Android / Material You Style Colors -->
+    <color name="android_accent_mint">#82D9BC</color>
+    <color name="android_accent_coral">#F28B82</color>
     <color name="m3_surface_dark">#E6182220</color>
     <color name="m3_surface_stroke">#267BD5B5</color>
     <color name="m3_tile_surface">#2E303D3B</color>
