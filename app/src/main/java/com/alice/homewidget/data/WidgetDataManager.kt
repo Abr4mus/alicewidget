@@ -248,8 +248,8 @@ class WidgetDataManager(context: Context) {
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "4x2") else null
         val selectedIds = config?.selectedDeviceIds ?: emptyList()
-        val allDevices = cached.devices
-        val rooms = cached.rooms
+        val allDevices = cached.devices ?: emptyList()
+        val rooms = cached.rooms ?: emptyList()
 
         // Devices strictly for THIS widget instance
         val targetDevices = if (selectedIds.isNotEmpty()) {
@@ -318,7 +318,7 @@ class WidgetDataManager(context: Context) {
             .mapNotNull { it.getBattery() }.minOrNull()
 
         return AggregatedSensorData(
-            householdName = cached.households.firstOrNull()?.name ?: "Датчики",
+            householdName = cached.households?.firstOrNull()?.name ?: "Датчики",
             primaryTemperature = primaryTemp,
             primaryHumidity = primaryHum,
             primaryPressure = primaryPress,
@@ -351,8 +351,8 @@ class WidgetDataManager(context: Context) {
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "4x1") else null
         val selectedIds = config?.selectedDeviceIds ?: emptyList()
-        val allDevices = cached.devices
-        val rooms = cached.rooms
+        val allDevices = cached.devices ?: emptyList()
+        val rooms = cached.rooms ?: emptyList()
 
         val targetDevices = if (selectedIds.isNotEmpty()) {
             allDevices.filter { selectedIds.contains(it.id) }
@@ -410,8 +410,8 @@ class WidgetDataManager(context: Context) {
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "2x1") else null
         val selectedIds = config?.selectedDeviceIds ?: emptyList()
-        val allDevices = cached.devices
-        val rooms = cached.rooms
+        val allDevices = cached.devices ?: emptyList()
+        val rooms = cached.rooms ?: emptyList()
 
         val dev = if (selectedIds.isNotEmpty()) {
             allDevices.firstOrNull { selectedIds.contains(it.id) }

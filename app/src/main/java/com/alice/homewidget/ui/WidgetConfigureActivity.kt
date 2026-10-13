@@ -66,10 +66,13 @@ class WidgetConfigureActivity : AppCompatActivity() {
                 topMargin = (4 * density).toInt()
                 bottomMargin = (4 * density).toInt()
             }
-            updateVisual()
             setOnClickListener {
                 setChecked(!isChecked, notify = true)
             }
+        }
+
+        init {
+            updateVisual()
         }
 
         fun setChecked(checked: Boolean, notify: Boolean = false) {
@@ -179,15 +182,15 @@ class WidgetConfigureActivity : AppCompatActivity() {
 
         addRoomChip("Все комнаты", null)
         for (room in rooms) {
-            addRoomChip(room.name, room.id)
+            addRoomChip(room.name.ifBlank { "Комната" }, room.id)
         }
     }
 
-    private fun addRoomChip(label: String, roomId: String?) {
+    private fun addRoomChip(label: String?, roomId: String?) {
         val density = resources.displayMetrics.density
         val isSelected = selectedRoomFilter == roomId
         val chip = TextView(this).apply {
-            text = label
+            text = label ?: "Комната"
             textSize = 12.5f
             gravity = Gravity.CENTER
             setPadding((14 * density).toInt(), (6 * density).toInt(), (14 * density).toInt(), (6 * density).toInt())

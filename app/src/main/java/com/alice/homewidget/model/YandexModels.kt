@@ -5,14 +5,14 @@ import com.google.gson.annotations.SerializedName
 data class UserInfoResponse(
     @SerializedName("status") val status: String? = null,
     @SerializedName("request_id") val requestId: String? = null,
-    @SerializedName("households") val households: List<Household> = emptyList(),
-    @SerializedName("rooms") val rooms: List<Room> = emptyList(),
-    @SerializedName("devices") val devices: List<Device> = emptyList()
+    @SerializedName("households") val households: List<Household>? = emptyList(),
+    @SerializedName("rooms") val rooms: List<Room>? = emptyList(),
+    @SerializedName("devices") val devices: List<Device>? = emptyList()
 )
 
 data class Household(
-    @SerializedName("id") val id: String,
-    @SerializedName("name") val name: String
+    @SerializedName("id") val id: String = "",
+    @SerializedName("name") val name: String = ""
 )
 
 data class Room(
