@@ -1347,6 +1347,8 @@ object WidgetRenderEngine {
                     if (availBadgeW > 14f * density) {
                         val safeBadge = ellipsizeText(badgeText, badgePaint, availBadgeW)
                         val badgeX = slotRect.right - innerPad - badgePaint.measureText(safeBadge)
+                        canvas.drawText(safeBadge, badgeX, contentY, badgePaint)
+                    }
                 }
             }
         }
@@ -2034,5 +2036,4 @@ object WidgetRenderEngine {
 
         return bitmap
     }
-}
 }
