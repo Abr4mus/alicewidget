@@ -194,24 +194,38 @@ class WidgetConfigureActivity : AppCompatActivity() {
                 else -> binding.rbConfigThemeXiaomi.isChecked = true
             }
 
-            // Set custom title if previously saved
-            binding.etConfigTitle.setText(config.customTitle ?: "")
+            // Immediately auto-save whenever theme changes
+            binding.rgConfigTheme.setOnCheckedChangeListener { _, _ ->
+                autoApplyAndSave()
+            }
 
             renderRoomChips(config)
             renderGroupedDevicesList(config)
 
-            binding.btnConfigSave.setOnClickListener {
-                saveAndFinish()
-            }
+            // Initial auto-apply to ensure widget state is active
+            autoApplyAndSave()
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Ошибка при загрузке настроек: ${e.localizedMessage ?: e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        autoApplyAndSave()
+    }
+
+    override fun onBackPressed() {
+        autoApplyAndSave()
+        super.onBackPressed()
+    }
+
     private fun renderRoomChips(config: WidgetDataManager.WidgetInstanceConfig) {
         binding.layoutRoomChips.removeAllViews()
-        val rooms = dataManager.getAvailableRooms()
+        val allDevices = dataManager.getAllRelevantDevices()
+        val rooms = dataManager.getAvailableRooms().filter { room ->
+            allDevices.any { it.room == room.id || room.hasDevice(it.id) }
+        }.sortedBy { it.name.lowercase() }
 
         addRoomChip("Все комнаты", null)
         for (room in rooms) {
@@ -269,7 +283,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
         allDeviceHolders.clear()
 
         val allDevices = dataManager.getAllRelevantDevices()
-        val rooms = dataManager.getAvailableRooms()
+        val rooms = dataManager.getAvailableRooms().sortedBy { it.name.lowercase() }
 
         if (allDevices.isEmpty()) {
             val emptyTv = TextView(this).apply {
@@ -289,17 +303,18 @@ class WidgetConfigureActivity : AppCompatActivity() {
         selectedDeviceOrder.clear()
         selectedDeviceOrder.addAll(selectedIds)
 
-        // Group devices by room
+        // Group devices by room - deterministic stable alphabetical sorting
         val roomsWithDevices = mutableListOf<Pair<Room?, List<Device>>>()
         for (room in rooms) {
             val devInRoom = allDevices.filter { it.room == room.id || room.hasDevice(it.id) }
+                .sortedBy { it.name.lowercase() }
             if (devInRoom.isNotEmpty()) {
                 roomsWithDevices.add(room to devInRoom)
             }
         }
         val unassigned = allDevices.filter { dev ->
             rooms.none { it.id == dev.room || it.hasDevice(dev.id) }
-        }
+        }.sortedBy { it.name.lowercase() }
         if (unassigned.isNotEmpty()) {
             roomsWithDevices.add(null to unassigned)
         }
@@ -571,6 +586,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
                                 if (!anyDevActive) switchRoom.isChecked = false
                             }
                         }
+                        autoApplyAndSave()
                     }
                     return pillRef
                 }
@@ -684,6 +700,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
                             switchRoom.isChecked = false
                         }
                     }
+                    autoApplyAndSave()
                 }
 
                 devHeader.setOnClickListener {
@@ -735,6 +752,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
                         switchRoom.isChecked = true
                     }
                 }
+                autoApplyAndSave()
             }
 
             roomHeader.setOnClickListener {
@@ -747,7 +765,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveAndFinish() {
+    private fun autoApplyAndSave() {
         val theme = when (binding.rgConfigTheme.checkedRadioButtonId) {
             R.id.rbConfigThemeIos -> WidgetDataManager.THEME_IOS
             R.id.rbConfigThemeAlice -> WidgetDataManager.THEME_ALICE
@@ -762,7 +780,6 @@ class WidgetConfigureActivity : AppCompatActivity() {
 
         for (holder in allDeviceHolders) {
             val devId = holder.device.id
-            // Save individual metrics for this device STRICTLY ISOLATED to this widget instance!
             val newSetting = WidgetDataManager.DeviceMetricSetting(
                 showTemperature = holder.getPill("temp")?.isChecked ?: true,
                 showHumidity = holder.getPill("hum")?.isChecked ?: true,
@@ -794,21 +811,24 @@ class WidgetConfigureActivity : AppCompatActivity() {
         }
 
         val finalChosenIds = orderedChosenIds.take(maxAllowed)
-        if (finalChosenIds.isEmpty()) {
-            Toast.makeText(this, "Выберите хотя бы одно устройство", Toast.LENGTH_SHORT).show()
-            return
+        if (finalChosenIds.isNotEmpty()) {
+            val config = WidgetDataManager.WidgetInstanceConfig(
+                appWidgetId = appWidgetId,
+                theme = theme,
+                selectedDeviceIds = finalChosenIds,
+                customTitle = customTitle
+            )
+            dataManager.saveWidgetConfig(config)
+            updateWidgetInstance()
+
+            val resultIntent = Intent().apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
+            setResult(RESULT_OK, resultIntent)
         }
+    }
 
-        // Save isolated config for THIS specific widget instance
-        val config = WidgetDataManager.WidgetInstanceConfig(
-            appWidgetId = appWidgetId,
-            theme = theme,
-            selectedDeviceIds = finalChosenIds,
-            customTitle = customTitle
-        )
-        dataManager.saveWidgetConfig(config)
-
-        // Update ONLY the exact provider corresponding to this widget instance
+    private fun updateWidgetInstance() {
         val appWidgetManager = AppWidgetManager.getInstance(this)
         if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
             val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
@@ -828,7 +848,6 @@ class WidgetConfigureActivity : AppCompatActivity() {
                     AliceCompact2x1WidgetProvider.updateWidget(this, appWidgetManager, appWidgetId, dataManager)
                 }
                 else -> {
-                    // Fallback: match by registered app widget IDs
                     val p4x2 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceHomeWidgetProvider::class.java))
                     val p4x1 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceBarWidgetProvider::class.java))
                     val p2x2 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceCompactWidgetProvider::class.java))
@@ -843,12 +862,5 @@ class WidgetConfigureActivity : AppCompatActivity() {
                 }
             }
         }
-
-        val resultIntent = Intent().apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-        }
-        setResult(RESULT_OK, resultIntent)
-        Toast.makeText(this, "✅ Настройки виджета #${appWidgetId} сохранены!", Toast.LENGTH_SHORT).show()
-        finish()
     }
 }

@@ -37,6 +37,7 @@ object WidgetRenderEngine {
         val alertRed: Int,
         val okGreen: Int,
         val isGlassmorphism: Boolean = false,
+        val isLight: Boolean = false,
         val cornerRadiusDp: Float = 26f
     )
 
@@ -57,6 +58,7 @@ object WidgetRenderEngine {
             alertRed = 0xFFFF453A.toInt(),      // Apple System Red
             okGreen = 0xFF30D158.toInt(),
             isGlassmorphism = true,
+            isLight = false,
             cornerRadiusDp = 26f
         )
         WidgetDataManager.THEME_ALICE -> ThemePalette(
@@ -128,24 +130,26 @@ object WidgetRenderEngine {
             alertRed = 0xFFFC3F1D.toInt(),
             okGreen = 0xFF00B350.toInt(),
             isGlassmorphism = false,            // Clean solid porcelain look
+            isLight = true,
             cornerRadiusDp = 26f
         )
         WidgetDataManager.THEME_FLUENT_PASTEL -> ThemePalette(
             // Microsoft Fluent Design: gentle blush pastel-pink into dreamy azure blue gradient with frosted acrylic
-            bgStart = 0xF04E2448.toInt(),       // Soft glowing pastel mauve-pink
-            bgEnd = 0xF61C3660.toInt(),         // Deep dreamy azure blue
-            borderTop = 0xB8FFFFFF.toInt(),     // Fluent Specular highlight
-            borderBottom = 0x30FFFFFF.toInt(),
-            tileBg = 0x22FFFFFF.toInt(),        // Translucent acrylic glass sub-tiles
-            tileBorder = 0x48FFFFFF.toInt(),
-            textPrimary = 0xFFFFFFFF.toInt(),   // Crisp Pure White
-            textSecondary = 0xFFE0E7FF.toInt(), // Soft Sky Lavender
-            accentComfort = 0xFF2ED573.toInt(), // Neon Seafoam
-            accentWarm = 0xFFFF7597.toInt(),    // Soft Pastel Coral Pink
-            accentCold = 0xFF70A1FF.toInt(),    // Dreamy Sky Azure
-            alertRed = 0xFFFF4757.toInt(),
-            okGreen = 0xFF2ED573.toInt(),
+            bgStart = 0xFFFDF2F8.toInt(),       // Soft glowing pastel mauve-pink
+            bgEnd = 0xFFE0F2FE.toInt(),         // Deep dreamy azure blue
+            borderTop = 0x80FFFFFF.toInt(),     // Fluent Specular highlight
+            borderBottom = 0x20000000.toInt(),
+            tileBg = 0x40FFFFFF.toInt(),        // Translucent acrylic glass sub-tiles
+            tileBorder = 0x60FFFFFF.toInt(),
+            textPrimary = 0xFF1E2430.toInt(),   // Deep Slate Graphite
+            textSecondary = 0xFF64748B.toInt(), // Soft Charcoal
+            accentComfort = 0xFF059669.toInt(), // Neon Seafoam
+            accentWarm = 0xFFE11D48.toInt(),    // Soft Pastel Coral Pink
+            accentCold = 0xFF0284C7.toInt(),    // Dreamy Sky Azure
+            alertRed = 0xFFDC2626.toInt(),
+            okGreen = 0xFF059669.toInt(),
             isGlassmorphism = true,
+            isLight = true,
             cornerRadiusDp = 26f
         )
         else -> ThemePalette( // THEME_XIAOMI (HyperOS)
@@ -506,14 +510,301 @@ object WidgetRenderEngine {
         return if (best.isNotEmpty()) best else "…"
     }
 
-    // --- FULL-CARD WIDGET RENDERING IMPLEMENTATIONS ---
+    fun drawVectorLock(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        size: Float,
+        isLocked: Boolean,
+        isAlert: Boolean,
+        palette: ThemePalette
+    ) {
+        val density = canvas.density
+        val lockColor = when {
+            isAlert -> palette.alertRed
+            isLocked -> palette.okGreen
+            else -> palette.textPrimary
+        }
+        val shackleColor = if (isAlert) palette.alertRed else 0xFFCFD6E4.toInt()
+
+        val pw = size * 0.70f
+        val ph = size * 0.85f
+        val bodyH = ph * 0.52f
+        val bodyTop = cy - ph * 0.05f
+        val bodyRect = RectF(cx - pw / 2f, bodyTop, cx + pw / 2f, bodyTop + bodyH)
+
+        // Shackle
+        val shacklePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = shackleColor
+            style = Paint.Style.STROKE
+            strokeWidth = (size * 0.12f).coerceAtLeast(2.5f * density)
+            strokeCap = Paint.Cap.ROUND
+        }
+        val shackleW = pw * 0.58f
+        val shackleH = ph * 0.45f
+        val shackleRect = RectF(cx - shackleW / 2f, bodyTop - shackleH, cx + shackleW / 2f, bodyTop + shackleH * 0.2f)
+
+        val path = Path()
+        if (isLocked) {
+            path.arcTo(shackleRect, 180f, 180f, false)
+            path.lineTo(cx + shackleW / 2f, bodyTop)
+            path.moveTo(cx - shackleW / 2f, bodyTop)
+        } else {
+            val openRect = RectF(cx - shackleW / 2f, bodyTop - shackleH * 1.25f, cx + shackleW / 2f, bodyTop - shackleH * 0.05f)
+            path.arcTo(openRect, 180f, 180f, false)
+            path.lineTo(cx - shackleW / 2f, bodyTop)
+        }
+        canvas.drawPath(path, shacklePaint)
+
+        // Body
+        val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = lockColor
+            style = Paint.Style.FILL
+            if (palette.isGlassmorphism) setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
+        }
+        canvas.drawRoundRect(bodyRect, 8f * density, 8f * density, bodyPaint)
+
+        // Keyhole
+        val holePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF141722.toInt()
+            style = Paint.Style.FILL
+        }
+        val keyCy = bodyRect.centerY() - 1f * density
+        canvas.drawCircle(cx, keyCy, size * 0.07f, holePaint)
+        canvas.drawRect(cx - size * 0.035f, keyCy, cx + size * 0.035f, keyCy + size * 0.14f, holePaint)
+    }
+
+    fun drawVectorCar(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        size: Float,
+        isRunning: Boolean,
+        palette: ThemePalette
+    ) {
+        val density = canvas.density
+        val cw = size * 1.35f
+        val ch = size * 0.70f
+
+        val carPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isRunning) palette.okGreen else 0xFF7D8799.toInt()
+            style = Paint.Style.FILL
+            if (palette.isGlassmorphism && isRunning) {
+                setShadowLayer(5f * density, 0f, 1f * density, 0x9000D2B4.toInt())
+            }
+        }
+
+        // Headlight beam if running
+        if (isRunning) {
+            val beamPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0x4500D2B4.toInt()
+                style = Paint.Style.FILL
+            }
+            val beamPath = Path().apply {
+                moveTo(cx + cw * 0.48f, cy - ch * 0.05f)
+                lineTo(cx + cw * 0.72f, cy - ch * 0.25f)
+                lineTo(cx + cw * 0.72f, cy + ch * 0.25f)
+                close()
+            }
+            canvas.drawPath(beamPath, beamPaint)
+        }
+
+        val left = cx - cw / 2f
+        val right = cx + cw / 2f
+        val top = cy - ch / 2f
+        val bottom = cy + ch * 0.25f
+
+        val bodyPath = Path().apply {
+            moveTo(left + cw * 0.05f, bottom)
+            lineTo(left, bottom - ch * 0.25f)
+            lineTo(left + cw * 0.12f, bottom - ch * 0.50f)
+            lineTo(left + cw * 0.32f, top + ch * 0.08f)
+            lineTo(left + cw * 0.65f, top)
+            lineTo(left + cw * 0.82f, bottom - ch * 0.50f)
+            lineTo(right, bottom - ch * 0.35f)
+            lineTo(right, bottom)
+            close()
+        }
+        canvas.drawPath(bodyPath, carPaint)
+
+        // Windows (Cabin glass)
+        val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isRunning) 0x60FFFFFF else 0x30000000
+            style = Paint.Style.FILL
+        }
+        val glassPath = Path().apply {
+            moveTo(left + cw * 0.34f, top + ch * 0.18f)
+            lineTo(left + cw * 0.64f, top + ch * 0.10f)
+            lineTo(left + cw * 0.78f, bottom - ch * 0.50f)
+            lineTo(left + cw * 0.34f, bottom - ch * 0.50f)
+            close()
+        }
+        canvas.drawPath(glassPath, glassPaint)
+
+        // Wheels
+        val wheelY = bottom + ch * 0.10f
+        val wheelR = size * 0.15f
+        val tirePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF141722.toInt()
+            style = Paint.Style.FILL
+        }
+        val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isRunning) palette.okGreen else 0xFFB0B7C6.toInt()
+            style = Paint.Style.FILL
+        }
+
+        val w1X = left + cw * 0.26f
+        val w2X = right - cw * 0.24f
+
+        canvas.drawCircle(w1X, wheelY, wheelR, tirePaint)
+        canvas.drawCircle(w1X, wheelY, wheelR * 0.50f, rimPaint)
+
+        canvas.drawCircle(w2X, wheelY, wheelR, tirePaint)
+        canvas.drawCircle(w2X, wheelY, wheelR * 0.50f, rimPaint)
+
+        // If stopped: clean parking "P" badge
+        if (!isRunning) {
+            val pBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0x30FFFFFF
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx, top - 2f * density, 6f * density, pBgPaint)
+            val pTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0xFFCFD6E4.toInt()
+                textSize = 8f * density
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText("P", cx, top + 1f * density, pTextPaint)
+        }
+    }
+
+    fun drawVectorLightBulb(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        size: Float,
+        isOn: Boolean,
+        palette: ThemePalette
+    ) {
+        val density = canvas.density
+        val bh = size * 0.85f
+        val bw = size * 0.65f
+        val bulbCenterY = cy - bh * 0.18f
+
+        if (isOn) {
+            val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0x35FFA000.toInt()
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx, bulbCenterY, size * 0.55f, glowPaint)
+
+            val rayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0xFFFFD54F.toInt()
+                style = Paint.Style.STROKE
+                strokeWidth = 2.2f * density
+                strokeCap = Paint.Cap.ROUND
+            }
+            val rayDistInner = size * 0.44f
+            val rayDistOuter = size * 0.58f
+            val angles = intArrayOf(-135, -90, -45, 0, 45, 90, 135, 180)
+            for (ang in angles) {
+                if (ang in 60..120) continue
+                val rad = Math.toRadians(ang.toDouble())
+                val x1 = cx + (cos(rad) * rayDistInner).toFloat()
+                val y1 = bulbCenterY + (sin(rad) * rayDistInner).toFloat()
+                val x2 = cx + (cos(rad) * rayDistOuter).toFloat()
+                val y2 = bulbCenterY + (sin(rad) * rayDistOuter).toFloat()
+                canvas.drawLine(x1, y1, x2, y2, rayPaint)
+            }
+        }
+
+        // Bulb dome
+        val domePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isOn) 0xFFFFD233.toInt() else 0xFF4A5264.toInt()
+            style = Paint.Style.FILL
+            if (isOn && palette.isGlassmorphism) setShadowLayer(6f * density, 0f, 1f * density, 0xFFFFA000.toInt())
+        }
+        val domeR = bw / 2f
+        canvas.drawCircle(cx, bulbCenterY, domeR, domePaint)
+
+        val taperPath = Path().apply {
+            moveTo(cx - domeR * 0.85f, bulbCenterY + domeR * 0.50f)
+            lineTo(cx - bw * 0.28f, cy + bh * 0.22f)
+            lineTo(cx + bw * 0.28f, cy + bh * 0.22f)
+            lineTo(cx + domeR * 0.85f, bulbCenterY + domeR * 0.50f)
+            close()
+        }
+        canvas.drawPath(taperPath, domePaint)
+
+        // Base screw threads
+        val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isOn) 0xFF8E95A3.toInt() else 0xFF353C4B.toInt()
+            style = Paint.Style.FILL
+        }
+        val baseRect = RectF(cx - bw * 0.24f, cy + bh * 0.22f, cx + bw * 0.24f, cy + bh * 0.36f)
+        canvas.drawRoundRect(baseRect, 3f * density, 3f * density, basePaint)
+        canvas.drawCircle(cx, cy + bh * 0.38f, 2.5f * density, basePaint)
+    }
+
+    fun drawVectorLedStrip(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        size: Float,
+        isOn: Boolean,
+        palette: ThemePalette
+    ) {
+        val density = canvas.density
+        val sw = size * 1.25f
+        val sh = size * 0.55f
+
+        val stripPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isOn) 0xFF2A2D3A.toInt() else 0xFF1C1F28.toInt()
+            style = Paint.Style.STROKE
+            strokeWidth = 12f * density
+            strokeCap = Paint.Cap.ROUND
+        }
+        val stripPath = Path().apply {
+            moveTo(cx - sw * 0.44f, cy + sh * 0.15f)
+            cubicTo(cx - sw * 0.20f, cy - sh * 0.35f, cx + sw * 0.20f, cy + sh * 0.35f, cx + sw * 0.44f, cy - sh * 0.15f)
+        }
+        canvas.drawPath(stripPath, stripPaint)
+
+        val colors = if (isOn) {
+            intArrayOf(0xFFFF3366.toInt(), 0xFFFFD233.toInt(), 0xFF00E676.toInt(), 0xFF00D2B4.toInt(), 0xFF2979FF.toInt(), 0xFFE040FB.toInt())
+        } else {
+            intArrayOf(0xFF505666.toInt(), 0xFF505666.toInt(), 0xFF505666.toInt(), 0xFF505666.toInt(), 0xFF505666.toInt(), 0xFF505666.toInt())
+        }
+
+        val dotR = 3.5f * density
+        val n = colors.size
+        for (i in 0 until n) {
+            val t = (i + 0.5f) / n
+            val p0X = cx - sw * 0.44f; val p0Y = cy + sh * 0.15f
+            val p1X = cx - sw * 0.20f; val p1Y = cy - sh * 0.35f
+            val p2X = cx + sw * 0.20f; val p2Y = cy + sh * 0.35f
+            val p3X = cx + sw * 0.44f; val p3Y = cy - sh * 0.15f
+
+            val u = 1f - t
+            val px = u*u*u*p0X + 3*u*u*t*p1X + 3*u*t*t*p2X + t*t*t*p3X
+            val py = u*u*u*p0Y + 3*u*u*t*p1Y + 3*u*t*t*p2Y + t*t*t*p3Y
+
+            val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colors[i]
+                style = Paint.Style.FILL
+                if (isOn && palette.isGlassmorphism) setShadowLayer(5f * density, 0f, 1f * density, colors[i])
+            }
+            canvas.drawCircle(px, py, dotR, dotPaint)
+        }
+    }
 
     // --- FULL-CARD WIDGET RENDERING IMPLEMENTATIONS ---
 
     /**
      * 2x1 Compact Pill:
      * Room / Device Name (top-left) + Large state/temperature (bottom-left) +
-     * High-clarity Frosted Glass Pill (right) for metrics (e.g. ⛽ 65% • 🔋 12.6 В or 💧 48%).
+     * High-clarity Frosted Glass Pill (right) with zero clipping or text overflow!
      */
     fun render2x1WidgetBitmap(
         context: Context,
@@ -522,8 +813,8 @@ object WidgetRenderEngine {
         data: WidgetDataManager.Compact2x1Data,
         theme: String
     ): Bitmap {
-        val w = widthPx.coerceAtLeast(240)
-        val h = heightPx.coerceAtLeast(100)
+        val w = widthPx.coerceAtLeast(220)
+        val h = heightPx.coerceAtLeast(90)
         val density = context.resources.displayMetrics.density
         val palette = getThemePalette(theme)
 
@@ -534,19 +825,19 @@ object WidgetRenderEngine {
         val cardRect = RectF(0f, 0f, w.toFloat(), h.toFloat())
         drawSquircleCard(canvas, cardRect, cornerRadius, palette)
 
-        val padLeft = 14f * density
-        val padTop = 10f * density
-        val padRight = 12f * density
-        val padBottom = 10f * density
-        val actionHotspotWidth = 64f * density
+        val padLeft = 11f * density
+        val padTop = 8f * density
+        val padRight = 10f * density
+        val padBottom = 8f * density
+        val actionHotspotWidth = 46f * density
 
         val st = data.state
 
-        // 1. Title (Icon + Name)
+        // 1. Top Title (Icon + Name) - compact and non-overflowing
         val titleText = "${st.iconEmoji} ${data.title}"
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textSecondary
-            textSize = (11.5f * density).coerceIn(10f, 13f * density)
+            textSize = (10.5f * density).coerceIn(9f * density, 11.5f * density)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
         }
@@ -555,35 +846,49 @@ object WidgetRenderEngine {
         val titleY = padTop + titlePaint.textSize
         canvas.drawText(safeTitle, padLeft, titleY, titlePaint)
 
-        // 2. Main Text (Big bold state or temperature)
-        val mainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (st.isAlert) palette.alertRed else palette.textPrimary
-            textSize = (h * 0.40f).coerceIn(20f * density, 30f * density)
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
-        }
-        val mainY = h - padBottom - 2f * density
-        val safeMain = ellipsizeText(st.mainText, mainPaint, (w - padLeft - padRight) * 0.54f)
-        canvas.drawText(safeMain, padLeft, mainY, mainPaint)
-        val mainWidth = mainPaint.measureText(safeMain)
-
-        // 3. Right Frosted Badge (Secondary metric)
+        // 2. Secondary badge calculation
         val badgeText = when {
             st.badge1 != null && st.badge2 != null -> "${st.badge1} • ${st.badge2}"
             st.badge1 != null -> st.badge1
-            st.subText != null -> st.subText
+            st.subText != null && !st.subText.startsWith("Датчик") && !st.subText.startsWith("Освещение") -> st.subText
             else -> null
         }
 
+        var pillLeft = w - padRight
         if (badgeText != null) {
-            val pillH = (h * 0.38f).coerceIn(22f * density, 28f * density)
-            val pillMaxW = (w - padLeft - mainWidth - 14f * density).coerceAtLeast(50f * density)
-            val pillRight = w - padRight
+            val pillH = 22f * density
+            val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 10f * density
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            }
+            val measuredBadgeW = badgePaint.measureText(badgeText) + 16f * density
+            val pillW = measuredBadgeW.coerceIn(40f * density, (w - padLeft - padRight) * 0.48f)
+            pillLeft = w - padRight - pillW
             val pillTop = h - padBottom - pillH
-            val pillRect = RectF(pillRight - pillMaxW, pillTop, pillRight, pillTop + pillH)
+            val pillRect = RectF(pillLeft, pillTop, w - padRight, pillTop + pillH)
             val badgeColor = if (st.isAlert) palette.alertRed else palette.accentCold
             drawGlassPill(context, canvas, pillRect, null, badgeText, badgeColor, palette)
         }
+
+        // 3. Main Text (Big bold state or temperature) - scaled to available width!
+        val maxMainW = (pillLeft - padLeft - 6f * density).coerceAtLeast(30f * density)
+        val mainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (st.isAlert) palette.alertRed else palette.textPrimary
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+        }
+
+        var targetMainSize = (h * 0.38f).coerceIn(16f * density, 26f * density)
+        while (targetMainSize > 12f * density) {
+            mainPaint.textSize = targetMainSize
+            if (mainPaint.measureText(st.mainText) <= maxMainW) break
+            targetMainSize -= 1f * density
+        }
+        mainPaint.textSize = targetMainSize
+
+        val mainY = h - padBottom - 2f * density
+        val safeMain = ellipsizeText(st.mainText, mainPaint, maxMainW)
+        canvas.drawText(safeMain, padLeft, mainY, mainPaint)
 
         return bitmap
     }
@@ -671,66 +976,25 @@ object WidgetRenderEngine {
                 drawGlassPill(context, canvas, pillRect, null, st.badge1, palette.accentCold, palette)
             }
         } else if (st.category == "vehicle") {
-            // --- VEHICLE MODE (2 Side-by-Side Square Icon Tiles + Bottom Pills) ---
+            // --- VEHICLE MODE: Single card with large Lock & Car vector icons, NO words! ---
             val hasBadges = st.badge1 != null || st.badge2 != null
             val bottomH = if (hasBadges) 24f * density else 0f
             val centerTileTop = pad + titleSize + 8f * density
             val centerTileBottom = h - pad - bottomH - (if (bottomH > 0) 8f * density else 0f)
 
-            val tileGap = 8f * density
-            val tileW = (w - pad * 2 - tileGap) / 2f
-
-            // Left Tile: Security / Lock status
-            val r1 = RectF(pad, centerTileTop, pad + tileW, centerTileBottom)
-            drawSquircleCard(canvas, r1, 14f * density, palette, isSubTile = true)
-
-            val secIcon = if (st.isAlert) "🔓" else "🔒"
-            val secText = if (st.isAlert) "ОТКРЫТ" else "ЗАКРЫТ"
-            val secColor = if (st.isAlert) palette.alertRed else palette.okGreen
-
-            val secIconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                textSize = (r1.height() * 0.26f).coerceIn(13f * density, 20f * density)
-                textAlign = Paint.Align.CENTER
-            }
-            canvas.drawText(secIcon, r1.centerX(), r1.top + r1.height() * 0.36f, secIconPaint)
-
-            val secTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = secColor
-                textSize = (r1.height() * 0.18f).coerceIn(10f * density, 13f * density)
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                textAlign = Paint.Align.CENTER
-                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
-            }
-            canvas.drawText(secText, r1.centerX(), r1.top + r1.height() * 0.65f, secTextPaint)
-
-            val secSubPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = palette.textSecondary
-                textSize = (9f * density).coerceIn(8f * density, 10f * density)
-                textAlign = Paint.Align.CENTER
-            }
-            canvas.drawText("Охрана", r1.centerX(), r1.bottom - 6f * density, secSubPaint)
-
-            // Right Tile: Engine state
-            val r2 = RectF(pad + tileW + tileGap, centerTileTop, w - pad, centerTileBottom)
-            drawSquircleCard(canvas, r2, 14f * density, palette, isSubTile = true)
+            val centerTileRect = RectF(pad, centerTileTop, w - pad, centerTileBottom)
+            drawSquircleCard(canvas, centerTileRect, 14f * density, palette, isSubTile = true)
 
             val isRunning = st.subText?.contains("Заведён") == true
-            val engIcon = if (isRunning) "⚡" else "🛑"
-            val engText = if (isRunning) "ЗАВЕДЁН" else "ЗАГЛУШЕН"
-            val engColor = if (isRunning) palette.okGreen else palette.textSecondary
+            val isLocked = !st.isAlert
 
-            canvas.drawText(engIcon, r2.centerX(), r2.top + r2.height() * 0.36f, secIconPaint)
+            val iconSize = (centerTileRect.height() * 0.44f).coerceIn(24f * density, 36f * density)
+            val lockCx = centerTileRect.left + centerTileRect.width() * 0.28f
+            val carCx = centerTileRect.left + centerTileRect.width() * 0.72f
+            val cardCy = centerTileRect.centerY()
 
-            val engTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = engColor
-                textSize = (r2.height() * 0.17f).coerceIn(9.5f * density, 12.5f * density)
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                textAlign = Paint.Align.CENTER
-                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
-            }
-            canvas.drawText(engText, r2.centerX(), r2.top + r2.height() * 0.65f, engTextPaint)
-
-            canvas.drawText("Двигатель", r2.centerX(), r2.bottom - 6f * density, secSubPaint)
+            drawVectorLock(canvas, lockCx, cardCy, iconSize, isLocked, st.isAlert, palette)
+            drawVectorCar(canvas, carCx, cardCy, iconSize, isRunning, palette)
 
             // Bottom Badges (Fuel & Battery)
             if (hasBadges) {
@@ -749,6 +1013,66 @@ object WidgetRenderEngine {
                     drawGlassPill(context, canvas, bRect, null, st.badge1, palette.accentComfort, palette)
                 }
             }
+        } else if (st.category == "light") {
+            // --- LIGHTING MODE: Large Vector Lightbulb (Glowing ON / Dimmed OFF) ---
+            val hasBadges = st.badge1 != null || st.badge2 != null
+            val bottomH = if (hasBadges) 24f * density else 0f
+            val centerTileTop = pad + titleSize + 8f * density
+            val centerTileBottom = h - pad - bottomH - (if (bottomH > 0) 8f * density else 0f)
+
+            val centerTileRect = RectF(pad, centerTileTop, w - pad, centerTileBottom)
+            drawSquircleCard(canvas, centerTileRect, 14f * density, palette, isSubTile = true)
+
+            val isLightOn = st.mainText == "ВКЛ" || st.mainText == "ВКЛЮЧЕН"
+            val bulbSize = (centerTileRect.height() * 0.44f).coerceIn(24f * density, 38f * density)
+            drawVectorLightBulb(canvas, cx, centerTileRect.top + centerTileRect.height() * 0.38f, bulbSize, isLightOn, palette)
+
+            val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isLightOn) 0xFFFFD233.toInt() else palette.textSecondary
+                textSize = (13f * density).coerceIn(11f * density, 15f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(3f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
+            canvas.drawText(st.mainText, cx, centerTileRect.bottom - 8f * density, statusPaint)
+
+            if (hasBadges) {
+                val bottomY = h - pad - 22f * density
+                val pillH = 22f * density
+                val pW = (w - pad * 2).coerceAtMost(96f * density)
+                val bRect = RectF(cx - pW / 2f, bottomY, cx + pW / 2f, bottomY + pillH)
+                drawGlassPill(context, canvas, bRect, null, st.badge1 ?: st.subText ?: "", palette.accentCold, palette)
+            }
+        } else if (st.category == "led_strip") {
+            // --- LED STRIP / TV BACKLIGHT MODE: Large Glowing LED Ribbon ---
+            val hasBadges = st.badge1 != null || st.badge2 != null
+            val bottomH = if (hasBadges) 24f * density else 0f
+            val centerTileTop = pad + titleSize + 8f * density
+            val centerTileBottom = h - pad - bottomH - (if (bottomH > 0) 8f * density else 0f)
+
+            val centerTileRect = RectF(pad, centerTileTop, w - pad, centerTileBottom)
+            drawSquircleCard(canvas, centerTileRect, 14f * density, palette, isSubTile = true)
+
+            val isStripOn = st.mainText == "ВКЛ" || st.mainText == "ВКЛЮЧЕН"
+            val stripSize = (centerTileRect.height() * 0.44f).coerceIn(24f * density, 38f * density)
+            drawVectorLedStrip(canvas, cx, centerTileRect.top + centerTileRect.height() * 0.38f, stripSize, isStripOn, palette)
+
+            val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isStripOn) 0xFF00E676.toInt() else palette.textSecondary
+                textSize = (13f * density).coerceIn(11f * density, 15f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(3f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
+            canvas.drawText(st.mainText, cx, centerTileRect.bottom - 8f * density, statusPaint)
+
+            if (hasBadges) {
+                val bottomY = h - pad - 22f * density
+                val pillH = 22f * density
+                val pW = (w - pad * 2).coerceAtMost(96f * density)
+                val bRect = RectF(cx - pW / 2f, bottomY, cx + pW / 2f, bottomY + pillH)
+                drawGlassPill(context, canvas, bRect, null, st.badge1 ?: st.subText ?: "", palette.accentCold, palette)
+            }
         } else {
             // --- DEVICE SPECIFIC MODE (Kettle, TV, Switch, Vacuum, AC, Leak, Door) - NO ARC! ---
             val hasBadges = st.badge1 != null || st.badge2 != null
@@ -758,40 +1082,62 @@ object WidgetRenderEngine {
             val centerTileRect = RectF(pad, centerTileTop, w - pad, centerTileBottom)
             drawSquircleCard(canvas, centerTileRect, 14f * density, palette, isSubTile = true)
 
-            val isOff = st.mainText == "ВЫКЛ" || st.mainText == "ВЫКЛЮЧЕН" || st.mainText == "НА БАЗЕ"
-            val stateColor = when {
-                st.isAlert -> palette.alertRed
-                isOff -> palette.textSecondary
-                st.mainText == "ВКЛ" || st.mainText == "ВКЛЮЧЕН" || st.mainText == "УБОРКА" -> palette.okGreen
-                else -> palette.textPrimary
-            }
+            if (st.category == "leak" && st.mainText.startsWith("АКБ")) {
+                // When only battery is selected for leak sensor, display battery prominently and NO "СУХО"!
+                val batPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = palette.accentCold
+                    textSize = (centerTileRect.height() * 0.32f).coerceIn(18f * density, 25f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    textAlign = Paint.Align.CENTER
+                    if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+                }
+                val metrics = batPaint.fontMetrics
+                val bY = centerTileRect.centerY() - 4f * density - (metrics.ascent + metrics.descent) / 2f
+                canvas.drawText(st.mainText, cx, bY, batPaint)
 
-            val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = stateColor
-                textSize = (centerTileRect.height() * 0.32f).coerceIn(16f * density, 24f * density)
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                textAlign = Paint.Align.CENTER
-                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
-            }
-            val stateMetrics = statePaint.fontMetrics
-            val stateY = centerTileRect.centerY() - (if (st.subText != null) 4f * density else 0f) - (stateMetrics.ascent + stateMetrics.descent) / 2f
-            val safeState = ellipsizeText(st.mainText, statePaint, centerTileRect.width() - 12f * density)
-            canvas.drawText(safeState, cx, stateY, statePaint)
-
-            if (st.subText != null) {
                 val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = if (st.isAlert) palette.alertRed else palette.textSecondary
+                    color = palette.textSecondary
                     textSize = 10f * density
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     textAlign = Paint.Align.CENTER
-                    if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
                 }
-                val safeSub = ellipsizeText(st.subText, subPaint, centerTileRect.width() - 12f * density)
-                canvas.drawText(safeSub, cx, centerTileRect.bottom - 7f * density, subPaint)
+                canvas.drawText("Заряд батареи", cx, centerTileRect.bottom - 7f * density, subPaint)
+            } else {
+                val isOff = st.mainText == "ВЫКЛ" || st.mainText == "ВЫКЛЮЧЕН" || st.mainText == "НА БАЗЕ"
+                val stateColor = when {
+                    st.isAlert -> palette.alertRed
+                    isOff -> palette.textSecondary
+                    st.mainText == "ВКЛ" || st.mainText == "ВКЛЮЧЕН" || st.mainText == "УБОРКА" -> palette.okGreen
+                    else -> palette.textPrimary
+                }
+
+                val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = stateColor
+                    textSize = (centerTileRect.height() * 0.32f).coerceIn(16f * density, 24f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    textAlign = Paint.Align.CENTER
+                    if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+                }
+                val stateMetrics = statePaint.fontMetrics
+                val stateY = centerTileRect.centerY() - (if (st.subText != null) 4f * density else 0f) - (stateMetrics.ascent + stateMetrics.descent) / 2f
+                val safeState = ellipsizeText(st.mainText, statePaint, centerTileRect.width() - 12f * density)
+                canvas.drawText(safeState, cx, stateY, statePaint)
+
+                if (st.subText != null) {
+                    val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = if (st.isAlert) palette.alertRed else palette.textSecondary
+                        textSize = 10f * density
+                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                        textAlign = Paint.Align.CENTER
+                        if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+                    }
+                    val safeSub = ellipsizeText(st.subText, subPaint, centerTileRect.width() - 12f * density)
+                    canvas.drawText(safeSub, cx, centerTileRect.bottom - 7f * density, subPaint)
+                }
             }
 
             // Bottom Badges
-            if (hasBadges) {
+            if (hasBadges && !st.mainText.startsWith("АКБ")) {
                 val bottomY = h - pad - 22f * density
                 val pillH = 22f * density
                 val hasTwo = st.badge1 != null && st.badge2 != null
@@ -824,8 +1170,8 @@ object WidgetRenderEngine {
         slots: List<WidgetDataManager.BarSlotItem>,
         theme: String
     ): Bitmap {
-        val w = widthPx.coerceAtLeast(320)
-        val h = heightPx.coerceAtLeast(90)
+        val w = widthPx.coerceAtLeast(300)
+        val h = heightPx.coerceAtLeast(85)
         val density = context.resources.displayMetrics.density
         val palette = getThemePalette(theme)
 
@@ -835,14 +1181,14 @@ object WidgetRenderEngine {
         val cornerRadius = palette.cornerRadiusDp * density
         drawSquircleCard(canvas, RectF(0f, 0f, w.toFloat(), h.toFloat()), cornerRadius, palette)
 
-        val actionHotspotWidth = 64f * density
-        val padLeft = 12f * density
-        val padTop = 8f * density
-        val padBottom = 8f * density
+        val actionHotspotWidth = 46f * density
+        val padLeft = 10f * density
+        val padTop = 7f * density
+        val padBottom = 7f * density
         val availWidth = w - padLeft - actionHotspotWidth
 
         val slotCount = slots.size.coerceIn(1, 2)
-        val gap = 8f * density
+        val gap = 6f * density
         val slotW = (availWidth - gap * (slotCount - 1)) / slotCount
 
         for (i in 0 until slotCount) {
@@ -851,54 +1197,92 @@ object WidgetRenderEngine {
             val slotLeft = padLeft + i * (slotW + gap)
             val slotRect = RectF(slotLeft, padTop, slotLeft + slotW, h - padBottom)
 
-            drawSquircleCard(canvas, slotRect, 14f * density, palette, isSubTile = true)
+            drawSquircleCard(canvas, slotRect, 12f * density, palette, isSubTile = true)
 
-            val innerPad = 8f * density
+            val innerPad = if (slotCount == 2) 6f * density else 8f * density
 
             // Top: Icon + Room / Device Name
             val roomPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = palette.textSecondary
-                textSize = (10.5f * density).coerceIn(9f * density, 12f * density)
+                textSize = if (slotCount == 2) 9.5f * density else 11f * density
                 if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
             }
             val titleStr = "${st.iconEmoji} ${slot.title}"
             val roomName = ellipsizeText(titleStr, roomPaint, slotW - innerPad * 2)
             canvas.drawText(roomName, slotLeft + innerPad, padTop + innerPad + roomPaint.textSize, roomPaint)
 
-            // Bottom Metrics Row: Main text + Badge cleanly bounded!
             val contentY = slotRect.bottom - innerPad - 2f * density
-            val isOff = st.mainText == "ВЫКЛ" || st.mainText == "ВЫКЛЮЧЕН" || st.mainText == "НА БАЗЕ"
-            val stateColor = when {
-                st.isAlert -> palette.alertRed
-                isOff -> palette.textSecondary
-                st.mainText == "ВКЛ" || st.mainText == "ВКЛЮЧЕН" || st.mainText == "УБОРКА" || st.mainText == "ЗАКРЫТ" -> palette.okGreen
-                else -> palette.textPrimary
-            }
 
-            val mainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = stateColor
-                textSize = (15f * density).coerceIn(13f * density, 17f * density)
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
-            }
+            if (st.category == "vehicle") {
+                // Vehicle: Show Lock, Engine, Fuel, and Battery
+                val isRunning = st.subText?.contains("Заведён") == true
+                val lockText = if (st.isAlert) "🔓 ОТКРЫТ" else "🔒 ЗАКРЫТ"
+                val lockColor = if (st.isAlert) palette.alertRed else palette.okGreen
 
-            val badgeText = st.badge1 ?: st.subText
-            val maxMainW = if (badgeText != null) (slotW - innerPad * 2) * 0.52f else (slotW - innerPad * 2)
-            val safeMain = ellipsizeText(st.mainText, mainPaint, maxMainW)
-            canvas.drawText(safeMain, slotLeft + innerPad, contentY, mainPaint)
-
-            if (badgeText != null) {
-                val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = if (st.isAlert) palette.alertRed else palette.accentCold
-                    textSize = 11f * density
+                val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = lockColor
+                    textSize = if (slotCount == 2) 11.5f * density else 13.5f * density
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
                 }
-                val availBadgeW = slotRect.right - innerPad - (slotLeft + innerPad + mainPaint.measureText(safeMain) + 6f * density)
-                if (availBadgeW > 20f * density) {
-                    val safeBadge = ellipsizeText(badgeText, badgePaint, availBadgeW)
-                    val badgeX = slotRect.right - innerPad - badgePaint.measureText(safeBadge)
-                    canvas.drawText(safeBadge, badgeX, contentY, badgePaint)
+                val safeLock = ellipsizeText(lockText, lockPaint, (slotW - innerPad * 2) * 0.48f)
+                canvas.drawText(safeLock, slotLeft + innerPad, contentY, lockPaint)
+
+                // Combine fuel & battery & engine into badge
+                val badges = mutableListOf<String>()
+                if (st.badge1 != null) badges.add(st.badge1)
+                if (st.badge2 != null) badges.add(st.badge2)
+                if (isRunning) badges.add("⚡ Заведён")
+                val combinedBadge = badges.joinToString(" • ")
+
+                if (combinedBadge.isNotBlank()) {
+                    val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = palette.accentComfort
+                        textSize = if (slotCount == 2) 9f * density else 10f * density
+                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    }
+                    val lockWidth = lockPaint.measureText(safeLock)
+                    val availW = slotRect.right - innerPad - (slotLeft + innerPad + lockWidth + 4f * density)
+                    if (availW > 16f * density) {
+                        val safeBadge = ellipsizeText(combinedBadge, badgePaint, availW)
+                        val bX = slotRect.right - innerPad - badgePaint.measureText(safeBadge)
+                        canvas.drawText(safeBadge, bX, contentY, badgePaint)
+                    }
+                }
+            } else {
+                val isOff = st.mainText == "ВЫКЛ" || st.mainText == "ВЫКЛЮЧЕН" || st.mainText == "НА БАЗЕ"
+                val stateColor = when {
+                    st.isAlert -> palette.alertRed
+                    isOff -> palette.textSecondary
+                    st.mainText == "ВКЛ" || st.mainText == "ВКЛЮЧЕН" || st.mainText == "УБОРКА" || st.mainText == "ЗАКРЫТ" || st.mainText == "НА ОХРАНЕ" -> palette.okGreen
+                    else -> palette.textPrimary
+                }
+
+                val mainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = stateColor
+                    textSize = if (slotCount == 2) 13f * density else 15f * density
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+                }
+
+                val badgeText = st.badge1 ?: st.subText
+                val maxMainW = if (badgeText != null) (slotW - innerPad * 2) * 0.50f else (slotW - innerPad * 2)
+                val safeMain = ellipsizeText(st.mainText, mainPaint, maxMainW)
+                canvas.drawText(safeMain, slotLeft + innerPad, contentY, mainPaint)
+
+                if (badgeText != null) {
+                    val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = if (st.isAlert) palette.alertRed else palette.accentCold
+                        textSize = if (slotCount == 2) 9f * density else 10.5f * density
+                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                        if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+                    }
+                    val mainWidth = mainPaint.measureText(safeMain)
+                    val availBadgeW = slotRect.right - innerPad - (slotLeft + innerPad + mainWidth + 4f * density)
+                    if (availBadgeW > 16f * density) {
+                        val safeBadge = ellipsizeText(badgeText, badgePaint, availBadgeW)
+                        val badgeX = slotRect.right - innerPad - badgePaint.measureText(safeBadge)
+                        canvas.drawText(safeBadge, badgeX, contentY, badgePaint)
+                    }
                 }
             }
         }
@@ -907,10 +1291,168 @@ object WidgetRenderEngine {
     }
 
     /**
+     * Symmetrical Pod Card for 4x2 Widget:
+     * Used for both left and right pods in 2-device mode and left pod in 3-device mode.
+     * Identical layout, identical vertical positions, zero text clipping or overlapping!
+     */
+    private fun draw4x2PodCard(
+        context: Context,
+        canvas: Canvas,
+        cardRect: RectF,
+        dev: DeviceWidgetState,
+        palette: ThemePalette,
+        density: Float
+    ) {
+        drawSquircleCard(canvas, cardRect, 18f * density, palette, isSubTile = true)
+
+        val innerPad = 10f * density
+
+        // 1. Top Title (Room or Device Name) - inside the pod
+        val titleText = "${dev.iconEmoji} ${dev.roomName ?: dev.name}"
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = palette.textSecondary
+            textSize = (11f * density).coerceIn(9.5f * density, 12f * density)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
+        }
+        val safeTitle = ellipsizeText(titleText, titlePaint, cardRect.width() - innerPad * 2)
+        val titleY = cardRect.top + innerPad + titlePaint.textSize
+        canvas.drawText(safeTitle, cardRect.left + innerPad, titleY, titlePaint)
+
+        // 2. Bottom Badges / Pills (badge1, badge2)
+        val pillH = 22f * density
+        val pillY = cardRect.bottom - innerPad - pillH
+        val hasBadge1 = dev.badge1 != null
+        val hasBadge2 = dev.badge2 != null
+
+        if (hasBadge1 && hasBadge2) {
+            val pillW = (cardRect.width() - innerPad * 2 - 6f * density) / 2f
+            val r1 = RectF(cardRect.left + innerPad, pillY, cardRect.left + innerPad + pillW, pillY + pillH)
+            val r2 = RectF(cardRect.left + innerPad + pillW + 6f * density, pillY, cardRect.right - innerPad, pillY + pillH)
+            drawGlassPill(context, canvas, r1, null, dev.badge1!!, palette.accentComfort, palette)
+            drawGlassPill(context, canvas, r2, null, dev.badge2!!, palette.accentCold, palette)
+        } else if (hasBadge1) {
+            val pillW = (cardRect.width() - innerPad * 2).coerceAtMost(86f * density)
+            val r = RectF(cardRect.centerX() - pillW / 2f, pillY, cardRect.centerX() + pillW / 2f, pillY + pillH)
+            drawGlassPill(context, canvas, r, null, dev.badge1!!, palette.accentCold, palette)
+        }
+
+        // 3. Center Area
+        val centerAvailTop = titleY + 6f * density
+        val centerAvailBottom = if (hasBadge1 || hasBadge2) (pillY - 6f * density) else (cardRect.bottom - innerPad)
+        val centerCy = (centerAvailTop + centerAvailBottom) / 2f
+
+        if (dev.hasComfortArc) {
+            // Climate in Pod
+            val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = palette.textPrimary
+                textSize = (cardRect.height() * 0.30f).coerceIn(18f * density, 27f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+            }
+            val metrics = tempPaint.fontMetrics
+            val tY = centerCy - 4f * density - (metrics.ascent + metrics.descent) / 2f
+            canvas.drawText(dev.mainText, cardRect.centerX(), tY, tempPaint)
+
+            val (comfortColor, comfortText) = getComfortInfo(dev.rawTemperature, palette)
+            val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = comfortColor
+                textSize = 9.5f * density
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
+            canvas.drawText("● $comfortText", cardRect.centerX(), tY + statusPaint.textSize + 6f * density, statusPaint)
+        } else if (dev.category == "light") {
+            // Lighting in Pod
+            val isLightOn = dev.mainText == "ВКЛ" || dev.mainText == "ВКЛЮЧЕН"
+            val bulbSize = (cardRect.height() * 0.34f).coerceIn(24f * density, 34f * density)
+            val bulbCy = centerCy - 6f * density
+            drawVectorLightBulb(canvas, cardRect.centerX(), bulbCy, bulbSize, isLightOn, palette)
+
+            val stPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isLightOn) 0xFFFFD233.toInt() else palette.textSecondary
+                textSize = 11.5f * density
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
+            canvas.drawText(dev.mainText, cardRect.centerX(), centerAvailBottom - 2f * density, stPaint)
+        } else if (dev.category == "led_strip") {
+            // LED Strip in Pod
+            val isStripOn = dev.mainText == "ВКЛ" || dev.mainText == "ВКЛЮЧЕН"
+            val stripSize = (cardRect.height() * 0.34f).coerceIn(24f * density, 34f * density)
+            val stripCy = centerCy - 6f * density
+            drawVectorLedStrip(canvas, cardRect.centerX(), stripCy, stripSize, isStripOn, palette)
+
+            val stPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isStripOn) 0xFF00E676.toInt() else palette.textSecondary
+                textSize = 11.5f * density
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
+            canvas.drawText(dev.mainText, cardRect.centerX(), centerAvailBottom - 2f * density, stPaint)
+        } else if (dev.category == "vehicle") {
+            // Vehicle in Pod
+            val isRunning = dev.subText?.contains("Заведён") == true
+            val isLocked = !dev.isAlert
+            val iconSize = (cardRect.height() * 0.30f).coerceIn(20f * density, 28f * density)
+            val vCy = centerCy - 6f * density
+            drawVectorLock(canvas, cardRect.centerX() - iconSize * 0.65f, vCy, iconSize, isLocked, dev.isAlert, palette)
+            drawVectorCar(canvas, cardRect.centerX() + iconSize * 0.65f, vCy, iconSize, isRunning, palette)
+
+            val secPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (dev.isAlert) palette.alertRed else palette.okGreen
+                textSize = 11f * density
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
+            val secStr = if (isLocked) "ЗАКРЫТ" else "ОТКРЫТ"
+            canvas.drawText(secStr, cardRect.centerX(), centerAvailBottom - 2f * density, secPaint)
+        } else {
+            // Kettle, TV, Switch, Vacuum, Leak, Door
+            val isOff = dev.mainText == "ВЫКЛ" || dev.mainText == "ВЫКЛЮЧЕН" || dev.mainText == "НА БАЗЕ"
+            val stateColor = when {
+                dev.isAlert -> palette.alertRed
+                isOff -> palette.textSecondary
+                dev.mainText == "ВКЛ" || dev.mainText == "ВКЛЮЧЕН" || dev.mainText == "УБОРКА" || dev.mainText == "ЗАКРЫТ" -> palette.okGreen
+                else -> palette.textPrimary
+            }
+
+            val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = stateColor
+                textSize = (cardRect.height() * 0.26f).coerceIn(16f * density, 24f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+            }
+            val metrics = statePaint.fontMetrics
+            val sY = centerCy - (if (dev.subText != null) 6f * density else 0f) - (metrics.ascent + metrics.descent) / 2f
+            val safeState = ellipsizeText(dev.mainText, statePaint, cardRect.width() - innerPad * 2)
+            canvas.drawText(safeState, cardRect.centerX(), sY, statePaint)
+
+            if (dev.subText != null) {
+                val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (dev.isAlert) palette.alertRed else palette.textSecondary
+                    textSize = 10f * density
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    textAlign = Paint.Align.CENTER
+                    if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+                }
+                val safeSub = ellipsizeText(dev.subText, subPaint, cardRect.width() - innerPad * 2)
+                canvas.drawText(safeSub, cardRect.centerX(), sY + subPaint.textSize + 6f * density, subPaint)
+            }
+        }
+    }
+
+    /**
      * 4x2 Flagship Smart Home Hub Dashboard:
-     * Header with isolated Room / Device title + Left Primary Device Compartment (tailored
-     * for vehicle, kettle, tv, switch, climate with zero arc on non-climate!) +
-     * Right Secondary Device Pods (up to 2 devices) with zero text layering!
+     * - 1 Device mode: Left side shows state/temp, right side features large prominent power tile/vector
+     * - 2 Devices mode: Symmetrical Left & Right pods with zero text overlapping, room name inside each pod
+     * - 3 Devices mode: Left pod + Right stacked dual-pods
      */
     fun render4x2WidgetBitmap(
         context: Context,
@@ -936,6 +1478,9 @@ object WidgetRenderEngine {
         val padBottom = 11f * density
 
         val primary = data.primaryState
+        val secCount = data.secondaryDevices.size.coerceAtMost(2)
+        val hasSecondaries = data.secondaryDevices.isNotEmpty()
+        val isTwoDeviceMode = secCount == 1
 
         // 1. Header (Left: Primary Title + Subtitle) - Generous vertical spacing!
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -944,7 +1489,12 @@ object WidgetRenderEngine {
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             if (palette.isGlassmorphism) setShadowLayer(3f * density, 0f, 1.2f * density, 0x90000000.toInt())
         }
-        val headerTitle = ellipsizeText("${primary.iconEmoji} ${data.primaryRoomName}", titlePaint, w - padLeft - 76f * density)
+        val headerTitleStr = if (isTwoDeviceMode || secCount == 2) {
+            "🏠 ${data.primaryRoomName}"
+        } else {
+            "${primary.iconEmoji} ${data.primaryRoomName}"
+        }
+        val headerTitle = ellipsizeText(headerTitleStr, titlePaint, w - padLeft - 76f * density)
         val titleY = padTop + 13f * density
         canvas.drawText(headerTitle, padLeft, titleY, titlePaint)
 
@@ -965,298 +1515,307 @@ object WidgetRenderEngine {
         val bodyTop = subY + 12f * density
         val bodyBottom = h - padBottom
 
-        val hasSecondaries = data.secondaryDevices.isNotEmpty()
-        val leftCardW = if (hasSecondaries) (w - padLeft - padRight - 10f * density) * 0.50f else (w - padLeft - padRight)
+        if (!hasSecondaries) {
+            // --- 1 DEVICE FULL-CARD MODE (Zero dead space!) ---
+            val cardRect = RectF(padLeft, bodyTop, w - padRight, bodyBottom)
+            drawSquircleCard(canvas, cardRect, 18f * density, palette, isSubTile = true)
 
-        // 2. Left Primary Compartment Card (Device 1)
-        val leftCardRect = RectF(padLeft, bodyTop, padLeft + leftCardW, bodyBottom)
-        drawSquircleCard(canvas, leftCardRect, 18f * density, palette, isSubTile = true)
-
-        val innerPad = 10f * density
-
-        if (primary.hasComfortArc) {
-            // Climate Display with Arc
-            val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = palette.textPrimary
-                textSize = (leftCardRect.height() * 0.35f).coerceIn(20f * density, 30f * density)
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                if (palette.isGlassmorphism) setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
+            val innerPad = 12f * density
+            val dTitle = "${primary.iconEmoji} ${primary.roomName ?: primary.name}"
+            val dTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = palette.textSecondary
+                textSize = (12f * density).coerceIn(10.5f * density, 13f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
             }
-            val tempY = leftCardRect.top + innerPad + tempPaint.textSize
-            canvas.drawText(primary.mainText, leftCardRect.left + innerPad, tempY, tempPaint)
+            canvas.drawText(ellipsizeText(dTitle, dTitlePaint, cardRect.width() * 0.55f), cardRect.left + innerPad, cardRect.top + innerPad + dTitlePaint.textSize, dTitlePaint)
 
-            val gaugeRadius = (leftCardRect.height() * 0.22f).coerceIn(14f * density, 22f * density)
-            val gaugeCx = leftCardRect.right - innerPad - gaugeRadius
-            val gaugeCy = leftCardRect.top + innerPad + gaugeRadius
-            drawComfortGaugeRing(canvas, gaugeCx, gaugeCy, gaugeRadius, 4.5f * density, primary.rawTemperature, palette, showStatusText = false)
-
-            val (comfortColor, comfortText) = getComfortInfo(primary.rawTemperature, palette)
-            val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = comfortColor
-                textSize = 9.5f * density
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                if (palette.isGlassmorphism) setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
-            }
-            canvas.drawText(comfortText, leftCardRect.left + innerPad, tempY + statusPaint.textSize + 4f * density, statusPaint)
-
-            var pillX = leftCardRect.left + innerPad
-            val pillH = 22f * density
-            val pillY = leftCardRect.bottom - innerPad - pillH
-
-            if (primary.badge1 != null) {
-                val pillW = 56f * density
-                val humRect = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
-                drawGlassPill(context, canvas, humRect, null, primary.badge1, palette.accentCold, palette)
-                pillX += pillW + 6f * density
-            }
-            if (primary.badge2 != null && (pillX + 54f * density) <= leftCardRect.right - innerPad) {
-                val pillW = 56f * density
-                val pressRect = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
-                drawGlassPill(context, canvas, pressRect, null, primary.badge2, palette.textSecondary, palette)
-            }
-        } else if (primary.category == "vehicle") {
-            // Vehicle Primary Card: Large bold lock status + Engine text underneath + Fuel/Battery pills
-            val secPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = if (primary.isAlert) palette.alertRed else palette.textPrimary
-                textSize = (leftCardRect.height() * 0.22f).coerceIn(16f * density, 22f * density)
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
-            }
-            val secY = leftCardRect.top + innerPad + secPaint.textSize
-            canvas.drawText(primary.mainText, leftCardRect.left + innerPad, secY, secPaint)
-
-            val engPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                val isRunning = primary.subText?.contains("Заведён") == true
-                color = if (isRunning) palette.okGreen else palette.textSecondary
-                textSize = (11f * density).coerceIn(10f * density, 13f * density)
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
-            }
-            canvas.drawText(primary.subText ?: "", leftCardRect.left + innerPad, secY + engPaint.textSize + 6f * density, engPaint)
-
-            var pillX = leftCardRect.left + innerPad
-            val pillH = 22f * density
-            val pillY = leftCardRect.bottom - innerPad - pillH
-
-            if (primary.badge1 != null) {
-                val pillW = (leftCardRect.width() * 0.44f).coerceAtMost(70f * density)
-                val r1 = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
-                drawGlassPill(context, canvas, r1, null, primary.badge1, palette.accentComfort, palette)
-                pillX += pillW + 6f * density
-            }
-            if (primary.badge2 != null && (pillX + 44f * density) <= leftCardRect.right - innerPad) {
-                val pillW = (leftCardRect.width() * 0.44f).coerceAtMost(70f * density)
-                val r2 = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
-                drawGlassPill(context, canvas, r2, null, primary.badge2, palette.accentCold, palette)
-            }
-        } else {
-            // Specialized Display (Kettle, TV, Switch, Vacuum, AC, Leak, Door) - NO ARC!
-            val isOff = primary.mainText == "ВЫКЛ" || primary.mainText == "ВЫКЛЮЧЕН" || primary.mainText == "НА БАЗЕ"
-            val stateColor = when {
-                primary.isAlert -> palette.alertRed
-                isOff -> palette.textSecondary
-                primary.mainText == "ВКЛ" || primary.mainText == "ВКЛЮЧЕН" || primary.mainText == "УБОРКА" -> palette.okGreen
-                else -> palette.textPrimary
-            }
-
-            val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = stateColor
-                textSize = (leftCardRect.height() * 0.26f).coerceIn(16f * density, 24f * density)
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
-            }
-            val stateY = leftCardRect.top + innerPad + statePaint.textSize
-            val safeState = ellipsizeText(primary.mainText, statePaint, leftCardRect.width() - innerPad * 2)
-            canvas.drawText(safeState, leftCardRect.left + innerPad, stateY, statePaint)
-
-            if (primary.subText != null) {
-                val subLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = if (primary.isAlert) palette.alertRed else palette.textSecondary
-                    textSize = 10f * density
+            if (primary.category == "kettle") {
+                // Kettle: Left side shows temperature & status, right side has a large tactile power button!
+                val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = palette.textPrimary
+                    textSize = (cardRect.height() * 0.35f).coerceIn(24f * density, 34f * density)
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
                 }
-                val safeSub = ellipsizeText(primary.subText, subLabelPaint, leftCardRect.width() - innerPad * 2)
-                canvas.drawText(safeSub, leftCardRect.left + innerPad, stateY + subLabelPaint.textSize + 5f * density, subLabelPaint)
-            }
+                val tY = cardRect.centerY() + 2f * density
+                canvas.drawText(primary.mainText, cardRect.left + innerPad, tY, tempPaint)
 
-            var pillX = leftCardRect.left + innerPad
-            val pillH = 22f * density
-            val pillY = leftCardRect.bottom - innerPad - pillH
+                val stPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = palette.textSecondary
+                    textSize = 11.5f * density
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                canvas.drawText(primary.subText ?: "Чайник", cardRect.left + innerPad, tY + stPaint.textSize + 8f * density, stPaint)
 
-            if (primary.badge1 != null) {
-                val pillW = (leftCardRect.width() * 0.44f).coerceAtMost(70f * density)
-                val r1 = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
-                drawGlassPill(context, canvas, r1, null, primary.badge1, palette.accentComfort, palette)
-                pillX += pillW + 6f * density
-            }
-            if (primary.badge2 != null && (pillX + 44f * density) <= leftCardRect.right - innerPad) {
-                val pillW = (leftCardRect.width() * 0.44f).coerceAtMost(70f * density)
-                val r2 = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
-                drawGlassPill(context, canvas, r2, null, primary.badge2, palette.accentCold, palette)
-            }
-        }
+                // Large Power Tile on Right
+                val pW = (cardRect.width() * 0.32f).coerceIn(100f * density, 130f * density)
+                val pH = (cardRect.height() * 0.60f).coerceIn(44f * density, 60f * density)
+                val pRect = RectF(cardRect.right - innerPad - pW, cardRect.centerY() - pH / 2f, cardRect.right - innerPad, cardRect.centerY() + pH / 2f)
 
-        // 3. Right Area: Secondary Devices
-        if (hasSecondaries) {
-            val rightLeft = leftCardRect.right + 10f * density
+                val isKettleOn = primary.badge1 == "ВКЛ" || primary.subText?.contains("Кипят") == true
+                val pBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (isKettleOn) 0x3D00D2B4.toInt() else 0x1EFFFFFF.toInt()
+                    style = Paint.Style.FILL
+                }
+                val pStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (isKettleOn) palette.okGreen else 0x30FFFFFF.toInt()
+                    style = Paint.Style.STROKE
+                    strokeWidth = 1.5f * density
+                }
+                canvas.drawRoundRect(pRect, 14f * density, 14f * density, pBgPaint)
+                canvas.drawRoundRect(pRect, 14f * density, 14f * density, pStrokePaint)
+
+                val pTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (isKettleOn) palette.okGreen else palette.textSecondary
+                    textSize = (pH * 0.34f).coerceIn(12f * density, 15f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    textAlign = Paint.Align.CENTER
+                }
+                val pTextMetrics = pTextPaint.fontMetrics
+                val pTextY = pRect.centerY() - (pTextMetrics.ascent + pTextMetrics.descent) / 2f
+                canvas.drawText(if (isKettleOn) "⏻ ВКЛ" else "⏻ ВЫКЛ", pRect.centerX(), pTextY, pTextPaint)
+            } else if (primary.category == "light") {
+                // Light: Left side shows status & subtitle, right side has large glowing bulb!
+                val isLightOn = primary.mainText == "ВКЛ" || primary.mainText == "ВКЛЮЧЕН"
+                val stColor = if (isLightOn) palette.okGreen else palette.textSecondary
+                val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = stColor
+                    textSize = (cardRect.height() * 0.32f).coerceIn(22f * density, 32f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                val sY = cardRect.centerY() + 2f * density
+                canvas.drawText(primary.mainText, cardRect.left + innerPad, sY, statePaint)
+
+                val subP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = palette.textSecondary
+                    textSize = 11.5f * density
+                }
+                canvas.drawText(primary.subText ?: "Освещение", cardRect.left + innerPad, sY + subP.textSize + 8f * density, subP)
+
+                val bulbSize = (cardRect.height() * 0.50f).coerceIn(36f * density, 48f * density)
+                drawVectorLightBulb(canvas, cardRect.right - innerPad - 45f * density, cardRect.centerY(), bulbSize, isLightOn, palette)
+            } else if (primary.category == "led_strip") {
+                // LED Strip: Left side shows status & subtitle, right side has large glowing LED ribbon!
+                val isStripOn = primary.mainText == "ВКЛ" || primary.mainText == "ВКЛЮЧЕН"
+                val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (isStripOn) palette.okGreen else palette.textSecondary
+                    textSize = (cardRect.height() * 0.32f).coerceIn(22f * density, 32f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                val sY = cardRect.centerY() + 2f * density
+                canvas.drawText(primary.mainText, cardRect.left + innerPad, sY, statePaint)
+
+                val subP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = palette.textSecondary
+                    textSize = 11.5f * density
+                }
+                canvas.drawText(primary.subText ?: "Подсветка", cardRect.left + innerPad, sY + subP.textSize + 8f * density, subP)
+
+                val stripSize = (cardRect.height() * 0.50f).coerceIn(36f * density, 48f * density)
+                drawVectorLedStrip(canvas, cardRect.right - innerPad - 45f * density, cardRect.centerY(), stripSize, isStripOn, palette)
+            } else if (primary.category == "vehicle") {
+                // Vehicle: Left side shows security & engine, pills below, right side shows Lock & Car icons
+                val secPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (primary.isAlert) palette.alertRed else palette.textPrimary
+                    textSize = (cardRect.height() * 0.24f).coerceIn(16f * density, 22f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                val sY = cardRect.top + innerPad + 36f * density
+                canvas.drawText(primary.mainText, cardRect.left + innerPad, sY, secPaint)
+
+                val engPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    val isRunning = primary.subText?.contains("Заведён") == true
+                    color = if (isRunning) palette.okGreen else palette.textSecondary
+                    textSize = 11f * density
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                canvas.drawText(primary.subText ?: "", cardRect.left + innerPad, sY + engPaint.textSize + 6f * density, engPaint)
+
+                var pX = cardRect.left + innerPad
+                val pillH = 22f * density
+                val pillY = cardRect.bottom - innerPad - pillH
+                if (primary.badge1 != null) {
+                    val pW = 70f * density
+                    drawGlassPill(context, canvas, RectF(pX, pillY, pX + pW, pillY + pillH), null, primary.badge1, palette.accentComfort, palette)
+                    pX += pW + 6f * density
+                }
+                if (primary.badge2 != null) {
+                    val pW = 70f * density
+                    drawGlassPill(context, canvas, RectF(pX, pillY, pX + pW, pillY + pillH), null, primary.badge2, palette.accentCold, palette)
+                }
+
+                val iconSize = (cardRect.height() * 0.36f).coerceIn(24f * density, 34f * density)
+                val isRunning = primary.subText?.contains("Заведён") == true
+                val isLocked = !primary.isAlert
+                val rightCenter = cardRect.right - innerPad - 55f * density
+                drawVectorLock(canvas, rightCenter - iconSize * 0.7f, cardRect.centerY(), iconSize, isLocked, primary.isAlert, palette)
+                drawVectorCar(canvas, rightCenter + iconSize * 0.7f, cardRect.centerY(), iconSize, isRunning, palette)
+            } else if (primary.hasComfortArc) {
+                // Climate Single Device: Large Temp & Badges on left, Comfort Gauge on right
+                val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = palette.textPrimary
+                    textSize = (cardRect.height() * 0.35f).coerceIn(20f * density, 32f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                val tY = cardRect.centerY() - 4f * density
+                canvas.drawText(primary.mainText, cardRect.left + innerPad, tY, tempPaint)
+
+                val (comfortColor, comfortText) = getComfortInfo(primary.rawTemperature, palette)
+                val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = comfortColor
+                    textSize = 10.5f * density
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                canvas.drawText("● $comfortText", cardRect.left + innerPad, tY + statusPaint.textSize + 6f * density, statusPaint)
+
+                var pX = cardRect.left + innerPad
+                val pillH = 22f * density
+                val pillY = cardRect.bottom - innerPad - pillH
+                if (primary.badge1 != null) {
+                    val pW = 60f * density
+                    drawGlassPill(context, canvas, RectF(pX, pillY, pX + pW, pillY + pillH), null, primary.badge1, palette.accentCold, palette)
+                    pX += pW + 6f * density
+                }
+                if (primary.badge2 != null) {
+                    val pW = 60f * density
+                    drawGlassPill(context, canvas, RectF(pX, pillY, pX + pW, pillY + pillH), null, primary.badge2, palette.textSecondary, palette)
+                }
+
+                val gaugeRadius = (cardRect.height() * 0.28f).coerceIn(20f * density, 30f * density)
+                val gaugeCx = cardRect.right - innerPad - gaugeRadius - 10f * density
+                drawComfortGaugeRing(canvas, gaugeCx, cardRect.centerY(), gaugeRadius, 5f * density, primary.rawTemperature, palette, showStatusText = false)
+            } else {
+                // TV, Switch, Vacuum, Leak, Door Single Device
+                val isOff = primary.mainText == "ВЫКЛ" || primary.mainText == "ВЫКЛЮЧЕН" || primary.mainText == "НА БАЗЕ"
+                val stateColor = when {
+                    primary.isAlert -> palette.alertRed
+                    isOff -> palette.textSecondary
+                    primary.mainText == "ВКЛ" || primary.mainText == "ВКЛЮЧЕН" || primary.mainText == "УБОРКА" -> palette.okGreen
+                    else -> palette.textPrimary
+                }
+                val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = stateColor
+                    textSize = (cardRect.height() * 0.32f).coerceIn(20f * density, 30f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                val sY = cardRect.centerY() + 2f * density
+                canvas.drawText(primary.mainText, cardRect.left + innerPad, sY, statePaint)
+
+                if (primary.subText != null) {
+                    val subP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = if (primary.isAlert) palette.alertRed else palette.textSecondary
+                        textSize = 11.5f * density
+                    }
+                    canvas.drawText(primary.subText, cardRect.left + innerPad, sY + subP.textSize + 8f * density, subP)
+                }
+
+                var pX = cardRect.left + innerPad
+                val pillH = 22f * density
+                val pillY = cardRect.bottom - innerPad - pillH
+                if (primary.badge1 != null) {
+                    val pW = 70f * density
+                    drawGlassPill(context, canvas, RectF(pX, pillY, pX + pW, pillY + pillH), null, primary.badge1, palette.accentComfort, palette)
+                }
+
+                // Power button on right
+                val pW = (cardRect.width() * 0.32f).coerceIn(100f * density, 130f * density)
+                val pH = (cardRect.height() * 0.60f).coerceIn(44f * density, 60f * density)
+                val pRect = RectF(cardRect.right - innerPad - pW, cardRect.centerY() - pH / 2f, cardRect.right - innerPad, cardRect.centerY() + pH / 2f)
+                val isOn = primary.mainText == "ВКЛ" || primary.mainText == "ВКЛЮЧЕН" || primary.mainText == "УБОРКА"
+                val pBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (isOn) 0x3D00D2B4.toInt() else 0x1EFFFFFF.toInt()
+                    style = Paint.Style.FILL
+                }
+                val pStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (isOn) palette.okGreen else 0x30FFFFFF.toInt()
+                    style = Paint.Style.STROKE
+                    strokeWidth = 1.5f * density
+                }
+                canvas.drawRoundRect(pRect, 14f * density, 14f * density, pBgPaint)
+                canvas.drawRoundRect(pRect, 14f * density, 14f * density, pStrokePaint)
+
+                val pTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (isOn) palette.okGreen else palette.textSecondary
+                    textSize = (pH * 0.34f).coerceIn(12f * density, 15f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    textAlign = Paint.Align.CENTER
+                }
+                val pTextMetrics = pTextPaint.fontMetrics
+                val pTextY = pRect.centerY() - (pTextMetrics.ascent + pTextMetrics.descent) / 2f
+                canvas.drawText(if (isOn) "⏻ ВКЛ" else "⏻ ВЫКЛ", pRect.centerX(), pTextY, pTextPaint)
+            }
+        } else if (isTwoDeviceMode) {
+            // --- 2 DEVICES SYMMETRICAL PODS MODE ---
+            val cardW = (w - padLeft - padRight - 10f * density) * 0.50f
+            val leftCardRect = RectF(padLeft, bodyTop, padLeft + cardW, bodyBottom)
+            val rightCardRect = RectF(padLeft + cardW + 10f * density, bodyTop, w - padRight, bodyBottom)
+
+            draw4x2PodCard(context, canvas, leftCardRect, primary, palette, density)
+            draw4x2PodCard(context, canvas, rightCardRect, data.secondaryDevices[0], palette, density)
+        } else {
+            // --- 3 DEVICES MODE (Left Pod + Right Stacked Dual Pods) ---
+            val cardW = (w - padLeft - padRight - 10f * density) * 0.50f
+            val leftCardRect = RectF(padLeft, bodyTop, padLeft + cardW, bodyBottom)
+            val rightLeft = padLeft + cardW + 10f * density
             val rightW = w - padRight - rightLeft
-            val secCount = data.secondaryDevices.size.coerceAtMost(2)
 
-            if (secCount == 1) {
-                // Exactly 2 devices total! Right card is an equal full square matching the left compartment!
-                val dev = data.secondaryDevices[0]
-                val cardRect = RectF(rightLeft, bodyTop, rightLeft + rightW, bodyBottom)
-                drawSquircleCard(canvas, cardRect, 18f * density, palette, isSubTile = true)
+            draw4x2PodCard(context, canvas, leftCardRect, primary, palette, density)
 
-                val cInnerPad = 10f * density
-                val dTitle = "${dev.iconEmoji} ${dev.name}"
+            val secGap = 6f * density
+            val totalAvailH = bodyBottom - bodyTop
+            val cardH = (totalAvailH - secGap) / 2f
+
+            for (i in 0 until 2) {
+                val dev = data.secondaryDevices[i]
+                val cardTop = bodyTop + i * (cardH + secGap)
+                val cardRect = RectF(rightLeft, cardTop, rightLeft + rightW, cardTop + cardH)
+
+                drawSquircleCard(canvas, cardRect, 12f * density, palette, isSubTile = true)
+
+                val cInnerPad = 8f * density
+                val dTitle = "${dev.iconEmoji} ${dev.roomName ?: dev.name}"
                 val dTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = palette.textSecondary
-                    textSize = (11.5f * density).coerceIn(10f * density, 13f * density)
-                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                    textSize = (10f * density).coerceIn(8.5f * density, 11f * density)
                     if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
                 }
                 val safeDTitle = ellipsizeText(dTitle, dTitlePaint, rightW - cInnerPad * 2)
-                canvas.drawText(safeDTitle, rightLeft + cInnerPad, bodyTop + cInnerPad + dTitlePaint.textSize, dTitlePaint)
+                canvas.drawText(safeDTitle, rightLeft + cInnerPad, cardTop + cInnerPad + dTitlePaint.textSize, dTitlePaint)
 
-                if (dev.hasComfortArc) {
-                    // Climate in secondary square: Centered temperature and comfort label
-                    val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = palette.textPrimary
-                        textSize = (cardRect.height() * 0.32f).coerceIn(18f * density, 28f * density)
-                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                        textAlign = Paint.Align.CENTER
-                        if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
-                    }
-                    val metrics = tempPaint.fontMetrics
-                    val centerY = cardRect.centerY() - 6f * density - (metrics.ascent + metrics.descent) / 2f
-                    canvas.drawText(dev.mainText, cardRect.centerX(), centerY, tempPaint)
+                // Bottom row in card: Main text + badge
+                val dValY = cardRect.bottom - cInnerPad
+                val isOff = dev.mainText == "ВЫКЛ" || dev.mainText == "ВЫКЛЮЧЕН" || dev.mainText == "НА БАЗЕ"
+                val stateColor = when {
+                    dev.isAlert -> palette.alertRed
+                    isOff -> palette.textSecondary
+                    dev.mainText == "ВКЛ" || dev.mainText == "ВКЛЮЧЕН" || dev.mainText == "УБОРКА" || dev.mainText == "ЗАКРЫТ" -> palette.okGreen
+                    else -> palette.textPrimary
+                }
 
-                    val (comfortColor, comfortText) = getComfortInfo(dev.rawTemperature, palette)
-                    val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = comfortColor
-                        textSize = 9.5f * density
+                val dValPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = stateColor
+                    textSize = (12.5f * density).coerceIn(11f * density, 14f * density)
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    if (palette.isGlassmorphism) setShadowLayer(2.5f * density, 0f, 1f * density, 0x85000000.toInt())
+                }
+
+                val badgeStr = dev.badge1 ?: dev.subText
+                val maxValW = if (badgeStr != null) rightW * 0.50f else (rightW - cInnerPad * 2)
+                val safeDVal = ellipsizeText(dev.mainText, dValPaint, maxValW)
+                canvas.drawText(safeDVal, rightLeft + cInnerPad, dValY, dValPaint)
+
+                if (badgeStr != null) {
+                    val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = if (dev.isAlert) palette.alertRed else palette.accentCold
+                        textSize = 10.5f * density
                         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                        textAlign = Paint.Align.CENTER
                         if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
                     }
-                    canvas.drawText("● $comfortText", cardRect.centerX(), centerY + statusPaint.textSize + 6f * density, statusPaint)
-
-                    if (dev.badge1 != null) {
-                        val pillH = 22f * density
-                        val pillW = (rightW - cInnerPad * 2).coerceAtMost(80f * density)
-                        val pillRect = RectF(cardRect.centerX() - pillW / 2f, cardRect.bottom - cInnerPad - pillH, cardRect.centerX() + pillW / 2f, cardRect.bottom - cInnerPad)
-                        drawGlassPill(context, canvas, pillRect, null, dev.badge1, palette.accentCold, palette)
-                    }
-                } else {
-                    // Device in secondary square (Switch, Kettle, TV, Vacuum, AC, Vehicle) - Large centered status!
-                    val isOff = dev.mainText == "ВЫКЛ" || dev.mainText == "ВЫКЛЮЧЕН" || dev.mainText == "НА БАЗЕ"
-                    val stateColor = when {
-                        dev.isAlert -> palette.alertRed
-                        isOff -> palette.textSecondary
-                        dev.mainText == "ВКЛ" || dev.mainText == "ВКЛЮЧЕН" || dev.mainText == "УБОРКА" || dev.mainText == "ЗАКРЫТ" -> palette.okGreen
-                        else -> palette.textPrimary
-                    }
-
-                    val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = stateColor
-                        textSize = (cardRect.height() * 0.26f).coerceIn(16f * density, 24f * density)
-                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                        textAlign = Paint.Align.CENTER
-                        if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
-                    }
-                    val metrics = statePaint.fontMetrics
-                    val centerY = cardRect.centerY() - (if (dev.subText != null) 6f * density else 0f) - (metrics.ascent + metrics.descent) / 2f
-                    val safeState = ellipsizeText(dev.mainText, statePaint, rightW - cInnerPad * 2)
-                    canvas.drawText(safeState, cardRect.centerX(), centerY, statePaint)
-
-                    if (dev.subText != null) {
-                        val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                            color = if (dev.isAlert) palette.alertRed else palette.textSecondary
-                            textSize = 10.5f * density
-                            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                            textAlign = Paint.Align.CENTER
-                            if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
-                        }
-                        val safeSub = ellipsizeText(dev.subText, subPaint, rightW - cInnerPad * 2)
-                        canvas.drawText(safeSub, cardRect.centerX(), centerY + subPaint.textSize + 8f * density, subPaint)
-                    }
-
-                    var pillX = cardRect.left + cInnerPad
-                    val pillH = 22f * density
-                    val pillY = cardRect.bottom - cInnerPad - pillH
-
-                    if (dev.badge1 != null) {
-                        val pillW = (rightW * 0.44f).coerceAtMost(70f * density)
-                        val r1 = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
-                        drawGlassPill(context, canvas, r1, null, dev.badge1, palette.accentComfort, palette)
-                        pillX += pillW + 6f * density
-                    }
-                    if (dev.badge2 != null && (pillX + 44f * density) <= cardRect.right - cInnerPad) {
-                        val pillW = (rightW * 0.44f).coerceAtMost(70f * density)
-                        val r2 = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
-                        drawGlassPill(context, canvas, r2, null, dev.badge2, palette.accentCold, palette)
-                    }
-                }
-            } else {
-                // Exactly 3 devices total: Two vertically stacked rectangular cards on right
-                val secGap = 6f * density
-                val totalAvailH = bodyBottom - bodyTop
-                val cardH = (totalAvailH - secGap) / 2f
-
-                for (i in 0 until 2) {
-                    val dev = data.secondaryDevices[i]
-                    val cardTop = bodyTop + i * (cardH + secGap)
-                    val cardRect = RectF(rightLeft, cardTop, rightLeft + rightW, cardTop + cardH)
-
-                    drawSquircleCard(canvas, cardRect, 12f * density, palette, isSubTile = true)
-
-                    val cInnerPad = 8f * density
-                    val dTitle = "${dev.iconEmoji} ${dev.name}"
-                    val dTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = palette.textSecondary
-                        textSize = (10f * density).coerceIn(8.5f * density, 11f * density)
-                        if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
-                    }
-                    val safeDTitle = ellipsizeText(dTitle, dTitlePaint, rightW - cInnerPad * 2)
-                    canvas.drawText(safeDTitle, rightLeft + cInnerPad, cardTop + cInnerPad + dTitlePaint.textSize, dTitlePaint)
-
-                    // Bottom row in card: Main text + badge
-                    val dValY = cardRect.bottom - cInnerPad
-                    val isOff = dev.mainText == "ВЫКЛ" || dev.mainText == "ВЫКЛЮЧЕН" || dev.mainText == "НА БАЗЕ"
-                    val stateColor = when {
-                        dev.isAlert -> palette.alertRed
-                        isOff -> palette.textSecondary
-                        dev.mainText == "ВКЛ" || dev.mainText == "ВКЛЮЧЕН" || dev.mainText == "УБОРКА" || dev.mainText == "ЗАКРЫТ" -> palette.okGreen
-                        else -> palette.textPrimary
-                    }
-
-                    val dValPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = stateColor
-                        textSize = (12.5f * density).coerceIn(11f * density, 14f * density)
-                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                        if (palette.isGlassmorphism) setShadowLayer(2.5f * density, 0f, 1f * density, 0x85000000.toInt())
-                    }
-
-                    val badgeStr = dev.badge1 ?: dev.subText
-                    val maxValW = if (badgeStr != null) rightW * 0.50f else (rightW - cInnerPad * 2)
-                    val safeDVal = ellipsizeText(dev.mainText, dValPaint, maxValW)
-                    canvas.drawText(safeDVal, rightLeft + cInnerPad, dValY, dValPaint)
-
-                    if (badgeStr != null) {
-                        val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                            color = if (dev.isAlert) palette.alertRed else palette.accentCold
-                            textSize = 10.5f * density
-                            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                            if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
-                        }
-                        val availBadgeW = cardRect.right - cInnerPad - (rightLeft + cInnerPad + dValPaint.measureText(safeDVal) + 6f * density)
-                        if (availBadgeW > 16f * density) {
-                            val safeBadge = ellipsizeText(badgeStr, badgePaint, availBadgeW)
-                            val bX = cardRect.right - cInnerPad - badgePaint.measureText(safeBadge)
-                            canvas.drawText(safeBadge, bX, dValY, badgePaint)
-                        }
+                    val availBadgeW = cardRect.right - cInnerPad - (rightLeft + cInnerPad + dValPaint.measureText(safeDVal) + 6f * density)
+                    if (availBadgeW > 16f * density) {
+                        val safeBadge = ellipsizeText(badgeStr, badgePaint, availBadgeW)
+                        val bX = cardRect.right - cInnerPad - badgePaint.measureText(safeBadge)
+                        canvas.drawText(safeBadge, bX, dValY, badgePaint)
                     }
                 }
             }

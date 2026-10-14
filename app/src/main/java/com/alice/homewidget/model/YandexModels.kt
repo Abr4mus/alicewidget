@@ -69,7 +69,7 @@ data class Device(
     fun getBattery(): Double? = getFloatProperty("battery_level")
     fun getPower(): Double? = getFloatProperty("power")
     fun getVoltage(): Double? = getFloatProperty("voltage")
-    fun getWaterOrFuelLevel(): Double? = getFloatProperty("water_level") ?: getFloatProperty("fuel_level")
+    fun getWaterOrFuelLevel(): Double? = getFloatProperty("water_level") ?: getFloatProperty("fuel_level") ?: getFloatProperty("fuel")
 
     // Availability checks (strictly physical, never guessed by device type)
     fun hasTemperature(): Boolean = hasFloatProperty("temperature") && getTemperature() != null
@@ -77,7 +77,8 @@ data class Device(
     fun hasPressure(): Boolean = hasFloatProperty("pressure") && getPressure() != null
     fun hasBattery(): Boolean = hasFloatProperty("battery_level") && getBattery() != null
     fun hasPower(): Boolean = hasFloatProperty("power") && getPower() != null
-    fun hasWaterOrFuel(): Boolean = (hasFloatProperty("water_level") || hasFloatProperty("fuel_level")) && getWaterOrFuelLevel() != null
+    fun hasVoltage(): Boolean = hasFloatProperty("voltage") && getVoltage() != null
+    fun hasWaterOrFuel(): Boolean = (hasFloatProperty("water_level") || hasFloatProperty("fuel_level") || hasFloatProperty("fuel")) && getWaterOrFuelLevel() != null
 
     // Door / Contact sensors
     fun hasDoorSensor(): Boolean = (properties?.any { it.state?.instance == "open" || it.parameters?.instance == "open" } == true) || (type?.contains("sensor.open") == true)
@@ -112,19 +113,55 @@ data class Device(
         val n = name.lowercase()
         if (t.contains("car") || t.contains("auto") || t.contains("vehicle")) return true
         val keywords = listOf(
-            "авто", "машин", "car", "starline", "pandora", "сигнализац", "лада", "веста", "гранта",
-            "bmw", "mercedes", "audi", "haval", "geely", "chery", "hyundai", "kia", "toyota", "vw", "volkswagen", "skoda"
+            "авто", "машин", "car", "starline", "pandora", "старлайн", "пандора", "сигнализац", "сигналк",
+            "лада", "веста", "гранта", "нива", "bmw", "mercedes", "audi", "haval", "geely", "chery",
+            "omoda", "exeed", "tank", "monjaro", "changan", "hyundai", "kia", "toyota", "vw", "volkswagen",
+            "skoda", "mazda", "ford", "nissan", "lexus", "subaru", "honda", "renault", "рено", "киа",
+            "хендай", "хёндай", "тойота", "шкода", "фольксваген", "бмв", "мерседес", "ауди"
         )
         if (keywords.any { n.contains(it) }) return true
-        return (hasWaterOrFuel() && (hasBattery() || isOnOffDevice()))
+        return (hasWaterOrFuel() && (hasBattery() || hasVoltage() || isOnOffDevice()))
     }
 
     fun isAc(): Boolean {
         val t = type?.lowercase() ?: ""
         val n = name.lowercase()
-        if (t.contains("thermostat") || t.contains("ac") || t.contains("air_conditioner") || t.contains("climate")) return true
-        val keywords = listOf("кондиционер", "кондёр", "сплит", "ac", "климат", "охлаждение", "обогрев", "тепловой насос")
+        if (t.contains("sensor")) return false
+        if (t == "devices.types.ac" || t == "devices.types.thermostat" || t == "devices.types.thermostat.ac" ||
+            t.endsWith(".ac") || t.contains("air_conditioner")) return true
+        val keywords = listOf("кондиционер", "кондёр", "сплит", "тепловой насос")
         return keywords.any { n.contains(it) }
+    }
+
+    fun isExcludedFromWidget(): Boolean {
+        val t = type?.lowercase() ?: ""
+        val n = name.lowercase()
+        // Hubs, Gateways, Bridges
+        if (t.contains("hub") || t.contains("gateway") || t.contains("bridge")) return true
+        if (n.contains("хаб") || n.contains("шлюз")) return true
+
+        // Yandex Stations and Smart Speakers
+        if (t.contains("speaker") || t.contains("yandexstation") || t.contains("smart_speaker")) return true
+        if (n.contains("станция") || n.contains("колонка") || n.contains("алиса")) return true
+
+        // Remote controls / IR Remotes
+        if (t.contains("remote_control") || t.contains("remote")) return true
+        if (n.contains("пульт") && !isTv() && !isVacuum() && !isAc()) return true
+
+        return false
+    }
+
+    fun isLedStrip(): Boolean {
+        val t = type?.lowercase() ?: ""
+        val n = name.lowercase()
+        return t.contains("strip") || t.contains("led") ||
+               n.contains("лента") || n.contains("подсветк") || n.contains("led") || n.contains("strip") || n.contains("диодн")
+    }
+
+    fun isLightBulb(): Boolean {
+        val t = type?.lowercase() ?: ""
+        val n = name.lowercase()
+        return (t.contains("light") || n.contains("свет") || n.contains("ламп") || n.contains("люстр") || n.contains("бра") || n.contains("торшер")) && !isLedStrip()
     }
 
     fun isVacuum(): Boolean {
@@ -194,18 +231,35 @@ data class Device(
         return null
     }
 
+    fun isVehicleRunning(): Boolean {
+        if (isTurnedOn() == true) return true
+        val engCap = capabilities?.firstOrNull {
+            it.state?.instance == "engine" || it.state?.instance == "ignition" ||
+            it.parameters?.toString()?.contains("engine") == true
+        }
+        if (engCap?.state?.value == true || engCap?.state?.value?.toString()?.lowercase() == "on") return true
+        val engProp = properties?.firstOrNull {
+            it.state?.instance == "engine" || it.state?.instance == "ignition"
+        }
+        val engVal = engProp?.state?.value?.toString()?.lowercase()
+        if (engVal == "running" || engVal == "on" || engVal == "started" || engVal == "заведён" || engVal == "заведен") return true
+        return false
+    }
+
     fun getVehicleSecurityState(): String {
         val sec = getEventProperty("security")
         if (sec != null) {
-            return if (sec == "armed" || sec == "lock" || sec == "locked") "На охране" else "Снят с охраны"
+            val s = sec.lowercase()
+            return if (s.contains("arm") || s.contains("lock") || s.contains("охран") || s.contains("закр")) "На охране" else "Снят с охраны"
+        }
+        val lock = getEventProperty("lock")
+        if (lock != null) {
+            val l = lock.lowercase()
+            return if (l == "locked" || l == "lock" || l.contains("закр")) "Закрыт" else "Открыт"
         }
         val op = isDoorOrWindowOpen()
         if (op != null) {
             return if (op) "Открыт" else "Закрыт"
-        }
-        val lock = getEventProperty("lock")
-        if (lock != null) {
-            return if (lock == "locked") "Закрыт" else "Открыт"
         }
         return "Закрыт"
     }
@@ -230,7 +284,7 @@ data class Device(
     ): DeviceWidgetState {
         return when {
             isVehicle() -> {
-                val isRunning = isTurnedOn() == true
+                val isRunning = isVehicleRunning()
                 val sec = getVehicleSecurityState()
                 val isSecOpen = sec == "Открыт" || sec == "Снят с охраны"
                 val secMain = sec.uppercase()
@@ -341,19 +395,26 @@ data class Device(
             }
             hasLeakSensor() -> {
                 val isLeak = hasWaterLeak() == true
-                val main = if (isLeak) "ПРОТЕЧКА!" else "СУХО"
+                val showLeakState = metricSetting?.showLeak ?: true
                 val showBat = metricSetting?.showBattery ?: true
                 val bat = if (showBat) getBattery()?.let { String.format(java.util.Locale.US, "%.0f%%", it) } else null
+                val main = if (showLeakState) {
+                    if (isLeak) "ПРОТЕЧКА!" else "СУХО"
+                } else {
+                    bat?.let { "АКБ $it" } ?: (if (isLeak) "ПРОТЕЧКА!" else "СУХО")
+                }
+                val sub = if (!showLeakState && bat != null) "Заряд батареи" else "Датчик протечки"
+                val b1 = if (showLeakState) bat?.let { "🔋 $it" } else null
                 DeviceWidgetState(
                     id = id,
                     name = name,
                     roomName = roomName,
                     category = "leak",
                     mainText = main,
-                    subText = "Датчик протечки",
-                    badge1 = bat?.let { "🔋 $it" },
+                    subText = sub,
+                    badge1 = b1,
                     badge2 = null,
-                    iconEmoji = "💧",
+                    iconEmoji = if (!showLeakState && bat != null) "🔋" else "💧",
                     isAlert = isLeak,
                     hasComfortArc = false,
                     rawTemperature = null
@@ -380,18 +441,32 @@ data class Device(
                 )
             }
             isLightingOrSwitch() -> {
-                val isLight = type?.contains("light") == true || name.lowercase().contains("свет") || name.lowercase().contains("люстр")
+                val isLed = isLedStrip()
+                val isLight = isLightBulb()
                 val isSocket = type?.contains("socket") == true || name.lowercase().contains("розетк")
-                val icon = if (isSocket) "🔌" else "💡"
+                val icon = when {
+                    isLed -> "🌈"
+                    isSocket -> "🔌"
+                    else -> "💡"
+                }
+                val cat = when {
+                    isLed -> "led_strip"
+                    isLight -> "light"
+                    else -> "switch"
+                }
                 val main = if (isTurnedOn() == true) "ВКЛ" else "ВЫКЛ"
                 val showPwr = metricSetting?.showPower ?: true
                 val p = if (showPwr) getPower()?.let { String.format(java.util.Locale.US, "%.0f Вт", it) } else null
-                val sub = p ?: if (isSocket) "Розетка" else "Освещение"
+                val sub = p ?: when {
+                    isLed -> "Подсветка"
+                    isSocket -> "Розетка"
+                    else -> "Освещение"
+                }
                 DeviceWidgetState(
                     id = id,
                     name = name,
                     roomName = roomName,
-                    category = "switch",
+                    category = cat,
                     mainText = main,
                     subText = sub,
                     badge1 = p?.let { "⚡ $it" },

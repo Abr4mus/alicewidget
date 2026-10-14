@@ -239,6 +239,8 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(getColor(R.color.alice_neon_light))
                 setOnClickListener {
                     val intent = Intent(this@MainActivity, WidgetConfigureActivity::class.java).apply {
+                        action = "com.alice.homewidget.CONFIGURE_WIDGET_$widgetId"
+                        data = android.net.Uri.parse("alice://widget/$widgetId")
                         putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
                     }
                     startActivity(intent)

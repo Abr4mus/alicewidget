@@ -227,7 +227,7 @@ class WidgetDataManager(context: Context) {
     }
 
     fun getAllRelevantDevices(): List<Device> {
-        return getCachedUserInfo()?.devices ?: emptyList()
+        return (getCachedUserInfo()?.devices ?: emptyList()).filter { !it.isExcludedFromWidget() }
     }
 
     fun getDevicesForRoom(roomId: String?): List<Device> {
@@ -248,7 +248,7 @@ class WidgetDataManager(context: Context) {
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "4x2") else null
         val selectedIds = config?.selectedDeviceIds ?: emptyList()
-        val allDevices = cached.devices ?: emptyList()
+        val allDevices = (cached.devices ?: emptyList()).filter { !it.isExcludedFromWidget() }
         val rooms = cached.rooms ?: emptyList()
 
         // 4x2: Up to 3 devices maximum, strictly preserving user's selection order!
@@ -274,8 +274,9 @@ class WidgetDataManager(context: Context) {
             rooms.firstOrNull { it.id == primaryDev.room || it.hasDevice(primaryDev.id) }
         } else null
 
+        val isTwoDeviceMode = targetDevices.size == 2
         val primaryTitle = config?.customTitle?.ifBlank { null }
-            ?: (if (primaryDev.isVehicle()) primaryDev.name else primaryRoom?.name ?: primaryDev.name)
+            ?: (if (isTwoDeviceMode) "Устройства" else (if (primaryDev.isVehicle()) primaryDev.name else primaryRoom?.name ?: primaryDev.name))
             ?: "Умный дом"
 
         val primaryMetricSetting = getDeviceMetricSetting(primaryDev.id, appWidgetId)
@@ -321,7 +322,7 @@ class WidgetDataManager(context: Context) {
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "4x1") else null
         val selectedIds = config?.selectedDeviceIds ?: emptyList()
-        val allDevices = cached.devices ?: emptyList()
+        val allDevices = (cached.devices ?: emptyList()).filter { !it.isExcludedFromWidget() }
         val rooms = cached.rooms ?: emptyList()
 
         // 4x1: Up to 2 devices maximum, strictly preserving user's selection order!
@@ -365,7 +366,7 @@ class WidgetDataManager(context: Context) {
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "2x1") else null
         val selectedIds = config?.selectedDeviceIds ?: emptyList()
-        val allDevices = cached.devices ?: emptyList()
+        val allDevices = (cached.devices ?: emptyList()).filter { !it.isExcludedFromWidget() }
         val rooms = cached.rooms ?: emptyList()
 
         // 2x1: Strictly 1 device, strictly preserving user's selection!

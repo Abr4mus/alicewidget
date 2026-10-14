@@ -248,18 +248,6 @@
                     <!-- Populated programmatically -->
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/btnConfigSave"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="16dp"
-                    android:backgroundTint="@color/alice_neon_purple"
-                    android:text="💾 Сохранить и применить к этому виджету"
-                    android:textColor="@color/white"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    app:cornerRadius="12dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

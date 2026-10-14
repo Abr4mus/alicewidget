@@ -102,7 +102,8 @@ class AliceCompact2x1WidgetProvider : AppWidgetProvider() {
                 views.setOnClickPendingIntent(R.id.btnWidgetRefresh, refreshPendingIntent)
 
                 // Dynamic contrast for action buttons in light themes
-                val isLightTheme = config.theme == WidgetDataManager.THEME_YANDEX_WHITE
+                val palette = WidgetRenderEngine.getThemePalette(config.theme)
+                val isLightTheme = palette.isLight
                 val iconColor = if (isLightTheme) 0xFF22252A.toInt() else 0xE6FFFFFF.toInt()
                 val rippleBg = if (isLightTheme) R.drawable.bg_btn_ripple_light else R.drawable.bg_btn_ripple
                 views.setInt(R.id.ivWidgetConfigure, "setColorFilter", iconColor)
