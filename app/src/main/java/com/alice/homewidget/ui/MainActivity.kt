@@ -56,7 +56,6 @@ class MainActivity : AppCompatActivity() {
         dataManager = WidgetDataManager(this)
 
         initViews()
-        initThemeSelector()
         renderActiveWidgets()
         renderCachedStatus()
     }
@@ -148,41 +147,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.yandex.iot")))
             }
-        }
-    }
-
-    private fun initThemeSelector() {
-        when (dataManager.defaultTheme) {
-            WidgetDataManager.THEME_IOS -> binding.rbThemeIos.isChecked = true
-            WidgetDataManager.THEME_ALICE -> binding.rbThemeAlice.isChecked = true
-            WidgetDataManager.THEME_YANDEX_WHITE -> binding.rbThemeYandexWhite.isChecked = true
-            WidgetDataManager.THEME_FLUENT_PASTEL -> binding.rbThemeFluentPastel.isChecked = true
-            WidgetDataManager.THEME_CYBERPUNK -> binding.rbThemeCyberpunk.isChecked = true
-            WidgetDataManager.THEME_NORDIC_AURORA -> binding.rbThemeNordicAurora.isChecked = true
-            else -> binding.rbThemeXiaomi.isChecked = true
-        }
-
-        binding.rgThemeSelector.setOnCheckedChangeListener { _, checkedId ->
-            val theme = when (checkedId) {
-                R.id.rbThemeIos -> WidgetDataManager.THEME_IOS
-                R.id.rbThemeAlice -> WidgetDataManager.THEME_ALICE
-                R.id.rbThemeYandexWhite -> WidgetDataManager.THEME_YANDEX_WHITE
-                R.id.rbThemeFluentPastel -> WidgetDataManager.THEME_FLUENT_PASTEL
-                R.id.rbThemeCyberpunk -> WidgetDataManager.THEME_CYBERPUNK
-                R.id.rbThemeNordicAurora -> WidgetDataManager.THEME_NORDIC_AURORA
-                else -> WidgetDataManager.THEME_XIAOMI
-            }
-            dataManager.defaultTheme = theme
-            val name = when (theme) {
-                WidgetDataManager.THEME_IOS -> "iPhone / iOS"
-                WidgetDataManager.THEME_ALICE -> "Яндекс / Алиса"
-                WidgetDataManager.THEME_YANDEX_WHITE -> "Белый Яндекс"
-                WidgetDataManager.THEME_FLUENT_PASTEL -> "Fluent Pastel"
-                WidgetDataManager.THEME_CYBERPUNK -> "Киберпанк Неон"
-                WidgetDataManager.THEME_NORDIC_AURORA -> "Северное сияние"
-                else -> "Xiaomi HyperOS"
-            }
-            Toast.makeText(this, "Стиль по умолчанию: $name", Toast.LENGTH_SHORT).show()
         }
     }
 

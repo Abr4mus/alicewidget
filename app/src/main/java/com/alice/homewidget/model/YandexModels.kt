@@ -101,7 +101,7 @@ data class Device(
     }
 
     fun isClimateSensor(): Boolean {
-        return !isVehicle() && !isKettle() && !isTv() &&
+        return !isVehicle() && !isKettle() && !isTv() && !isAc() && !isVacuum() &&
                (type?.contains("sensor.climate") == true || type?.contains("sensor.temp") == true || (hasTemperature() && hasHumidity()))
     }
 
@@ -117,6 +117,22 @@ data class Device(
         )
         if (keywords.any { n.contains(it) }) return true
         return (hasWaterOrFuel() && (hasBattery() || isOnOffDevice()))
+    }
+
+    fun isAc(): Boolean {
+        val t = type?.lowercase() ?: ""
+        val n = name.lowercase()
+        if (t.contains("thermostat") || t.contains("ac") || t.contains("air_conditioner") || t.contains("climate")) return true
+        val keywords = listOf("кондиционер", "кондёр", "сплит", "ac", "климат", "охлаждение", "обогрев", "тепловой насос")
+        return keywords.any { n.contains(it) }
+    }
+
+    fun isVacuum(): Boolean {
+        val t = type?.lowercase() ?: ""
+        val n = name.lowercase()
+        if (t.contains("vacuum") || t.contains("cleaner") || t.contains("robot")) return true
+        val keywords = listOf("пылесос", "робот-пылесос", "робот", "уборка", "vacuum", "dreame", "roborock", "xiaomi vacuum", "irobot")
+        return keywords.any { n.contains(it) }
     }
 
     fun isKettle(): Boolean {
@@ -135,7 +151,37 @@ data class Device(
         val t = type?.lowercase() ?: ""
         val n = name.lowercase()
         return t.contains("light") || t.contains("switch") || t.contains("socket") || t.contains("relay") ||
-               (isOnOffDevice() && !isVehicle() && !isKettle() && !isTv() && !isClimateSensor())
+               (isOnOffDevice() && !isVehicle() && !isKettle() && !isTv() && !isAc() && !isVacuum() && !isClimateSensor())
+    }
+
+    fun getTargetTemperature(): Double? {
+        val cap = capabilities?.firstOrNull {
+            it.type == "devices.capabilities.range" &&
+            (it.state?.instance == "temperature" || it.parameters?.toString()?.contains("temperature") == true)
+        } ?: return null
+        return when (val v = cap.state?.value) {
+            is Number -> v.toDouble()
+            is String -> v.toDoubleOrNull()
+            else -> null
+        }
+    }
+
+    fun getThermostatMode(): String? {
+        val cap = capabilities?.firstOrNull {
+            it.type == "devices.capabilities.mode" &&
+            (it.state?.instance == "thermostat" || it.state?.instance == "work_speed")
+        }
+        val modeVal = cap?.state?.value?.toString()?.lowercase() ?: return null
+        return when (modeVal) {
+            "cool" -> "Охлаждение"
+            "heat" -> "Обогрев"
+            "auto" -> "Авто"
+            "dry" -> "Осушение"
+            "fan_only" -> "Вентиляция"
+            "quiet" -> "Тихий"
+            "turbo", "max" -> "Турбо"
+            else -> modeVal.replaceFirstChar { it.uppercase() }
+        }
     }
 
     fun getVehicleFuel(): Double? = getWaterOrFuelLevel()
@@ -178,26 +224,81 @@ data class Device(
         }
     }
 
-    fun toWidgetState(roomName: String?): DeviceWidgetState {
+    fun toWidgetState(
+        roomName: String?,
+        metricSetting: com.alice.homewidget.data.WidgetDataManager.DeviceMetricSetting? = null
+    ): DeviceWidgetState {
         return when {
             isVehicle() -> {
                 val isRunning = isTurnedOn() == true
-                val main = if (isRunning) "Заведён" else "Заглушен"
                 val sec = getVehicleSecurityState()
-                val fuel = getVehicleFuel()?.let { String.format(java.util.Locale.US, "%.0f%%", it) }
-                val bat = getVehicleBatteryOrVoltage()
-                val temp = getTemperature()?.let { String.format(java.util.Locale.US, "%.0f°", it) }
+                val isSecOpen = sec == "Открыт" || sec == "Снят с охраны"
+                val secMain = sec.uppercase()
+                val engineText = "Двигатель: " + (if (isRunning) "Заведён" else "Заглушен")
+
+                val showFuel = metricSetting?.showFuel ?: true
+                val showBat = metricSetting?.showBattery ?: true
+                val fuel = if (showFuel) getVehicleFuel()?.let { String.format(java.util.Locale.US, "%.0f%%", it) } else null
+                val bat = if (showBat) getVehicleBatteryOrVoltage() else null
+
                 DeviceWidgetState(
                     id = id,
                     name = name,
                     roomName = roomName,
                     category = "vehicle",
-                    mainText = main,
-                    subText = "🔒 $sec",
-                    badge1 = fuel?.let { "⛽ $it" } ?: temp?.let { "🌡️ $it" },
-                    badge2 = bat?.let { "🔋 $it" } ?: (if (fuel != null) temp?.let { "🌡️ $it" } else null),
+                    mainText = secMain,
+                    subText = engineText,
+                    badge1 = fuel?.let { "⛽ $it" } ?: bat?.let { "🔋 $it" },
+                    badge2 = if (fuel != null) bat?.let { "🔋 $it" } else null,
                     iconEmoji = "🚗",
-                    isAlert = sec == "Открыт" || sec == "Снят с охраны",
+                    isAlert = isSecOpen,
+                    hasComfortArc = false,
+                    rawTemperature = null
+                )
+            }
+            isAc() -> {
+                val isOn = isTurnedOn() == true
+                val targetT = getTargetTemperature()
+                val mode = getThermostatMode()
+                val main = if (isOn) {
+                    targetT?.let { String.format(java.util.Locale.US, "%.0f°", it) } ?: "ВКЛ"
+                } else {
+                    "ВЫКЛ"
+                }
+                val sub = if (isOn) (mode ?: "Охлаждение") else "Кондиционер"
+                val b1 = if (isOn) "❄️ ВКЛ" else null
+
+                DeviceWidgetState(
+                    id = id,
+                    name = name,
+                    roomName = roomName,
+                    category = "ac",
+                    mainText = main,
+                    subText = sub,
+                    badge1 = b1,
+                    badge2 = null,
+                    iconEmoji = "❄️",
+                    isAlert = false,
+                    hasComfortArc = false,
+                    rawTemperature = null
+                )
+            }
+            isVacuum() -> {
+                val isOn = isTurnedOn() == true
+                val main = if (isOn) "УБОРКА" else "НА БАЗЕ"
+                val bat = getBattery()?.let { String.format(java.util.Locale.US, "%.0f%%", it) }
+
+                DeviceWidgetState(
+                    id = id,
+                    name = name,
+                    roomName = roomName,
+                    category = "vacuum",
+                    mainText = main,
+                    subText = "Пылесос",
+                    badge1 = bat?.let { "🔋 $it" },
+                    badge2 = null,
+                    iconEmoji = "🧹",
+                    isAlert = false,
                     hasComfortArc = false,
                     rawTemperature = null
                 )
@@ -222,7 +323,7 @@ data class Device(
                 )
             }
             isTv() -> {
-                val main = if (isTurnedOn() == true) "ВКЛЮЧЕН" else "ВЫКЛЮЧЕН"
+                val main = if (isTurnedOn() == true) "ВКЛ" else "ВЫКЛ"
                 DeviceWidgetState(
                     id = id,
                     name = name,
@@ -241,7 +342,8 @@ data class Device(
             hasLeakSensor() -> {
                 val isLeak = hasWaterLeak() == true
                 val main = if (isLeak) "ПРОТЕЧКА!" else "СУХО"
-                val bat = getBattery()?.let { String.format(java.util.Locale.US, "%.0f%%", it) }
+                val showBat = metricSetting?.showBattery ?: true
+                val bat = if (showBat) getBattery()?.let { String.format(java.util.Locale.US, "%.0f%%", it) } else null
                 DeviceWidgetState(
                     id = id,
                     name = name,
@@ -259,8 +361,9 @@ data class Device(
             }
             hasDoorSensor() -> {
                 val isOpen = isDoorOrWindowOpen() == true
-                val main = if (isOpen) "ОТКРЫТО!" else "Закрыто"
-                val bat = getBattery()?.let { String.format(java.util.Locale.US, "%.0f%%", it) }
+                val main = if (isOpen) "ОТКРЫТО!" else "ЗАКРЫТО"
+                val showBat = metricSetting?.showBattery ?: true
+                val bat = if (showBat) getBattery()?.let { String.format(java.util.Locale.US, "%.0f%%", it) } else null
                 DeviceWidgetState(
                     id = id,
                     name = name,
@@ -280,8 +383,9 @@ data class Device(
                 val isLight = type?.contains("light") == true || name.lowercase().contains("свет") || name.lowercase().contains("люстр")
                 val isSocket = type?.contains("socket") == true || name.lowercase().contains("розетк")
                 val icon = if (isSocket) "🔌" else "💡"
-                val main = if (isTurnedOn() == true) "ВКЛЮЧЕН" else "ВЫКЛЮЧЕН"
-                val p = getPower()?.let { String.format(java.util.Locale.US, "%.0f Вт", it) }
+                val main = if (isTurnedOn() == true) "ВКЛ" else "ВЫКЛ"
+                val showPwr = metricSetting?.showPower ?: true
+                val p = if (showPwr) getPower()?.let { String.format(java.util.Locale.US, "%.0f Вт", it) } else null
                 val sub = p ?: if (isSocket) "Розетка" else "Освещение"
                 DeviceWidgetState(
                     id = id,
@@ -299,14 +403,28 @@ data class Device(
                 )
             }
             else -> {
-                val t = getTemperature()
-                val h = getHumidity()
-                val p = getPressure()
-                val bat = getBattery()
-                val tStr = t?.let { String.format(java.util.Locale.US, "%.1f°", it) } ?: "--°"
-                val humStr = h?.let { String.format(java.util.Locale.US, "💧 %.0f%%", it) }
+                val showTemp = metricSetting?.showTemperature ?: true
+                val showHum = metricSetting?.showHumidity ?: true
+                val showPress = metricSetting?.showPressure ?: false
+                val showBat = metricSetting?.showBattery ?: true
+
+                val t = if (showTemp) getTemperature() else null
+                val h = if (showHum) getHumidity() else null
+                val p = if (showPress) getPressure() else null
+                val bat = if (showBat) getBattery() else null
+
+                val tStr = when {
+                    t != null -> String.format(java.util.Locale.US, "%.1f°", t)
+                    h != null -> String.format(java.util.Locale.US, "💧 %.0f%%", h)
+                    else -> "--°"
+                }
+                val humStr = if (t != null && h != null) String.format(java.util.Locale.US, "💧 %.0f%%", h) else null
                 val pressStr = p?.let { String.format(java.util.Locale.US, "📊 %.0f", it) }
                 val batStr = bat?.let { String.format(java.util.Locale.US, "🔋 %.0f%%", it) }
+
+                val b1 = humStr ?: pressStr ?: batStr
+                val b2 = if (b1 == humStr) (pressStr ?: batStr) else (if (b1 == pressStr) batStr else null)
+
                 DeviceWidgetState(
                     id = id,
                     name = name,
@@ -314,8 +432,8 @@ data class Device(
                     category = "climate",
                     mainText = tStr,
                     subText = if (t != null) "Комфортно" else "Датчик",
-                    badge1 = humStr ?: batStr,
-                    badge2 = pressStr ?: (if (humStr != null) batStr else null),
+                    badge1 = b1,
+                    badge2 = b2,
                     iconEmoji = "🌡️",
                     isAlert = false,
                     hasComfortArc = t != null,
@@ -330,7 +448,7 @@ data class DeviceWidgetState(
     val id: String,
     val name: String,
     val roomName: String?,
-    val category: String, // "vehicle", "kettle", "tv", "switch", "leak", "door", "climate"
+    val category: String, // "vehicle", "kettle", "tv", "switch", "leak", "door", "climate", "ac", "vacuum"
     val mainText: String,
     val subText: String?,
     val badge1: String?,

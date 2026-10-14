@@ -76,7 +76,7 @@ class WidgetDataManager(context: Context) {
     )
 
     fun getWidgetConfig(appWidgetId: Int, defaultType: String = "4x2"): WidgetInstanceConfig {
-        val theme = prefs.getString("w_${appWidgetId}_theme", defaultTheme) ?: defaultTheme
+        val theme = prefs.getString("w_${appWidgetId}_theme", THEME_XIAOMI) ?: THEME_XIAOMI
         val jsonDevices = prefs.getString("w_${appWidgetId}_dev_ids", null)
         val title = prefs.getString("w_${appWidgetId}_title", null)
 
@@ -251,9 +251,9 @@ class WidgetDataManager(context: Context) {
         val allDevices = cached.devices ?: emptyList()
         val rooms = cached.rooms ?: emptyList()
 
-        // 4x2: Up to 3 devices maximum!
+        // 4x2: Up to 3 devices maximum, strictly preserving user's selection order!
         val targetDevices = if (selectedIds.isNotEmpty()) {
-            allDevices.filter { selectedIds.contains(it.id) }.take(3)
+            selectedIds.mapNotNull { id -> allDevices.firstOrNull { it.id == id } }.take(3)
         } else {
             // Brand new widget: default to 1 primary device only!
             val single = allDevices.firstOrNull { it.isClimateSensor() || it.hasTemperature() } ?: allDevices.firstOrNull()
@@ -269,25 +269,26 @@ class WidgetDataManager(context: Context) {
                 lastUpdatedTimestamp = lastSyncTimestamp
             )
 
-        // Primary room: NEVER guess a random room if device has no room!
-        val primaryRoom = if (!primaryDev.room.isNullOrBlank()) {
+        // Primary room: for vehicle, always use car name, NEVER guess a random room!
+        val primaryRoom = if (!primaryDev.room.isNullOrBlank() && !primaryDev.isVehicle()) {
             rooms.firstOrNull { it.id == primaryDev.room || it.hasDevice(primaryDev.id) }
         } else null
 
         val primaryTitle = config?.customTitle?.ifBlank { null }
-            ?: primaryRoom?.name
-            ?: primaryDev.name
+            ?: (if (primaryDev.isVehicle()) primaryDev.name else primaryRoom?.name ?: primaryDev.name)
             ?: "Умный дом"
 
-        val primaryState = primaryDev.toWidgetState(primaryRoom?.name)
+        val primaryMetricSetting = getDeviceMetricSetting(primaryDev.id, appWidgetId)
+        val primaryState = primaryDev.toWidgetState(primaryRoom?.name, primaryMetricSetting)
 
         // Secondary cards (Device 2 and Device 3)
         val secondaryDevs = targetDevices.filter { it.id != primaryDev.id }.take(2)
         val secondaryStates = secondaryDevs.map { dev ->
-            val devRoom = if (!dev.room.isNullOrBlank()) {
+            val devRoom = if (!dev.room.isNullOrBlank() && !dev.isVehicle()) {
                 rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) }
             } else null
-            dev.toWidgetState(devRoom?.name)
+            val devMetric = getDeviceMetricSetting(dev.id, appWidgetId)
+            dev.toWidgetState(if (dev.isVehicle()) null else devRoom?.name, devMetric)
         }
 
         return AggregatedSensorData(
@@ -323,9 +324,9 @@ class WidgetDataManager(context: Context) {
         val allDevices = cached.devices ?: emptyList()
         val rooms = cached.rooms ?: emptyList()
 
-        // 4x1: Up to 2 devices maximum!
+        // 4x1: Up to 2 devices maximum, strictly preserving user's selection order!
         val targetDevices = if (selectedIds.isNotEmpty()) {
-            allDevices.filter { selectedIds.contains(it.id) }.take(2)
+            selectedIds.mapNotNull { id -> allDevices.firstOrNull { it.id == id } }.take(2)
         } else {
             val single = allDevices.firstOrNull { it.isClimateSensor() || it.hasTemperature() } ?: allDevices.firstOrNull()
             if (single != null) listOf(single) else emptyList()
@@ -333,9 +334,10 @@ class WidgetDataManager(context: Context) {
 
         val result = mutableListOf<BarSlotItem>()
         for (dev in targetDevices) {
-            val r = if (!dev.room.isNullOrBlank()) rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) } else null
-            val devTitle = r?.name ?: dev.name
-            val st = dev.toWidgetState(r?.name)
+            val r = if (!dev.room.isNullOrBlank() && !dev.isVehicle()) rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) } else null
+            val devTitle = if (dev.isVehicle()) dev.name else (r?.name ?: dev.name)
+            val devMetric = getDeviceMetricSetting(dev.id, appWidgetId)
+            val st = dev.toWidgetState(if (dev.isVehicle()) null else r?.name, devMetric)
             result.add(BarSlotItem(devTitle, st))
         }
 
@@ -366,9 +368,9 @@ class WidgetDataManager(context: Context) {
         val allDevices = cached.devices ?: emptyList()
         val rooms = cached.rooms ?: emptyList()
 
-        // 2x1: Strictly 1 device!
+        // 2x1: Strictly 1 device, strictly preserving user's selection!
         val dev = if (selectedIds.isNotEmpty()) {
-            allDevices.firstOrNull { selectedIds.contains(it.id) } ?: allDevices.firstOrNull()
+            selectedIds.firstNotNullOfOrNull { id -> allDevices.firstOrNull { it.id == id } } ?: allDevices.firstOrNull()
         } else {
             allDevices.firstOrNull { it.isClimateSensor() || it.hasTemperature() } ?: allDevices.firstOrNull()
         }
@@ -377,9 +379,10 @@ class WidgetDataManager(context: Context) {
             return Compact2x1Data("Климат", com.alice.homewidget.model.DeviceWidgetState("default", "Климат", null, "climate", "22.5°", "Комфортно", "💧 48%", null, "🌡️", false, true, 22.5))
         }
 
-        val room = if (!dev.room.isNullOrBlank()) rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) } else null
-        val title = config?.customTitle?.ifBlank { null } ?: room?.name ?: dev.name
-        val state = dev.toWidgetState(room?.name)
+        val room = if (!dev.room.isNullOrBlank() && !dev.isVehicle()) rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) } else null
+        val title = config?.customTitle?.ifBlank { null } ?: (if (dev.isVehicle()) dev.name else room?.name ?: dev.name)
+        val devMetric = getDeviceMetricSetting(dev.id, appWidgetId)
+        val state = dev.toWidgetState(if (dev.isVehicle()) null else room?.name, devMetric)
 
         return Compact2x1Data(title, state)
     }
