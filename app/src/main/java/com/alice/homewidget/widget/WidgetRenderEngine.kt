@@ -76,7 +76,7 @@ object WidgetRenderEngine {
             okGreen = 0xFF50FA7B.toInt(),
             cornerRadiusDp = 26f
         )
-        WidgetDataManager.THEME_CYBERPUNK -> ThemePalette(
+        WidgetDataManager.THEME_CYBERPUNK, WidgetDataManager.THEME_ANDROID -> ThemePalette(
             // Cyberpunk Neon: Deep OLED black with electric cyan and purple glowing contours
             bgStart = 0xF5080A10.toInt(),
             bgEnd = 0xFA040508.toInt(),
@@ -94,7 +94,7 @@ object WidgetRenderEngine {
             isGlassmorphism = true,
             cornerRadiusDp = 26f
         )
-        WidgetDataManager.THEME_NORDIC_AURORA -> ThemePalette(
+        WidgetDataManager.THEME_NORDIC_AURORA, WidgetDataManager.THEME_NOTHING -> ThemePalette(
             // Nordic Aurora: Scandinavian midnight slate with emerald northern lights glow
             bgStart = 0xF00D1B24.toInt(),
             bgEnd = 0xF6071017.toInt(),

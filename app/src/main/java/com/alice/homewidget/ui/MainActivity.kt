@@ -219,8 +219,8 @@ class MainActivity : AppCompatActivity() {
                 WidgetDataManager.THEME_ALICE -> "Стиль Алиса"
                 WidgetDataManager.THEME_YANDEX_WHITE -> "Стиль Белый Яндекс"
                 WidgetDataManager.THEME_FLUENT_PASTEL -> "Стиль Fluent Pastel"
-                WidgetDataManager.THEME_ANDROID -> "Стиль Android"
-                WidgetDataManager.THEME_NOTHING -> "Стиль Nothing"
+                WidgetDataManager.THEME_CYBERPUNK, WidgetDataManager.THEME_ANDROID -> "Стиль Киберпанк Неон"
+                WidgetDataManager.THEME_NORDIC_AURORA, WidgetDataManager.THEME_NOTHING -> "Стиль Северное сияние"
                 else -> "Стиль Xiaomi"
             }
 

@@ -32,6 +32,9 @@ class WidgetDataManager(context: Context) {
         const val THEME_FLUENT_PASTEL = "FLUENT_PASTEL"
         const val THEME_CYBERPUNK = "CYBERPUNK"
         const val THEME_NORDIC_AURORA = "NORDIC_AURORA"
+        // Deprecated aliases for backward compatibility with previous installs
+        const val THEME_ANDROID = "ANDROID"
+        const val THEME_NOTHING = "NOTHING"
         private const val KEY_DEFAULT_THEME = "widget_default_theme"
 
         // Active widget tracking
