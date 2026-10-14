@@ -128,6 +128,15 @@ class AliceHomeWidgetProvider : AppWidgetProvider() {
                 )
                 views.setOnClickPendingIntent(R.id.btnWidgetRefresh, refreshPendingIntent)
 
+                // Dynamic contrast for action buttons in light themes
+                val isLightTheme = config.theme == WidgetDataManager.THEME_YANDEX_WHITE
+                val iconColor = if (isLightTheme) 0xFF22252A.toInt() else 0xE6FFFFFF.toInt()
+                val rippleBg = if (isLightTheme) R.drawable.bg_btn_ripple_light else R.drawable.bg_btn_ripple
+                views.setInt(R.id.ivWidgetConfigure, "setColorFilter", iconColor)
+                views.setInt(R.id.ivWidgetRefresh, "setColorFilter", iconColor)
+                views.setInt(R.id.btnWidgetConfigure, "setBackgroundResource", rippleBg)
+                views.setInt(R.id.btnWidgetRefresh, "setBackgroundResource", rippleBg)
+
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {
                 e.printStackTrace()

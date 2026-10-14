@@ -157,8 +157,8 @@ class MainActivity : AppCompatActivity() {
             WidgetDataManager.THEME_ALICE -> binding.rbThemeAlice.isChecked = true
             WidgetDataManager.THEME_YANDEX_WHITE -> binding.rbThemeYandexWhite.isChecked = true
             WidgetDataManager.THEME_FLUENT_PASTEL -> binding.rbThemeFluentPastel.isChecked = true
-            WidgetDataManager.THEME_ANDROID -> binding.rbThemeAndroid.isChecked = true
-            WidgetDataManager.THEME_NOTHING -> binding.rbThemeNothing.isChecked = true
+            WidgetDataManager.THEME_CYBERPUNK -> binding.rbThemeCyberpunk.isChecked = true
+            WidgetDataManager.THEME_NORDIC_AURORA -> binding.rbThemeNordicAurora.isChecked = true
             else -> binding.rbThemeXiaomi.isChecked = true
         }
 
@@ -168,8 +168,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.rbThemeAlice -> WidgetDataManager.THEME_ALICE
                 R.id.rbThemeYandexWhite -> WidgetDataManager.THEME_YANDEX_WHITE
                 R.id.rbThemeFluentPastel -> WidgetDataManager.THEME_FLUENT_PASTEL
-                R.id.rbThemeAndroid -> WidgetDataManager.THEME_ANDROID
-                R.id.rbThemeNothing -> WidgetDataManager.THEME_NOTHING
+                R.id.rbThemeCyberpunk -> WidgetDataManager.THEME_CYBERPUNK
+                R.id.rbThemeNordicAurora -> WidgetDataManager.THEME_NORDIC_AURORA
                 else -> WidgetDataManager.THEME_XIAOMI
             }
             dataManager.defaultTheme = theme
@@ -178,8 +178,8 @@ class MainActivity : AppCompatActivity() {
                 WidgetDataManager.THEME_ALICE -> "Яндекс / Алиса"
                 WidgetDataManager.THEME_YANDEX_WHITE -> "Белый Яндекс"
                 WidgetDataManager.THEME_FLUENT_PASTEL -> "Fluent Pastel"
-                WidgetDataManager.THEME_ANDROID -> "Android Material You"
-                WidgetDataManager.THEME_NOTHING -> "Nothing OS"
+                WidgetDataManager.THEME_CYBERPUNK -> "Киберпанк Неон"
+                WidgetDataManager.THEME_NORDIC_AURORA -> "Северное сияние"
                 else -> "Xiaomi HyperOS"
             }
             Toast.makeText(this, "Стиль по умолчанию: $name", Toast.LENGTH_SHORT).show()

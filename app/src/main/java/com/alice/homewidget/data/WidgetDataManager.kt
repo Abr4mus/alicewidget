@@ -28,10 +28,10 @@ class WidgetDataManager(context: Context) {
         const val THEME_XIAOMI = "XIAOMI"
         const val THEME_IOS = "IOS"
         const val THEME_ALICE = "ALICE"
-        const val THEME_ANDROID = "ANDROID"
-        const val THEME_NOTHING = "NOTHING"
         const val THEME_YANDEX_WHITE = "YANDEX_WHITE"
         const val THEME_FLUENT_PASTEL = "FLUENT_PASTEL"
+        const val THEME_CYBERPUNK = "CYBERPUNK"
+        const val THEME_NORDIC_AURORA = "NORDIC_AURORA"
         private const val KEY_DEFAULT_THEME = "widget_default_theme"
 
         // Active widget tracking
@@ -237,12 +237,9 @@ class WidgetDataManager(context: Context) {
     // --- 4x2 Widget Data per Widget Instance ---
     fun get4x2SensorData(appWidgetId: Int = 0): AggregatedSensorData {
         val cached = getCachedUserInfo() ?: return AggregatedSensorData(
-            householdName = "Климат",
-            primaryTemperature = 22.5,
-            primaryHumidity = 48.0,
-            primaryPressure = null,
-            primaryRoomName = "Гостиная",
-            totalSensorCount = 0,
+            primaryRoomName = "Умный дом",
+            primaryState = com.alice.homewidget.model.DeviceWidgetState("default", "Климат", null, "climate", "22.5°", "Комфортно", "💧 48%", null, "🌡️", false, true, 22.5),
+            secondaryDevices = emptyList(),
             lastUpdatedTimestamp = lastSyncTimestamp
         )
 
@@ -251,82 +248,49 @@ class WidgetDataManager(context: Context) {
         val allDevices = cached.devices ?: emptyList()
         val rooms = cached.rooms ?: emptyList()
 
-        // Devices strictly for THIS widget instance
+        // 4x2: Up to 3 devices maximum!
         val targetDevices = if (selectedIds.isNotEmpty()) {
-            allDevices.filter { selectedIds.contains(it.id) }
+            allDevices.filter { selectedIds.contains(it.id) }.take(3)
         } else {
-            allDevices.filter { it.isClimateSensor() || it.isOpenSensor() }
+            // Brand new widget: default to 1 primary device only!
+            val single = allDevices.firstOrNull { it.isClimateSensor() || it.hasTemperature() } ?: allDevices.firstOrNull()
+            if (single != null) listOf(single) else emptyList()
         }
 
-        val primaryDev = targetDevices.firstOrNull { it.isClimateSensor() || it.getTemperature() != null }
-            ?: targetDevices.firstOrNull()
-        val primaryRoom = rooms.firstOrNull { it.id == primaryDev?.room || it.hasDevice(primaryDev?.id) }
-            ?: rooms.firstOrNull()
+        val primaryDev = targetDevices.firstOrNull()
+            ?: allDevices.firstOrNull()
+            ?: return AggregatedSensorData(
+                primaryRoomName = "Умный дом",
+                primaryState = com.alice.homewidget.model.DeviceWidgetState("default", "Климат", null, "climate", "22.5°", "Комфортно", "💧 48%", null, "🌡️", false, true, 22.5),
+                secondaryDevices = emptyList(),
+                lastUpdatedTimestamp = lastSyncTimestamp
+            )
 
-        val primarySetting = primaryDev?.let { getDeviceMetricSetting(it.id, appWidgetId) } ?: DeviceMetricSetting()
-        val primaryTemp = if (primarySetting.showTemperature && primaryDev?.hasTemperature() == true) primaryDev.getTemperature() else null
-        val primaryHum = if (primarySetting.showHumidity && primaryDev?.hasHumidity() == true) primaryDev.getHumidity() else null
-        val primaryPress = if (primarySetting.showPressure && primaryDev?.hasPressure() == true) primaryDev.getPressure() else null
+        // Primary room: NEVER guess a random room if device has no room!
+        val primaryRoom = if (!primaryDev.room.isNullOrBlank()) {
+            rooms.firstOrNull { it.id == primaryDev.room || it.hasDevice(primaryDev.id) }
+        } else null
 
-        val primaryRoomName = config?.customTitle?.ifBlank { null }
-            ?: primaryRoom?.name ?: primaryDev?.name ?: "Климат"
+        val primaryTitle = config?.customTitle?.ifBlank { null }
+            ?: primaryRoom?.name
+            ?: primaryDev.name
+            ?: "Умный дом"
 
-        // Secondary cards (from other devices selected for this widget)
-        val otherDevs = targetDevices.filter { it.id != primaryDev?.id }
-        val roomSummaries = mutableListOf<RoomClimateSummary>()
+        val primaryState = primaryDev.toWidgetState(primaryRoom?.name)
 
-        for (dev in otherDevs) {
-            val devSetting = getDeviceMetricSetting(dev.id, appWidgetId)
-            val t = if (devSetting.showTemperature && dev.hasTemperature()) dev.getTemperature() else null
-            val h = if (devSetting.showHumidity && dev.hasHumidity()) dev.getHumidity() else null
-            val p = if (devSetting.showPressure && dev.hasPressure()) dev.getPressure() else null
-            val bat = if (devSetting.showBattery && dev.hasBattery()) dev.getBattery() else null
-            val fuel = if (devSetting.showFuel && dev.hasWaterOrFuel()) dev.getWaterOrFuelLevel() else null
-
-            if (t != null || h != null || p != null || bat != null || fuel != null) {
-                val rName = rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) }?.name ?: dev.name
-                val extra = if (fuel != null) "Уровень: ${String.format(Locale.US, "%.0f%%", fuel)}" else null
-                roomSummaries.add(
-                    RoomClimateSummary(
-                        roomId = dev.room ?: dev.id,
-                        roomName = rName,
-                        temperature = t,
-                        humidity = h,
-                        pressure = p,
-                        battery = bat,
-                        extraInfo = extra
-                    )
-                )
-                if (roomSummaries.size >= 2) break
-            }
+        // Secondary cards (Device 2 and Device 3)
+        val secondaryDevs = targetDevices.filter { it.id != primaryDev.id }.take(2)
+        val secondaryStates = secondaryDevs.map { dev ->
+            val devRoom = if (!dev.room.isNullOrBlank()) {
+                rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) }
+            } else null
+            dev.toWidgetState(devRoom?.name)
         }
-
-        // Door status (only from devices selected for this widget)
-        var anyDoorOpen = false
-        var openDoorName: String? = null
-        for (dev in targetDevices) {
-            val devSetting = getDeviceMetricSetting(dev.id, appWidgetId)
-            if (devSetting.showDoor && dev.isDoorOrWindowOpen() == true) {
-                anyDoorOpen = true
-                openDoorName = dev.name
-                break
-            }
-        }
-
-        // Lowest battery (only from devices selected for this widget)
-        val lowestBattery = targetDevices.filter { getDeviceMetricSetting(it.id, appWidgetId).showBattery }
-            .mapNotNull { it.getBattery() }.minOrNull()
 
         return AggregatedSensorData(
-            householdName = cached.households?.firstOrNull()?.name ?: "Датчики",
-            primaryTemperature = primaryTemp,
-            primaryHumidity = primaryHum,
-            primaryPressure = primaryPress,
-            primaryRoomName = primaryRoomName,
-            roomSensors = roomSummaries,
-            isAnyDoorOpen = anyDoorOpen,
-            openDoorDeviceName = openDoorName,
-            lowestBatteryLevel = lowestBattery,
+            primaryRoomName = primaryTitle,
+            primaryState = primaryState,
+            secondaryDevices = secondaryStates,
             totalSensorCount = targetDevices.size,
             lastUpdatedTimestamp = lastSyncTimestamp
         )
@@ -334,19 +298,21 @@ class WidgetDataManager(context: Context) {
 
     // --- 4x1 Bar Widget Data per Widget Instance ---
     data class BarSlotItem(
-        val roomName: String,
-        val mainText: String,
-        val secondaryText: String? = null,
-        val iconType: String = "temp", // "temp", "hum", "door", "fuel", "bat", "power"
-        val isDoor: Boolean = false,
-        val isDoorAlert: Boolean = false
-    )
+        val title: String,
+        val state: com.alice.homewidget.model.DeviceWidgetState
+    ) {
+        val roomName: String get() = title
+        val mainText: String get() = state.mainText
+        val secondaryText: String? get() = state.badge1 ?: state.subText
+        val iconType: String get() = state.category
+        val isDoor: Boolean get() = state.category == "door"
+        val isDoorAlert: Boolean get() = state.isAlert
+    }
 
     fun get4x1BarSlots(appWidgetId: Int = 0): List<BarSlotItem> {
         val cached = getCachedUserInfo() ?: return listOf(
-            BarSlotItem("Гостиная", "22.5°", "48%", iconType = "temp"),
-            BarSlotItem("Спальня", "21.0°", "52%", iconType = "temp"),
-            BarSlotItem("Безопасность", "Закрыто", null, iconType = "door", isDoor = true)
+            BarSlotItem("Гостиная", com.alice.homewidget.model.DeviceWidgetState("1", "Гостиная", "Гостиная", "climate", "22.5°", "Комфортно", "💧 48%", null, "🌡️", false, true, 22.5)),
+            BarSlotItem("Спальня", com.alice.homewidget.model.DeviceWidgetState("2", "Спальня", "Спальня", "climate", "21.0°", "Комфортно", "💧 52%", null, "🌡️", false, true, 21.0))
         )
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "4x1") else null
@@ -354,45 +320,24 @@ class WidgetDataManager(context: Context) {
         val allDevices = cached.devices ?: emptyList()
         val rooms = cached.rooms ?: emptyList()
 
+        // 4x1: Up to 2 devices maximum!
         val targetDevices = if (selectedIds.isNotEmpty()) {
-            allDevices.filter { selectedIds.contains(it.id) }
+            allDevices.filter { selectedIds.contains(it.id) }.take(2)
         } else {
-            allDevices.filter { it.isClimateSensor() || it.isOpenSensor() || it.hasTemperature() }
+            val single = allDevices.firstOrNull { it.isClimateSensor() || it.hasTemperature() } ?: allDevices.firstOrNull()
+            if (single != null) listOf(single) else emptyList()
         }
 
         val result = mutableListOf<BarSlotItem>()
-
         for (dev in targetDevices) {
-            val devSetting = getDeviceMetricSetting(dev.id, appWidgetId)
-            val rName = rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) }?.name ?: dev.name
-
-            if (dev.hasDoorSensor() && devSetting.showDoor) {
-                val isOpen = dev.isDoorOrWindowOpen() == true
-                result.add(BarSlotItem(rName, if (isOpen) "ОТКРЫТО!" else "Закрыто", iconType = "door", isDoor = true, isDoorAlert = isOpen))
-            } else if (dev.hasWaterOrFuel() && devSetting.showFuel) {
-                val f = dev.getWaterOrFuelLevel()?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
-                result.add(BarSlotItem(rName, f, "Уровень", iconType = "fuel"))
-            } else if (dev.hasPower() && devSetting.showPower) {
-                val p = dev.getPower()?.let { String.format(Locale.US, "%.0f Вт", it) } ?: ""
-                result.add(BarSlotItem(rName, p, null, iconType = "power"))
-            } else {
-                val t = if (devSetting.showTemperature && dev.hasTemperature()) dev.getTemperature() else null
-                val h = if (devSetting.showHumidity && dev.hasHumidity()) dev.getHumidity() else null
-
-                if (t != null || h != null) {
-                    val tStr = t?.let { String.format(Locale.US, "%.1f°", it) } ?: ""
-                    val hStr = h?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
-                    result.add(BarSlotItem(rName, tStr, hStr.ifEmpty { null }, iconType = "temp"))
-                } else if (dev.hasBattery() && devSetting.showBattery) {
-                    val b = dev.getBattery()?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
-                    result.add(BarSlotItem(rName, b, null, iconType = "bat"))
-                }
-            }
-            if (result.size >= 3) break
+            val r = if (!dev.room.isNullOrBlank()) rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) } else null
+            val devTitle = r?.name ?: dev.name
+            val st = dev.toWidgetState(r?.name)
+            result.add(BarSlotItem(devTitle, st))
         }
 
         if (result.isEmpty()) {
-            result.add(BarSlotItem("Климат", "22.5°", "48%", iconType = "temp"))
+            result.add(BarSlotItem("Климат", com.alice.homewidget.model.DeviceWidgetState("default", "Климат", null, "climate", "22.5°", "Комфортно", "💧 48%", null, "🌡️", false, true, 22.5)))
         }
 
         return result
@@ -401,77 +346,53 @@ class WidgetDataManager(context: Context) {
     // --- 2x1 Compact Data per Widget Instance ---
     data class Compact2x1Data(
         val title: String,
-        val tempText: String,
-        val humidityText: String?
-    )
+        val state: com.alice.homewidget.model.DeviceWidgetState
+    ) {
+        val tempText: String get() = state.mainText
+        val humidityText: String? get() = state.badge1 ?: state.subText
+    }
 
     fun get2x1Data(appWidgetId: Int = 0): Compact2x1Data {
-        val cached = getCachedUserInfo() ?: return Compact2x1Data("Гостиная", "22.5°", "48%")
+        val cached = getCachedUserInfo() ?: return Compact2x1Data(
+            "Гостиная",
+            com.alice.homewidget.model.DeviceWidgetState("default", "Гостиная", "Гостиная", "climate", "22.5°", "Комфортно", "💧 48%", null, "🌡️", false, true, 22.5)
+        )
 
         val config = if (appWidgetId > 0) getWidgetConfig(appWidgetId, "2x1") else null
         val selectedIds = config?.selectedDeviceIds ?: emptyList()
         val allDevices = cached.devices ?: emptyList()
         val rooms = cached.rooms ?: emptyList()
 
+        // 2x1: Strictly 1 device!
         val dev = if (selectedIds.isNotEmpty()) {
-            allDevices.firstOrNull { selectedIds.contains(it.id) }
+            allDevices.firstOrNull { selectedIds.contains(it.id) } ?: allDevices.firstOrNull()
         } else {
-            allDevices.firstOrNull { it.getTemperature() != null || it.isClimateSensor() }
+            allDevices.firstOrNull { it.isClimateSensor() || it.hasTemperature() } ?: allDevices.firstOrNull()
         }
 
-        val title = config?.customTitle?.ifBlank { null }
-            ?: dev?.let { d -> rooms.firstOrNull { it.id == d.room || it.hasDevice(d.id) }?.name ?: d.name }
-            ?: "Климат"
-
-        val setting = dev?.let { getDeviceMetricSetting(it.id, appWidgetId) } ?: DeviceMetricSetting()
-
-        val tempStr: String
-        val humStr: String?
-
-        when {
-            dev != null && dev.hasDoorSensor() && setting.showDoor -> {
-                tempStr = if (dev.isDoorOrWindowOpen() == true) "ОТКРЫТО!" else "Закрыто"
-                humStr = null
-            }
-            dev != null && dev.hasWaterOrFuel() && setting.showFuel -> {
-                tempStr = dev.getWaterOrFuelLevel()?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
-                humStr = "Уровень"
-            }
-            dev != null && dev.hasPower() && setting.showPower -> {
-                tempStr = dev.getPower()?.let { String.format(Locale.US, "%.0f Вт", it) } ?: "-- Вт"
-                humStr = null
-            }
-            dev != null && dev.hasTemperature() && setting.showTemperature -> {
-                val temp = dev.getTemperature()
-                tempStr = temp?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
-                val hum = if (setting.showHumidity && dev.hasHumidity()) dev.getHumidity() else null
-                humStr = hum?.let { String.format(Locale.US, "%.0f%%", it) }
-            }
-            dev != null && dev.hasBattery() && setting.showBattery -> {
-                tempStr = dev.getBattery()?.let { String.format(Locale.US, "%.0f%%", it) } ?: "--%"
-                humStr = "Батарея"
-            }
-            else -> {
-                val temp = if (setting.showTemperature && dev?.hasTemperature() == true) dev.getTemperature() else null
-                val hum = if (setting.showHumidity && dev?.hasHumidity() == true) dev.getHumidity() else null
-                tempStr = temp?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
-                humStr = hum?.let { String.format(Locale.US, "%.0f%%", it) }
-            }
+        if (dev == null) {
+            return Compact2x1Data("Климат", com.alice.homewidget.model.DeviceWidgetState("default", "Климат", null, "climate", "22.5°", "Комфортно", "💧 48%", null, "🌡️", false, true, 22.5))
         }
 
-        return Compact2x1Data(title, tempStr, humStr)
+        val room = if (!dev.room.isNullOrBlank()) rooms.firstOrNull { it.id == dev.room || it.hasDevice(dev.id) } else null
+        val title = config?.customTitle?.ifBlank { null } ?: room?.name ?: dev.name
+        val state = dev.toWidgetState(room?.name)
+
+        return Compact2x1Data(title, state)
     }
 
     // --- 2x2 Compact Data per Widget Instance ---
     data class Compact2x2Data(
         val title: String,
-        val tempText: String,
-        val humidityText: String?
-    )
+        val state: com.alice.homewidget.model.DeviceWidgetState
+    ) {
+        val tempText: String get() = state.mainText
+        val humidityText: String? get() = state.badge1 ?: state.subText
+    }
 
     fun get2x2Data(appWidgetId: Int = 0): Compact2x2Data {
         val d = get2x1Data(appWidgetId)
-        return Compact2x2Data(d.title, d.tempText, d.humidityText)
+        return Compact2x2Data(d.title, d.state)
     }
 
     // Backward compatibility

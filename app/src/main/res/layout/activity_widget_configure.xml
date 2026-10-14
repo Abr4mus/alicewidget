@@ -143,26 +143,26 @@
                         android:textSize="13sp" />
 
                     <RadioButton
-                        android:id="@+id/rbConfigThemeAndroid"
+                        android:id="@+id/rbConfigThemeCyberpunk"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_tile_android"
-                        android:buttonTint="@color/android_accent_mint"
+                        android:background="@drawable/bg_tile_cyberpunk"
+                        android:buttonTint="@color/cyberpunk_cyan"
                         android:padding="10dp"
-                        android:text="🤖 Android Material You (акриловый графит, пастель)"
+                        android:text="⚡ Киберпанк Неон (глубокий OLED, неоновый контур)"
                         android:textColor="@color/alice_text_white"
                         android:textSize="13sp" />
 
                     <RadioButton
-                        android:id="@+id/rbConfigThemeNothing"
+                        android:id="@+id/rbConfigThemeNordicAurora"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_tile_xiaomi"
-                        android:buttonTint="@color/white"
+                        android:background="@drawable/bg_tile_nordic_aurora"
+                        android:buttonTint="@color/nordic_aurora_mint"
                         android:padding="10dp"
-                        android:text="🔴 Nothing OS (монохромный хай-тек, минимализм)"
+                        android:text="🌌 Северное сияние (изумрудная аврора, сканди)"
                         android:textColor="@color/alice_text_white"
                         android:textSize="13sp" />
                 </RadioGroup>

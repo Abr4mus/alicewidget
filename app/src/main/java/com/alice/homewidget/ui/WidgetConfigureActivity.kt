@@ -122,6 +122,37 @@ class WidgetConfigureActivity : AppCompatActivity() {
     private val roomGroups = mutableListOf<RoomGroup>()
     private val allDeviceHolders = mutableListOf<DeviceConfigViewHolder>()
 
+    private fun getMaxDevicesForWidget(): Int {
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 3
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
+        val providerClass = info?.provider?.className
+        return when (providerClass) {
+            AliceCompactWidgetProvider::class.java.name -> 1
+            AliceCompact2x1WidgetProvider::class.java.name -> 1
+            AliceBarWidgetProvider::class.java.name -> 2
+            AliceHomeWidgetProvider::class.java.name -> 3
+            else -> {
+                val p2x2 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceCompactWidgetProvider::class.java))
+                val p2x1 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceCompact2x1WidgetProvider::class.java))
+                val p4x1 = appWidgetManager.getAppWidgetIds(ComponentName(this, AliceBarWidgetProvider::class.java))
+                when {
+                    p2x2.contains(appWidgetId) || p2x1.contains(appWidgetId) -> 1
+                    p4x1.contains(appWidgetId) -> 2
+                    else -> 3
+                }
+            }
+        }
+    }
+
+    private fun getWidgetTypeDescription(): String {
+        return when (getMaxDevicesForWidget()) {
+            1 -> "Компактный виджет (макс. 1 устройство)"
+            2 -> "Инфо-полоса 4×1 (макс. 2 устройства)"
+            else -> "Смарт-хаб 4×2 (до 3 устройств)"
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setResult(RESULT_CANCELED)
@@ -146,6 +177,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
         } else {
             "Настройка виджета"
         }
+        binding.tvConfigWidgetSubtitle.text = getWidgetTypeDescription()
 
         try {
             val config = dataManager.getWidgetConfig(appWidgetId)
@@ -156,8 +188,8 @@ class WidgetConfigureActivity : AppCompatActivity() {
                 WidgetDataManager.THEME_ALICE -> binding.rbConfigThemeAlice.isChecked = true
                 WidgetDataManager.THEME_YANDEX_WHITE -> binding.rbConfigThemeYandexWhite.isChecked = true
                 WidgetDataManager.THEME_FLUENT_PASTEL -> binding.rbConfigThemeFluentPastel.isChecked = true
-                WidgetDataManager.THEME_ANDROID -> binding.rbConfigThemeAndroid.isChecked = true
-                WidgetDataManager.THEME_NOTHING -> binding.rbConfigThemeNothing.isChecked = true
+                WidgetDataManager.THEME_CYBERPUNK -> binding.rbConfigThemeCyberpunk.isChecked = true
+                WidgetDataManager.THEME_NORDIC_AURORA -> binding.rbConfigThemeNordicAurora.isChecked = true
                 else -> binding.rbConfigThemeXiaomi.isChecked = true
             }
 
@@ -335,284 +367,416 @@ class WidgetConfigureActivity : AppCompatActivity() {
             val group = RoomGroup(rId, rName, roomCard, switchRoom, groupHolders)
             roomGroups.add(group)
 
-            // Devices in this room
-            for (dev in devList) {
-                val isSelected = if (hasSavedConfig) {
-                    selectedIds.contains(dev.id)
-                } else {
-                    // Default for brand new widget
-                    dev.isClimateSensor() || dev.hasTemperature() || dev.hasDoorSensor()
+        val maxAllowedDevices = getMaxDevicesForWidget()
+        val defaultInitialDevId = if (!hasSavedConfig || selectedIds.isEmpty()) {
+            allDevices.firstOrNull { it.isClimateSensor() || it.isVehicle() || it.hasTemperature() || it.hasDoorSensor() || it.hasLeakSensor() }?.id
+                ?: allDevices.firstOrNull()?.id
+        } else null
+
+        // Devices in this room
+        for (dev in devList) {
+            val isSelected = if (hasSavedConfig && selectedIds.isNotEmpty()) {
+                selectedIds.contains(dev.id)
+            } else {
+                dev.id == defaultInitialDevId
+            }
+
+            val metricPref = dataManager.getDeviceMetricSetting(dev.id, appWidgetId)
+
+            // Device Container Card (HyperOS Inset Tile)
+            val devCard = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding((16 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
+                val bgDrawable = GradientDrawable().apply {
+                    cornerRadius = 14f * density
+                    setColor(0x18FFFFFF)
                 }
-
-                val metricPref = dataManager.getDeviceMetricSetting(dev.id, appWidgetId)
-
-                // Device Container Card (HyperOS Inset Tile)
-                val devCard = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding((16 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
-                    val bgDrawable = GradientDrawable().apply {
-                        cornerRadius = 14f * density
-                        setColor(0x18FFFFFF)
-                    }
-                    background = bgDrawable
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        topMargin = (8 * density).toInt()
-                    }
+                background = bgDrawable
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = (8 * density).toInt()
                 }
+            }
 
-                // Device Header Row (Icon + Name + Subtitle + Large MaterialSwitch)
-                val devHeader = LinearLayout(this).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.CENTER_VERTICAL
+            // Device Header Row (Icon + Name + Subtitle + Large MaterialSwitch)
+            val devHeader = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+
+            // Device Icon
+            val devIcon = when {
+                dev.isVehicle() -> "🚗"
+                dev.isKettle() -> "🫖"
+                dev.isTv() -> "📺"
+                dev.isLightingOrSwitch() -> "💡"
+                dev.hasLeakSensor() -> "💧"
+                dev.hasDoorSensor() -> "🚪"
+                dev.hasWaterOrFuel() -> "⛽"
+                dev.hasPower() -> "⚡"
+                dev.hasTemperature() -> "🌡️"
+                dev.hasBattery() -> "🔋"
+                else -> "📱"
+            }
+
+            val devIconTv = TextView(this).apply {
+                text = devIcon
+                textSize = 16f
+            }
+            devHeader.addView(devIconTv)
+
+            val devInfoLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = (8 * density).toInt()
+                    marginEnd = (8 * density).toInt()
                 }
+            }
 
-                // Device Icon
-                val devIcon = when {
-                    dev.hasDoorSensor() -> "🚪"
-                    dev.hasWaterOrFuel() -> "⛽"
-                    dev.hasPower() -> "⚡"
-                    dev.hasTemperature() -> "🌡️"
-                    dev.hasBattery() -> "🔋"
-                    else -> "💡"
+            val devNameTv = TextView(this).apply {
+                text = dev.name
+                setTextColor(Color.WHITE)
+                textSize = 14.5f
+                setTypeface(null, Typeface.BOLD)
+                maxLines = 1
+            }
+            devInfoLayout.addView(devNameTv)
+
+            // Subtitle preview of current state
+            val stateDesc = when {
+                dev.isVehicle() -> {
+                    val isRunning = dev.isTurnedOn() == true
+                    val runStr = if (isRunning) "Заведён" else "Заглушен"
+                    val fuel = dev.getVehicleFuel()?.let { "⛽ ${it.toInt()}%" } ?: ""
+                    val sec = "🔒 ${dev.getVehicleSecurityState()}"
+                    val bat = dev.getVehicleBatteryOrVoltage()?.let { "🔋 $it" } ?: ""
+                    listOf(runStr, sec, fuel, bat).filter { it.isNotBlank() }.joinToString(" • ")
                 }
-
-                val devIconTv = TextView(this).apply {
-                    text = devIcon
-                    textSize = 16f
+                dev.isKettle() -> {
+                    val kState = dev.getKettleState()
+                    val t = dev.getTemperature()?.let { "${it.toInt()}°C" } ?: ""
+                    listOf(t, kState).filter { it.isNotBlank() }.joinToString(" • ")
                 }
-                devHeader.addView(devIconTv)
-
-                val devInfoLayout = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                        marginStart = (8 * density).toInt()
-                        marginEnd = (8 * density).toInt()
-                    }
+                dev.isTv() -> if (dev.isTurnedOn() == true) "ВКЛЮЧЕН" else "ВЫКЛЮЧЕН"
+                dev.isLightingOrSwitch() -> {
+                    val on = if (dev.isTurnedOn() == true) "ВКЛЮЧЕН" else "ВЫКЛЮЧЕН"
+                    val p = dev.getPower()?.let { "${it.toInt()} Вт" } ?: ""
+                    listOf(on, p).filter { it.isNotBlank() }.joinToString(" • ")
                 }
-
-                val devNameTv = TextView(this).apply {
-                    text = dev.name
-                    setTextColor(Color.WHITE)
-                    textSize = 14.5f
-                    setTypeface(null, Typeface.BOLD)
-                    maxLines = 1
+                dev.hasLeakSensor() -> if (dev.hasWaterLeak() == true) "ПРОТЕЧКА!" else "СУХО"
+                dev.hasDoorSensor() -> if (dev.isDoorOrWindowOpen() == true) "ОТКРЫТО!" else "Закрыто"
+                dev.hasTemperature() && dev.getTemperature() != null -> {
+                    val t = "${dev.getTemperature()}°C"
+                    val h = dev.getHumidity()?.let { " • $it%" } ?: ""
+                    "$t$h"
                 }
-                devInfoLayout.addView(devNameTv)
+                dev.hasWaterOrFuel() -> dev.getWaterOrFuelLevel()?.let { "Уровень: ${it.toInt()}%" } ?: ""
+                dev.hasPower() -> dev.getPower()?.let { "${it.toInt()} Вт" } ?: ""
+                dev.hasBattery() -> dev.getBattery()?.let { "Заряд: $it%" } ?: ""
+                else -> ""
+            }
 
-                // Subtitle preview of current state
-                val stateDesc = when {
-                    dev.hasTemperature() && dev.getTemperature() != null -> {
-                        val t = "${dev.getTemperature()}°C"
-                        val h = dev.getHumidity()?.let { " • $it%" } ?: ""
-                        "$t$h"
-                    }
-                    dev.hasDoorSensor() -> if (dev.isDoorOrWindowOpen() == true) "ОТКРЫТО!" else "Закрыто"
-                    dev.hasWaterOrFuel() -> dev.getWaterOrFuelLevel()?.let { "Уровень: ${it.toInt()}%" } ?: ""
-                    dev.hasPower() -> dev.getPower()?.let { "${it.toInt()} Вт" } ?: ""
-                    dev.hasBattery() -> dev.getBattery()?.let { "Заряд: $it%" } ?: ""
-                    else -> ""
+            if (stateDesc.isNotBlank()) {
+                val devStateTv = TextView(this).apply {
+                    text = stateDesc
+                    setTextColor(getColor(R.color.alice_text_muted))
+                    textSize = 11f
                 }
+                devInfoLayout.addView(devStateTv)
+            }
+            devHeader.addView(devInfoLayout)
 
-                if (stateDesc.isNotBlank()) {
-                    val devStateTv = TextView(this).apply {
-                        text = stateDesc
-                        setTextColor(getColor(R.color.alice_text_muted))
-                        textSize = 11f
-                    }
-                    devInfoLayout.addView(devStateTv)
-                }
-                devHeader.addView(devInfoLayout)
+            // Large Device Switch ("Включить в виджет")
+            val switchDevice = MaterialSwitch(this).apply {
+                isChecked = isSelected
+            }
+            devHeader.addView(switchDevice)
+            devCard.addView(devHeader)
 
-                // Large Device Switch ("Включить в виджет")
-                val switchDevice = MaterialSwitch(this).apply {
-                    isChecked = isSelected
-                }
-                devHeader.addView(switchDevice)
-                devHeader.setOnClickListener {
-                    switchDevice.performClick()
-                }
-                devCard.addView(devHeader)
+            // Metrics Row (Tactile Pill Chips)
+            val metricsContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding((4 * density).toInt(), (8 * density).toInt(), 0, 0)
+                alpha = if (isSelected) 1.0f else 0.35f
+            }
 
-                // Metrics Row (Tactile Pill Chips)
-                val metricsContainer = LinearLayout(this).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    setPadding((4 * density).toInt(), (8 * density).toInt(), 0, 0)
-                    alpha = if (isSelected) 1.0f else 0.35f
-                }
+            val pills = mutableListOf<MetricPill>()
 
-                val pills = mutableListOf<MetricPill>()
-
-                fun createPill(key: String, label: String, initialChecked: Boolean): MetricPill {
-                    lateinit var pillRef: MetricPill
-                    pillRef = MetricPill(this@WidgetConfigureActivity, key, label, initialChecked) { isCheckedNow ->
-                        if (isCheckedNow) {
-                            // Turning on ANY metric -> turn on device and turn on room!
-                            if (!switchDevice.isChecked) {
-                                switchDevice.isChecked = true
-                                metricsContainer.alpha = 1.0f
+            fun createPill(key: String, label: String, initialChecked: Boolean): MetricPill {
+                lateinit var pillRef: MetricPill
+                pillRef = MetricPill(this@WidgetConfigureActivity, key, label, initialChecked) { isCheckedNow ->
+                    if (isCheckedNow) {
+                        if (!switchDevice.isChecked) {
+                            if (maxAllowedDevices == 1) {
+                                for (h in allDeviceHolders) {
+                                    if (h.device.id != dev.id && h.switchDevice.isChecked) {
+                                        h.switchDevice.isChecked = false
+                                        h.metricsContainer.alpha = 0.35f
+                                        h.pills.forEach { it.setChecked(false) }
+                                    }
+                                }
+                                for (rg in roomGroups) {
+                                    rg.switchRoom.isChecked = rg.deviceHolders.any { it.switchDevice.isChecked }
+                                }
+                            } else {
+                                val currentEnabledCount = allDeviceHolders.count { it.isEnabled && it.device.id != dev.id }
+                                if (currentEnabledCount >= maxAllowedDevices) {
+                                    pillRef.setChecked(false)
+                                    Toast.makeText(
+                                        this@WidgetConfigureActivity,
+                                        "Лимит для этого виджета: $maxAllowedDevices устр.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@MetricPill
+                                }
                             }
-                            switchRoom.isChecked = true
-                        } else {
-                            // If all pills turned off -> turn off device
-                            val anyPillActive = pills.any { it.isChecked }
-                            if (!anyPillActive) {
-                                switchDevice.isChecked = false
-                                metricsContainer.alpha = 0.35f
-                                val anyDevActive = groupHolders.any { it.switchDevice.isChecked }
-                                if (!anyDevActive) switchRoom.isChecked = false
-                            }
+                            switchDevice.isChecked = true
+                            metricsContainer.alpha = 1.0f
                         }
-                    }
-                    return pillRef
-                }
-
-                // 1. Temperature
-                if (dev.hasTemperature()) {
-                    val p = createPill("temp", "🌡️ Темп.", isSelected && metricPref.showTemperature)
-                    pills.add(p)
-                    metricsContainer.addView(p.view)
-                }
-
-                // 2. Humidity
-                if (dev.hasHumidity()) {
-                    val p = createPill("hum", "💧 Влажн.", isSelected && metricPref.showHumidity)
-                    pills.add(p)
-                    metricsContainer.addView(p.view)
-                }
-
-                // 3. Pressure
-                if (dev.hasPressure()) {
-                    val p = createPill("press", "📊 Давл.", isSelected && metricPref.showPressure)
-                    pills.add(p)
-                    metricsContainer.addView(p.view)
-                }
-
-                // 4. Door
-                if (dev.hasDoorSensor()) {
-                    val p = createPill("door", "🚪 Дверь", isSelected && metricPref.showDoor)
-                    pills.add(p)
-                    metricsContainer.addView(p.view)
-                }
-
-                // 5. Battery
-                if (dev.hasBattery()) {
-                    val p = createPill("bat", "🔋 Батарея", isSelected && metricPref.showBattery)
-                    pills.add(p)
-                    metricsContainer.addView(p.view)
-                }
-
-                // 6. Fuel / Water Level
-                if (dev.hasWaterOrFuel()) {
-                    val p = createPill("fuel", "⛽ Уровень", isSelected && metricPref.showFuel)
-                    pills.add(p)
-                    metricsContainer.addView(p.view)
-                }
-
-                // 7. Power
-                if (dev.hasPower()) {
-                    val p = createPill("power", "⚡ Мощность", isSelected && metricPref.showPower)
-                    pills.add(p)
-                    metricsContainer.addView(p.view)
-                }
-
-                if (pills.isNotEmpty()) {
-                    devCard.addView(metricsContainer)
-                }
-
-                roomCard.addView(devCard)
-
-                val holder = DeviceConfigViewHolder(dev, devCard, switchDevice, metricsContainer, pills)
-                groupHolders.add(holder)
-                allDeviceHolders.add(holder)
-
-                // When Device Switch is clicked by user:
-                switchDevice.setOnClickListener {
-                    val devActive = switchDevice.isChecked
-                    metricsContainer.alpha = if (devActive) 1.0f else 0.35f
-
-                    if (devActive) {
-                        // Check all available physical metric pills
-                        pills.forEach { it.setChecked(true) }
-                        // Room MUST turn on when ANY device is enabled
                         switchRoom.isChecked = true
                     } else {
-                        // Uncheck all metric pills when device is disabled
-                        pills.forEach { it.setChecked(false) }
-                        // If no devices enabled in room, turn off room switch
-                        val anyDevInRoom = groupHolders.any { it.switchDevice.isChecked }
-                        if (!anyDevInRoom) {
-                            switchRoom.isChecked = false
+                        val anyPillActive = pills.any { it.isChecked }
+                        if (!anyPillActive) {
+                            switchDevice.isChecked = false
+                            metricsContainer.alpha = 0.35f
+                            val anyDevActive = groupHolders.any { it.switchDevice.isChecked }
+                            if (!anyDevActive) switchRoom.isChecked = false
                         }
+                    }
+                }
+                return pillRef
+            }
+
+            // 1. Temperature
+            if (dev.hasTemperature()) {
+                val p = createPill("temp", "🌡️ Темп.", isSelected && metricPref.showTemperature)
+                pills.add(p)
+                metricsContainer.addView(p.view)
+            }
+
+            // 2. Humidity
+            if (dev.hasHumidity()) {
+                val p = createPill("hum", "💧 Влажн.", isSelected && metricPref.showHumidity)
+                pills.add(p)
+                metricsContainer.addView(p.view)
+            }
+
+            // 3. Pressure
+            if (dev.hasPressure()) {
+                val p = createPill("press", "📊 Давл.", isSelected && metricPref.showPressure)
+                pills.add(p)
+                metricsContainer.addView(p.view)
+            }
+
+            // 4. Door
+            if (dev.hasDoorSensor()) {
+                val p = createPill("door", "🚪 Дверь", isSelected && metricPref.showDoor)
+                pills.add(p)
+                metricsContainer.addView(p.view)
+            }
+
+            // 5. Leak
+            if (dev.hasLeakSensor()) {
+                val p = createPill("leak", "💧 Протечка", isSelected && metricPref.showLeak)
+                pills.add(p)
+                metricsContainer.addView(p.view)
+            }
+
+            // 6. Battery
+            if (dev.hasBattery()) {
+                val p = createPill("bat", "🔋 Батарея", isSelected && metricPref.showBattery)
+                pills.add(p)
+                metricsContainer.addView(p.view)
+            }
+
+            // 7. Fuel / Water Level
+            if (dev.hasWaterOrFuel()) {
+                val p = createPill("fuel", "⛽ Уровень", isSelected && metricPref.showFuel)
+                pills.add(p)
+                metricsContainer.addView(p.view)
+            }
+
+            // 8. Power
+            if (dev.hasPower()) {
+                val p = createPill("power", "⚡ Мощность", isSelected && metricPref.showPower)
+                pills.add(p)
+                metricsContainer.addView(p.view)
+            }
+
+            if (pills.isNotEmpty()) {
+                devCard.addView(metricsContainer)
+            }
+
+            roomCard.addView(devCard)
+
+            val holder = DeviceConfigViewHolder(dev, devCard, switchDevice, metricsContainer, pills)
+            groupHolders.add(holder)
+            allDeviceHolders.add(holder)
+
+            // When Device Switch is clicked by user:
+            switchDevice.setOnClickListener {
+                val devActive = switchDevice.isChecked
+                if (devActive) {
+                    if (maxAllowedDevices == 1) {
+                        for (h in allDeviceHolders) {
+                            if (h.device.id != dev.id && h.switchDevice.isChecked) {
+                                h.switchDevice.isChecked = false
+                                h.metricsContainer.alpha = 0.35f
+                                h.pills.forEach { it.setChecked(false) }
+                            }
+                        }
+                        for (rg in roomGroups) {
+                            rg.switchRoom.isChecked = rg.deviceHolders.any { it.switchDevice.isChecked }
+                        }
+                    } else {
+                        val currentEnabledCount = allDeviceHolders.count { it.isEnabled && it.device.id != dev.id }
+                        if (currentEnabledCount >= maxAllowedDevices) {
+                            switchDevice.isChecked = false
+                            Toast.makeText(
+                                this@WidgetConfigureActivity,
+                                "Лимит для этого виджета: $maxAllowedDevices устр.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@setOnClickListener
+                        }
+                    }
+                    metricsContainer.alpha = 1.0f
+                    pills.forEach { it.setChecked(true) }
+                    switchRoom.isChecked = true
+                } else {
+                    metricsContainer.alpha = 0.35f
+                    pills.forEach { it.setChecked(false) }
+                    val anyDevInRoom = groupHolders.any { it.switchDevice.isChecked }
+                    if (!anyDevInRoom) {
+                        switchRoom.isChecked = false
                     }
                 }
             }
 
-            // Initial state of Room Switch: ON if ANY device in room is enabled!
-            switchRoom.isChecked = groupHolders.any { it.switchDevice.isChecked }
+            devHeader.setOnClickListener {
+                switchDevice.isChecked = !switchDevice.isChecked
+                switchDevice.callOnClick()
+            }
+        }
 
-            // When Room Switch is clicked by user:
-            switchRoom.setOnClickListener {
-                val roomActive = switchRoom.isChecked
+        // Initial state of Room Switch: ON if ANY device in room is enabled!
+        switchRoom.isChecked = groupHolders.any { it.switchDevice.isChecked }
+
+        // When Room Switch is clicked by user:
+        switchRoom.setOnClickListener {
+            val roomActive = switchRoom.isChecked
+            if (!roomActive) {
                 for (h in groupHolders) {
-                    h.switchDevice.isChecked = roomActive
-                    h.metricsContainer.alpha = if (roomActive) 1.0f else 0.35f
-                    h.pills.forEach { it.setChecked(roomActive) }
+                    h.switchDevice.isChecked = false
+                    h.metricsContainer.alpha = 0.35f
+                    h.pills.forEach { it.setChecked(false) }
+                }
+            } else {
+                if (maxAllowedDevices == 1) {
+                    for (h in allDeviceHolders) {
+                        h.switchDevice.isChecked = false
+                        h.metricsContainer.alpha = 0.35f
+                        h.pills.forEach { it.setChecked(false) }
+                    }
+                    for (rg in roomGroups) {
+                        rg.switchRoom.isChecked = false
+                    }
+                    switchRoom.isChecked = true
+                    val firstH = groupHolders.firstOrNull()
+                    if (firstH != null) {
+                        firstH.switchDevice.isChecked = true
+                        firstH.metricsContainer.alpha = 1.0f
+                        firstH.pills.forEach { it.setChecked(true) }
+                    }
+                } else {
+                    var currentTotal = allDeviceHolders.count { it.isEnabled && !groupHolders.contains(it) }
+                    var added = 0
+                    for (h in groupHolders) {
+                        if (currentTotal < maxAllowedDevices) {
+                            h.switchDevice.isChecked = true
+                            h.metricsContainer.alpha = 1.0f
+                            h.pills.forEach { it.setChecked(true) }
+                            currentTotal++
+                            added++
+                        } else {
+                            h.switchDevice.isChecked = false
+                            h.metricsContainer.alpha = 0.35f
+                            h.pills.forEach { it.setChecked(false) }
+                        }
+                    }
+                    if (added == 0) {
+                        switchRoom.isChecked = false
+                        Toast.makeText(
+                            this@WidgetConfigureActivity,
+                            "Лимит ($maxAllowedDevices устр.) уже исчерпан",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        switchRoom.isChecked = true
+                    }
                 }
             }
-
-            roomHeader.setOnClickListener {
-                switchRoom.performClick()
-            }
-
-            binding.layoutConfigDevicesList.addView(roomCard)
         }
+
+        roomHeader.setOnClickListener {
+            switchRoom.performClick()
+        }
+
+        binding.layoutConfigDevicesList.addView(roomCard)
+    }
+}
+
+private fun saveAndFinish() {
+    val theme = when (binding.rgConfigTheme.checkedRadioButtonId) {
+        R.id.rbConfigThemeIos -> WidgetDataManager.THEME_IOS
+        R.id.rbConfigThemeAlice -> WidgetDataManager.THEME_ALICE
+        R.id.rbConfigThemeYandexWhite -> WidgetDataManager.THEME_YANDEX_WHITE
+        R.id.rbConfigThemeFluentPastel -> WidgetDataManager.THEME_FLUENT_PASTEL
+        R.id.rbConfigThemeCyberpunk -> WidgetDataManager.THEME_CYBERPUNK
+        R.id.rbConfigThemeNordicAurora -> WidgetDataManager.THEME_NORDIC_AURORA
+        else -> WidgetDataManager.THEME_XIAOMI
     }
 
-    private fun saveAndFinish() {
-        val theme = when (binding.rgConfigTheme.checkedRadioButtonId) {
-            R.id.rbConfigThemeIos -> WidgetDataManager.THEME_IOS
-            R.id.rbConfigThemeAlice -> WidgetDataManager.THEME_ALICE
-            R.id.rbConfigThemeYandexWhite -> WidgetDataManager.THEME_YANDEX_WHITE
-            R.id.rbConfigThemeFluentPastel -> WidgetDataManager.THEME_FLUENT_PASTEL
-            R.id.rbConfigThemeAndroid -> WidgetDataManager.THEME_ANDROID
-            R.id.rbConfigThemeNothing -> WidgetDataManager.THEME_NOTHING
-            else -> WidgetDataManager.THEME_XIAOMI
+    val customTitle = binding.etConfigTitle.text.toString().trim().ifBlank { null }
+    val chosenDeviceIds = mutableListOf<String>()
+
+    for (holder in allDeviceHolders) {
+        val devId = holder.device.id
+        if (holder.isEnabled) {
+            chosenDeviceIds.add(devId)
         }
 
-        val customTitle = binding.etConfigTitle.text.toString().trim().ifBlank { null }
-        val chosenDeviceIds = mutableListOf<String>()
-
-        for (holder in allDeviceHolders) {
-            val devId = holder.device.id
-            if (holder.isEnabled) {
-                chosenDeviceIds.add(devId)
-            }
-
-            // Save individual metrics for this device STRICTLY ISOLATED to this widget instance!
-            val newSetting = WidgetDataManager.DeviceMetricSetting(
-                showTemperature = holder.getPill("temp")?.isChecked ?: true,
-                showHumidity = holder.getPill("hum")?.isChecked ?: true,
-                showPressure = holder.getPill("press")?.isChecked ?: false,
-                showDoor = holder.getPill("door")?.isChecked ?: true,
-                showLeak = true,
-                showBattery = holder.getPill("bat")?.isChecked ?: true,
-                showFuel = holder.getPill("fuel")?.isChecked ?: true,
-                showPower = holder.getPill("power")?.isChecked ?: true
-            )
-            dataManager.saveDeviceMetricSetting(devId, newSetting, appWidgetId)
-        }
-
-        // Save isolated config for THIS specific widget instance
-        val config = WidgetDataManager.WidgetInstanceConfig(
-            appWidgetId = appWidgetId,
-            theme = theme,
-            selectedDeviceIds = chosenDeviceIds,
-            customTitle = customTitle
+        // Save individual metrics for this device STRICTLY ISOLATED to this widget instance!
+        val newSetting = WidgetDataManager.DeviceMetricSetting(
+            showTemperature = holder.getPill("temp")?.isChecked ?: true,
+            showHumidity = holder.getPill("hum")?.isChecked ?: true,
+            showPressure = holder.getPill("press")?.isChecked ?: false,
+            showDoor = holder.getPill("door")?.isChecked ?: true,
+            showLeak = holder.getPill("leak")?.isChecked ?: true,
+            showBattery = holder.getPill("bat")?.isChecked ?: true,
+            showFuel = holder.getPill("fuel")?.isChecked ?: true,
+            showPower = holder.getPill("power")?.isChecked ?: true
         )
-        dataManager.saveWidgetConfig(config)
+        dataManager.saveDeviceMetricSetting(devId, newSetting, appWidgetId)
+    }
+
+    val maxAllowed = getMaxDevicesForWidget()
+    val finalChosenIds = chosenDeviceIds.take(maxAllowed)
+    if (finalChosenIds.isEmpty()) {
+        Toast.makeText(this, "Выберите хотя бы одно устройство", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    // Save isolated config for THIS specific widget instance
+    val config = WidgetDataManager.WidgetInstanceConfig(
+        appWidgetId = appWidgetId,
+        theme = theme,
+        selectedDeviceIds = finalChosenIds,
+        customTitle = customTitle
+    )
+    dataManager.saveWidgetConfig(config)
 
         // Update ONLY the exact provider corresponding to this widget instance
         val appWidgetManager = AppWidgetManager.getInstance(this)

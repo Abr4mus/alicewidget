@@ -74,6 +74,19 @@
     <color name="fluent_pastel_blue">#70A1FF</color>
     <color name="fluent_pastel_mint">#2ED573</color>
 
+    <!-- Cyberpunk Neon Style Colors -->
+    <color name="cyberpunk_dark">#080A10</color>
+    <color name="cyberpunk_cyan">#00F0FF</color>
+    <color name="cyberpunk_pink">#FF0055</color>
+    <color name="cyberpunk_purple">#BD00FF</color>
+    <color name="cyberpunk_mint">#00F5D4</color>
+
+    <!-- Nordic Aurora Style Colors -->
+    <color name="nordic_aurora_dark">#0D1B24</color>
+    <color name="nordic_aurora_mint">#00E5A3</color>
+    <color name="nordic_aurora_blue">#64D2FF</color>
+    <color name="nordic_aurora_amber">#FFB340</color>
+
     <!-- System -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>

@@ -11,8 +11,8 @@ android {
         applicationId = "com.alice.homewidget"
         minSdk = 26
         targetSdk = 34
-        versionCode = 11
-        versionName = "0.38"
+        versionCode = 12
+        versionName = "0.39"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

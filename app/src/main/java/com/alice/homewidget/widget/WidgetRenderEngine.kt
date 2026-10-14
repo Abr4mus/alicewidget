@@ -76,38 +76,40 @@ object WidgetRenderEngine {
             okGreen = 0xFF50FA7B.toInt(),
             cornerRadiusDp = 26f
         )
-        WidgetDataManager.THEME_NOTHING -> ThemePalette(
-            // Nothing OS: Deep monochrome tech with high-contrast Bauhaus geometry
-            bgStart = 0xF50D0E11.toInt(),
-            bgEnd = 0xFA08080A.toInt(),
-            borderTop = 0x4DFFFFFF.toInt(),
-            borderBottom = 0x1AFFFFFF.toInt(),
-            tileBg = 0x1CFFFFFF.toInt(),
-            tileBorder = 0x2EFFFFFF.toInt(),
+        WidgetDataManager.THEME_CYBERPUNK -> ThemePalette(
+            // Cyberpunk Neon: Deep OLED black with electric cyan and purple glowing contours
+            bgStart = 0xF5080A10.toInt(),
+            bgEnd = 0xFA040508.toInt(),
+            borderTop = 0xD000F0FF.toInt(),     // Neon Cyan
+            borderBottom = 0x60BD00FF.toInt(),  // Electric Purple
+            tileBg = 0x2400F0FF.toInt(),
+            tileBorder = 0x5500F0FF.toInt(),
             textPrimary = 0xFFFFFFFF.toInt(),
-            textSecondary = 0xFF8A8D93.toInt(),
-            accentComfort = 0xFFFFFFFF.toInt(),
-            accentWarm = 0xFFD71921.toInt(),    // Nothing Red
-            accentCold = 0xFFD0D3D9.toInt(),
-            alertRed = 0xFFD71921.toInt(),
-            okGreen = 0xFFFFFFFF.toInt(),
-            cornerRadiusDp = 22f
+            textSecondary = 0xFF8AE8FF.toInt(), // Cyan Lavender
+            accentComfort = 0xFF00F5D4.toInt(), // Cyber Mint
+            accentWarm = 0xFFFF0055.toInt(),    // Neon Pink
+            accentCold = 0xFF00B4D8.toInt(),    // Deep Aqua
+            alertRed = 0xFFFF0055.toInt(),
+            okGreen = 0xFF00F5D4.toInt(),
+            isGlassmorphism = true,
+            cornerRadiusDp = 26f
         )
-        WidgetDataManager.THEME_ANDROID -> ThemePalette(
-            // Android Material You: Tonal graphite surface with pastel accents
-            bgStart = 0xF01C1E22.toInt(),
-            bgEnd = 0xF6101114.toInt(),
-            borderTop = 0x5082D9BC.toInt(),     // Pastel Mint Highlight
-            borderBottom = 0x1882D9BC.toInt(),
-            tileBg = 0x22FFFFFF.toInt(),
-            tileBorder = 0x28FFFFFF.toInt(),
-            textPrimary = 0xFFE6E1E5.toInt(),
-            textSecondary = 0xFF9995A0.toInt(),
-            accentComfort = 0xFF82D9BC.toInt(), // Mint
-            accentWarm = 0xFFF28B82.toInt(),    // Coral
-            accentCold = 0xFF78D9EC.toInt(),    // Sky
-            alertRed = 0xFFF28B82.toInt(),
-            okGreen = 0xFF82D9BC.toInt(),
+        WidgetDataManager.THEME_NORDIC_AURORA -> ThemePalette(
+            // Nordic Aurora: Scandinavian midnight slate with emerald northern lights glow
+            bgStart = 0xF00D1B24.toInt(),
+            bgEnd = 0xF6071017.toInt(),
+            borderTop = 0xBF00E5A3.toInt(),     // Aurora Borealis Mint
+            borderBottom = 0x3000E5A3.toInt(),
+            tileBg = 0x1E00E5A3.toInt(),
+            tileBorder = 0x4800E5A3.toInt(),
+            textPrimary = 0xFFFFFFFF.toInt(),
+            textSecondary = 0xFFB2DFDB.toInt(), // Pale Glacier Mint
+            accentComfort = 0xFF00E5A3.toInt(), // Aurora Mint
+            accentWarm = 0xFFFFB340.toInt(),    // Nordic Amber
+            accentCold = 0xFF64D2FF.toInt(),    // Polar Blue
+            alertRed = 0xFFFF453A.toInt(),
+            okGreen = 0xFF00E5A3.toInt(),
+            isGlassmorphism = true,
             cornerRadiusDp = 26f
         )
         WidgetDataManager.THEME_YANDEX_WHITE -> ThemePalette(
@@ -481,10 +483,12 @@ object WidgetRenderEngine {
 
     // --- FULL-CARD WIDGET RENDERING IMPLEMENTATIONS ---
 
+    // --- FULL-CARD WIDGET RENDERING IMPLEMENTATIONS ---
+
     /**
      * 2x1 Compact Pill:
-     * Room Name (top-left) + Large crisp temperature (bottom-left) + Comfort status text +
-     * Frosted Glass Humidity Capsule (right) + reserved action buttons (top-right).
+     * Room / Device Name (top-left) + Large state/temperature (bottom-left) +
+     * High-clarity Frosted Glass Pill (right) for metrics (e.g. ⛽ 65% • 🔋 12.6 В or 💧 48%).
      */
     fun render2x1WidgetBitmap(
         context: Context,
@@ -503,58 +507,57 @@ object WidgetRenderEngine {
 
         val cornerRadius = palette.cornerRadiusDp * density
         val cardRect = RectF(0f, 0f, w.toFloat(), h.toFloat())
-
         drawSquircleCard(canvas, cardRect, cornerRadius, palette)
 
-        val padLeft = 16f * density
-        val padTop = 11f * density
-        val padRight = 14f * density
-        val padBottom = 11f * density
-        val actionHotspotWidth = 68f * density
+        val padLeft = 14f * density
+        val padTop = 10f * density
+        val padRight = 12f * density
+        val padBottom = 10f * density
+        val actionHotspotWidth = 64f * density
 
-        // 1. Room Title
+        val st = data.state
+
+        // 1. Title (Icon + Name)
+        val titleText = "${st.iconEmoji} ${data.title}"
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textSecondary
-            textSize = (11f * density).coerceIn(10f, 14f * density)
+            textSize = (11.5f * density).coerceIn(10f, 13f * density)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            if (palette.isGlassmorphism) {
-                setShadowLayer(3f * density, 0f, 1.2f * density, 0x90000000.toInt())
-            }
+            if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
         }
-        val maxTitleW = w - padLeft - actionHotspotWidth - 10f * density
-        val safeTitle = ellipsizeText(data.title, titlePaint, maxTitleW)
+        val maxTitleW = w - padLeft - actionHotspotWidth
+        val safeTitle = ellipsizeText(titleText, titlePaint, maxTitleW)
         val titleY = padTop + titlePaint.textSize
         canvas.drawText(safeTitle, padLeft, titleY, titlePaint)
 
-        // 2. Main Temperature
-        val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = palette.textPrimary
-            textSize = (h * 0.44f).coerceIn(22f * density, 34f * density)
+        // 2. Main Text (Big bold state or temperature)
+        val mainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (st.isAlert) palette.alertRed else palette.textPrimary
+            textSize = (h * 0.40f).coerceIn(20f * density, 30f * density)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            if (palette.isGlassmorphism) {
-                setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
-            }
+            if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
         }
-        val tempY = h - padBottom - 2f * density
-        canvas.drawText(data.tempText, padLeft, tempY, tempPaint)
-        val tempWidth = tempPaint.measureText(data.tempText)
+        val mainY = h - padBottom - 2f * density
+        val safeMain = ellipsizeText(st.mainText, mainPaint, (w - padLeft - padRight) * 0.54f)
+        canvas.drawText(safeMain, padLeft, mainY, mainPaint)
+        val mainWidth = mainPaint.measureText(safeMain)
 
-        // 3. Status indicator & clear text badge
-        val rawTemp = data.tempText.replace("°", "").toDoubleOrNull()
-        val (comfortColor, comfortText) = getComfortInfo(rawTemp, palette)
-        drawStatusDot(canvas, padLeft + tempWidth + 10f * density, tempY - tempPaint.textSize * 0.35f, 3.5f * density, comfortColor)
+        // 3. Right Frosted Badge (Secondary metric)
+        val badgeText = when {
+            st.badge1 != null && st.badge2 != null -> "${st.badge1} • ${st.badge2}"
+            st.badge1 != null -> st.badge1
+            st.subText != null -> st.subText
+            else -> null
+        }
 
-        // 4. Right Frosted Capsule (Humidity or Status)
-        if (data.humidityText != null) {
-            val pillH = (h * 0.40f).coerceIn(24f * density, 32f * density)
-            val pillW = (68f * density).coerceAtMost(w - padLeft - tempWidth - 24f * density)
-            if (pillW > 40f * density) {
-                val pillRight = w - padRight
-                val pillTop = h - padBottom - pillH
-                val pillRect = RectF(pillRight - pillW, pillTop, pillRight, pillTop + pillH)
-                val icon = if (data.humidityText == "Уровень" || data.humidityText == "Топливо") R.drawable.ic_humidity else R.drawable.ic_humidity
-                drawGlassPill(context, canvas, pillRect, icon, data.humidityText, palette.accentCold, palette)
-            }
+        if (badgeText != null) {
+            val pillH = (h * 0.38f).coerceIn(22f * density, 28f * density)
+            val pillMaxW = (w - padLeft - mainWidth - 14f * density).coerceAtLeast(50f * density)
+            val pillRight = w - padRight
+            val pillTop = h - padBottom - pillH
+            val pillRect = RectF(pillRight - pillMaxW, pillTop, pillRight, pillTop + pillH)
+            val badgeColor = if (st.isAlert) palette.alertRed else palette.accentCold
+            drawGlassPill(context, canvas, pillRect, null, badgeText, badgeColor, palette)
         }
 
         return bitmap
@@ -562,8 +565,9 @@ object WidgetRenderEngine {
 
     /**
      * 2x2 Square Widget:
-     * Header with Room & Comfort Dot + Central Comfort Ring Gauge with temperature and
-     * interactive clarity status ("🌿 Комфортно") + Bottom Glass Humidity Pill.
+     * Custom tailored display for each device type!
+     * Climate sensor gets comfort gauge arc; Vehicle, TV, Kettle, Switch, Leak get
+     * large prominent state cards with secondary badges and NO temperature arc!
      */
     fun render2x2WidgetBitmap(
         context: Context,
@@ -583,68 +587,111 @@ object WidgetRenderEngine {
         val cornerRadius = palette.cornerRadiusDp * density
         drawSquircleCard(canvas, RectF(0f, 0f, w.toFloat(), h.toFloat()), cornerRadius, palette)
 
-        val pad = 14f * density
+        val pad = 12f * density
+        val st = data.state
 
-        // 1. Top Title (Dynamic size auto-scaling to fit room name without truncation)
-        val maxTitleW = w - pad - 64f * density
-        var titleSize = 13f * density
+        // 1. Top Title (Icon + Name)
+        val maxTitleW = w - pad - 60f * density
+        val titleText = "${st.iconEmoji} ${data.title}"
+        var titleSize = 12.5f * density
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textSecondary
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            if (palette.isGlassmorphism) {
-                setShadowLayer(3f * density, 0f, 1.2f * density, 0x90000000.toInt())
-            }
+            if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
         }
         while (titleSize > 8.5f * density) {
             titlePaint.textSize = titleSize
-            if (titlePaint.measureText(data.title) <= maxTitleW) break
+            if (titlePaint.measureText(titleText) <= maxTitleW) break
             titleSize -= 0.5f * density
         }
-        val safeTitle = ellipsizeText(data.title, titlePaint, maxTitleW)
+        val safeTitle = ellipsizeText(titleText, titlePaint, maxTitleW)
         canvas.drawText(safeTitle, pad, pad + titleSize, titlePaint)
 
-        // 2. Central Comfort Ring Gauge
-        val rawTemp = data.tempText.replace("°", "").toDoubleOrNull()
         val cx = w / 2f
-        val cy = h * 0.44f
-        val gaugeRadius = (min(w, h) * 0.24f).coerceIn(22f * density, 48f * density)
-        val strokeWidth = 5f * density
 
-        drawComfortGaugeRing(canvas, cx, cy, gaugeRadius, strokeWidth, rawTemp, palette, showStatusText = false)
+        if (st.hasComfortArc) {
+            // --- CLIMATE SENSOR MODE (with Comfort Gauge Ring) ---
+            val cy = h * 0.44f
+            val gaugeRadius = (min(w, h) * 0.23f).coerceIn(20f * density, 44f * density)
+            val strokeWidth = 5f * density
+            drawComfortGaugeRing(canvas, cx, cy, gaugeRadius, strokeWidth, st.rawTemperature, palette, showStatusText = false)
 
-        // 3. Big Temperature Inside Ring
-        val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = palette.textPrimary
-            textSize = (gaugeRadius * 0.70f).coerceIn(16f * density, 28f * density)
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textAlign = Paint.Align.CENTER
-            if (palette.isGlassmorphism) {
-                setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
+            val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = palette.textPrimary
+                textSize = (gaugeRadius * 0.72f).coerceIn(16f * density, 28f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
             }
-        }
-        val fontMetrics = tempPaint.fontMetrics
-        val tempY = cy - 2f * density - (fontMetrics.ascent + fontMetrics.descent) / 2f
-        canvas.drawText(data.tempText, cx, tempY, tempPaint)
+            val fontMetrics = tempPaint.fontMetrics
+            val tempY = cy - 2f * density - (fontMetrics.ascent + fontMetrics.descent) / 2f
+            canvas.drawText(st.mainText, cx, tempY, tempPaint)
 
-        // 4. Clarifying Comfort Status inside open bottom arc of gauge (Zero collision with bottom pill!)
-        val (comfortColor, comfortText) = getComfortInfo(rawTemp, palette)
-        val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = comfortColor
-            textSize = (gaugeRadius * 0.28f).coerceIn(8.5f * density, 11f * density)
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textAlign = Paint.Align.CENTER
-            if (palette.isGlassmorphism) {
-                setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
+            val (comfortColor, comfortText) = getComfortInfo(st.rawTemperature, palette)
+            val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = comfortColor
+                textSize = (gaugeRadius * 0.28f).coerceIn(8.5f * density, 11f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
             }
-        }
-        canvas.drawText(comfortText, cx, cy + gaugeRadius * 0.58f, statusPaint)
+            canvas.drawText(comfortText, cx, cy + gaugeRadius * 0.58f, statusPaint)
 
-        // 5. Bottom Frosted Glass Pill (ample breathing room and perfectly spaced)
-        if (data.humidityText != null) {
-            val pillH = 24f * density
-            val pillW = 72f * density
-            val pillRect = RectF(cx - pillW / 2f, h - pad - pillH, cx + pillW / 2f, h - pad)
-            drawGlassPill(context, canvas, pillRect, R.drawable.ic_humidity, data.humidityText, palette.accentCold, palette)
+            if (st.badge1 != null) {
+                val pillH = 22f * density
+                val pillW = (w - pad * 2).coerceAtMost(80f * density)
+                val pillRect = RectF(cx - pillW / 2f, h - pad - pillH, cx + pillW / 2f, h - pad)
+                drawGlassPill(context, canvas, pillRect, null, st.badge1, palette.accentCold, palette)
+            }
+        } else {
+            // --- DEVICE SPECIFIC MODE (Car, Kettle, TV, Switch, Leak, Door) - NO ARC! ---
+            val centerTileTop = pad + titleSize + 8f * density
+            val centerTileBottom = h - pad - 30f * density
+            val centerTileRect = RectF(pad, centerTileTop, w - pad, centerTileBottom)
+            drawSquircleCard(canvas, centerTileRect, 14f * density, palette, isSubTile = true)
+
+            // Large State Text (e.g. "ЗАГЛУШЕН", "32°C", "ВКЛЮЧЕН", "СУХО")
+            val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (st.isAlert) palette.alertRed else palette.textPrimary
+                textSize = (centerTileRect.height() * 0.36f).coerceIn(16f * density, 24f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+            }
+            val stateMetrics = statePaint.fontMetrics
+            val stateY = centerTileRect.centerY() - 4f * density - (stateMetrics.ascent + stateMetrics.descent) / 2f
+            val safeState = ellipsizeText(st.mainText, statePaint, centerTileRect.width() - 12f * density)
+            canvas.drawText(safeState, cx, stateY, statePaint)
+
+            // Subtitle text (e.g. "🔒 На охране", "Не греет", "Телевизор")
+            if (st.subText != null) {
+                val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (st.isAlert) palette.alertRed else palette.textSecondary
+                    textSize = 10f * density
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    textAlign = Paint.Align.CENTER
+                    if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+                }
+                val safeSub = ellipsizeText(st.subText, subPaint, centerTileRect.width() - 12f * density)
+                canvas.drawText(safeSub, cx, centerTileRect.bottom - 7f * density, subPaint)
+            }
+
+            // Bottom Badges (e.g. "⛽ 65%" and "🔋 12.6 В")
+            val bottomY = h - pad - 22f * density
+            val pillH = 22f * density
+            val hasTwoBadges = st.badge1 != null && st.badge2 != null
+
+            if (hasTwoBadges) {
+                val pillW = (w - pad * 2 - 8f * density) / 2f
+                val r1 = RectF(pad, bottomY, pad + pillW, bottomY + pillH)
+                val r2 = RectF(pad + pillW + 8f * density, bottomY, w - pad, bottomY + pillH)
+                drawGlassPill(context, canvas, r1, null, st.badge1!!, palette.accentComfort, palette)
+                drawGlassPill(context, canvas, r2, null, st.badge2!!, palette.accentCold, palette)
+            } else if (st.badge1 != null) {
+                val pillW = (w - pad * 2).coerceAtMost(96f * density)
+                val r = RectF(cx - pillW / 2f, bottomY, cx + pillW / 2f, bottomY + pillH)
+                drawGlassPill(context, canvas, r, null, st.badge1, palette.accentComfort, palette)
+            }
         }
 
         return bitmap
@@ -652,8 +699,8 @@ object WidgetRenderEngine {
 
     /**
      * 4x1 Modern Glass Ribbon:
-     * Overhauled with 3 distinct Frosted Glass Compartments, large bold numbers,
-     * crisp glowing vector icons (🌡️, 💧, 🚪, 🔋, ⚡), and high visibility.
+     * Up to 2 distinct Frosted Glass Pods with ample horizontal space.
+     * Labels and values never stick out or overflow!
      */
     fun render4x1WidgetBitmap(
         context: Context,
@@ -673,89 +720,60 @@ object WidgetRenderEngine {
         val cornerRadius = palette.cornerRadiusDp * density
         drawSquircleCard(canvas, RectF(0f, 0f, w.toFloat(), h.toFloat()), cornerRadius, palette)
 
-        val actionHotspotWidth = 68f * density
+        val actionHotspotWidth = 64f * density
         val padLeft = 12f * density
-        val padTop = 9f * density
-        val padBottom = 9f * density
+        val padTop = 8f * density
+        val padBottom = 8f * density
         val availWidth = w - padLeft - actionHotspotWidth
 
-        val slotCount = slots.size.coerceIn(1, 3)
-        val gap = 6f * density
+        val slotCount = slots.size.coerceIn(1, 2)
+        val gap = 8f * density
         val slotW = (availWidth - gap * (slotCount - 1)) / slotCount
 
         for (i in 0 until slotCount) {
             val slot = slots[i]
+            val st = slot.state
             val slotLeft = padLeft + i * (slotW + gap)
             val slotRect = RectF(slotLeft, padTop, slotLeft + slotW, h - padBottom)
 
-            // Draw Frosted Sub-Card Compartment for each slot
             drawSquircleCard(canvas, slotRect, 14f * density, palette, isSubTile = true)
 
-            val innerPad = 7f * density
+            val innerPad = 8f * density
 
-            // Top: Room / Device Name
+            // Top: Icon + Room / Device Name
             val roomPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = palette.textSecondary
-                textSize = 9.5f * density
-                if (palette.isGlassmorphism) {
-                    setShadowLayer(2.5f * density, 0f, 1f * density, 0x90000000.toInt())
-                }
+                textSize = (10.5f * density).coerceIn(9f * density, 12f * density)
+                if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
             }
-            val roomName = ellipsizeText(slot.roomName, roomPaint, slotW - innerPad * 2)
+            val titleStr = "${st.iconEmoji} ${slot.title}"
+            val roomName = ellipsizeText(titleStr, roomPaint, slotW - innerPad * 2)
             canvas.drawText(roomName, slotLeft + innerPad, padTop + innerPad + roomPaint.textSize, roomPaint)
 
-            // Bottom Metrics Row with Crisp Icons & Prominent Numbers
+            // Bottom Metrics Row
             val contentY = slotRect.bottom - innerPad - 2f * density
-            var startX = slotLeft + innerPad
+            val mainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (st.isAlert) palette.alertRed else palette.textPrimary
+                textSize = (15.5f * density).coerceIn(13f * density, 18f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+            }
+            val safeMain = ellipsizeText(st.mainText, mainPaint, slotW * 0.52f)
+            canvas.drawText(safeMain, slotLeft + innerPad, contentY, mainPaint)
 
-            if (slot.isDoor) {
-                val doorColor = if (slot.isDoorAlert) palette.alertRed else palette.okGreen
-                val iconSize = 14f * density
-                drawVectorDrawable(context, canvas, R.drawable.ic_door, startX, contentY - iconSize + 2f, iconSize, iconSize, tintColor = doorColor)
-                startX += iconSize + 4f * density
-
-                val doorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = doorColor
-                    textSize = 12.5f * density
+            val badgeText = st.badge1 ?: st.subText
+            if (badgeText != null) {
+                val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (st.isAlert) palette.alertRed else palette.accentCold
+                    textSize = 11.5f * density
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    if (palette.isGlassmorphism) {
-                        setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
-                    }
+                    if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
                 }
-                canvas.drawText(slot.mainText, startX, contentY, doorPaint)
-            } else {
-                // 1. Thermometer icon
-                val iconSize = 13f * density
-                drawVectorDrawable(context, canvas, R.drawable.ic_thermometer, startX, contentY - iconSize + 2f, iconSize, iconSize, tintColor = palette.accentComfort)
-                startX += iconSize + 3f * density
-
-                // 2. Large Bold Temperature
-                val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = palette.textPrimary
-                    textSize = 15f * density
-                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    if (palette.isGlassmorphism) {
-                        setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
-                    }
-                }
-                canvas.drawText(slot.mainText, startX, contentY, tempPaint)
-                startX += tempPaint.measureText(slot.mainText) + 6f * density
-
-                // 3. Humidity or Secondary with droplet
-                if (slot.secondaryText != null && (startX + 28f * density <= slotRect.right - innerPad)) {
-                    val humIconSize = 11f * density
-                    drawVectorDrawable(context, canvas, R.drawable.ic_humidity, startX, contentY - humIconSize + 1f, humIconSize, humIconSize, tintColor = palette.accentCold)
-                    startX += humIconSize + 2f * density
-
-                    val humPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = palette.accentCold
-                        textSize = 12f * density
-                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                        if (palette.isGlassmorphism) {
-                            setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
-                        }
-                    }
-                    canvas.drawText(slot.secondaryText, startX, contentY, humPaint)
+                val availBadgeW = slotRect.right - innerPad - (slotLeft + innerPad + mainPaint.measureText(safeMain) + 6f * density)
+                if (availBadgeW > 24f * density) {
+                    val safeBadge = ellipsizeText(badgeText, badgePaint, availBadgeW)
+                    val badgeX = slotRect.right - innerPad - badgePaint.measureText(safeBadge)
+                    canvas.drawText(safeBadge, badgeX, contentY, badgePaint)
                 }
             }
         }
@@ -765,8 +783,9 @@ object WidgetRenderEngine {
 
     /**
      * 4x2 Flagship Smart Home Hub Dashboard:
-     * Header + Left Primary Climate Compartment with Comfort Ring & Textual Status Badge +
-     * Right Secondary Multi-Room Frosted Cards & Security/Battery Badges.
+     * Header with isolated Room / Device title + Left Primary Device Compartment (tailored
+     * for vehicle, kettle, tv, switch, climate with zero arc on non-climate!) +
+     * Right Secondary Device Pods (up to 2 devices) with zero text layering!
      */
     fun render4x2WidgetBitmap(
         context: Context,
@@ -786,21 +805,21 @@ object WidgetRenderEngine {
         val cornerRadius = palette.cornerRadiusDp * density
         drawSquircleCard(canvas, RectF(0f, 0f, w.toFloat(), h.toFloat()), cornerRadius, palette)
 
-        val padLeft = 16f * density
-        val padTop = 12f * density
-        val padRight = 14f * density
-        val padBottom = 12f * density
+        val padLeft = 14f * density
+        val padTop = 11f * density
+        val padRight = 12f * density
+        val padBottom = 11f * density
 
-        // 1. Header (Left: Title + Subtitle)
+        val primary = data.primaryState
+
+        // 1. Header (Left: Primary Title + Subtitle)
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textPrimary
-            textSize = 13.5f * density
+            textSize = 14f * density
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            if (palette.isGlassmorphism) {
-                setShadowLayer(3f * density, 0f, 1.2f * density, 0x90000000.toInt())
-            }
+            if (palette.isGlassmorphism) setShadowLayer(3f * density, 0f, 1.2f * density, 0x90000000.toInt())
         }
-        val headerTitle = ellipsizeText(data.primaryRoomName, titlePaint, w - padLeft - 76f * density)
+        val headerTitle = ellipsizeText("${primary.iconEmoji} ${data.primaryRoomName}", titlePaint, w - padLeft - 76f * density)
         canvas.drawText(headerTitle, padLeft, padTop + 13f * density, titlePaint)
 
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -812,133 +831,151 @@ object WidgetRenderEngine {
         val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textSecondary
             textSize = 9.5f * density
-            if (palette.isGlassmorphism) {
-                setShadowLayer(2f * density, 0f, 1f * density, 0x85000000.toInt())
-            }
+            if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x85000000.toInt())
         }
         canvas.drawText(updateTimeStr, padLeft, padTop + 24f * density, subPaint)
 
         val bodyTop = padTop + 32f * density
         val bodyBottom = h - padBottom
 
-        val hasRightContent = data.roomSensors.isNotEmpty() || data.openDoorDeviceName != null || data.isAnyDoorOpen || data.lowestBatteryLevel != null
-        val leftCardW = if (hasRightContent) (w - padLeft - padRight - 10f * density) * 0.48f else (w - padLeft - padRight)
+        val hasSecondaries = data.secondaryDevices.isNotEmpty()
+        val leftCardW = if (hasSecondaries) (w - padLeft - padRight - 10f * density) * 0.50f else (w - padLeft - padRight)
 
-        // 2. Left Primary Compartment Card (Frosted Glass Sub-Card)
+        // 2. Left Primary Compartment Card (Device 1)
         val leftCardRect = RectF(padLeft, bodyTop, padLeft + leftCardW, bodyBottom)
         drawSquircleCard(canvas, leftCardRect, 18f * density, palette, isSubTile = true)
 
         val innerPad = 10f * density
-        val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = palette.textPrimary
-            textSize = (leftCardRect.height() * 0.35f).coerceIn(20f * density, 30f * density)
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            if (palette.isGlassmorphism) {
-                setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
+
+        if (primary.hasComfortArc) {
+            // Climate Display with Arc
+            val tempPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = palette.textPrimary
+                textSize = (leftCardRect.height() * 0.35f).coerceIn(20f * density, 30f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                if (palette.isGlassmorphism) setShadowLayer(4f * density, 0f, 1.5f * density, 0x85000000.toInt())
+            }
+            val tempY = leftCardRect.top + innerPad + tempPaint.textSize
+            canvas.drawText(primary.mainText, leftCardRect.left + innerPad, tempY, tempPaint)
+
+            val gaugeRadius = (leftCardRect.height() * 0.22f).coerceIn(14f * density, 22f * density)
+            val gaugeCx = leftCardRect.right - innerPad - gaugeRadius
+            val gaugeCy = leftCardRect.top + innerPad + gaugeRadius
+            drawComfortGaugeRing(canvas, gaugeCx, gaugeCy, gaugeRadius, 4.5f * density, primary.rawTemperature, palette, showStatusText = false)
+
+            val (comfortColor, comfortText) = getComfortInfo(primary.rawTemperature, palette)
+            val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = comfortColor
+                textSize = 9.5f * density
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                if (palette.isGlassmorphism) setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
+            }
+            canvas.drawText(comfortText, leftCardRect.left + innerPad, tempY + statusPaint.textSize + 4f * density, statusPaint)
+
+            var pillX = leftCardRect.left + innerPad
+            val pillH = 22f * density
+            val pillY = leftCardRect.bottom - innerPad - pillH
+
+            if (primary.badge1 != null) {
+                val pillW = 56f * density
+                val humRect = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
+                drawGlassPill(context, canvas, humRect, null, primary.badge1, palette.accentCold, palette)
+                pillX += pillW + 6f * density
+            }
+            if (primary.badge2 != null && (pillX + 54f * density) <= leftCardRect.right - innerPad) {
+                val pillW = 56f * density
+                val pressRect = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
+                drawGlassPill(context, canvas, pressRect, null, primary.badge2, palette.textSecondary, palette)
+            }
+        } else {
+            // Specialized Display (Car, Kettle, TV, Switch, Leak, Door) - NO ARC!
+            val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (primary.isAlert) palette.alertRed else palette.textPrimary
+                textSize = (leftCardRect.height() * 0.26f).coerceIn(16f * density, 24f * density)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                if (palette.isGlassmorphism) setShadowLayer(3.5f * density, 0f, 1.2f * density, 0x85000000.toInt())
+            }
+            val stateY = leftCardRect.top + innerPad + statePaint.textSize
+            val safeState = ellipsizeText(primary.mainText, statePaint, leftCardRect.width() - innerPad * 2)
+            canvas.drawText(safeState, leftCardRect.left + innerPad, stateY, statePaint)
+
+            if (primary.subText != null) {
+                val subLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (primary.isAlert) palette.alertRed else palette.textSecondary
+                    textSize = 10f * density
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+                }
+                val safeSub = ellipsizeText(primary.subText, subLabelPaint, leftCardRect.width() - innerPad * 2)
+                canvas.drawText(safeSub, leftCardRect.left + innerPad, stateY + subLabelPaint.textSize + 5f * density, subLabelPaint)
+            }
+
+            var pillX = leftCardRect.left + innerPad
+            val pillH = 22f * density
+            val pillY = leftCardRect.bottom - innerPad - pillH
+
+            if (primary.badge1 != null) {
+                val pillW = (leftCardRect.width() * 0.44f).coerceAtMost(70f * density)
+                val r1 = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
+                drawGlassPill(context, canvas, r1, null, primary.badge1, palette.accentComfort, palette)
+                pillX += pillW + 6f * density
+            }
+            if (primary.badge2 != null && (pillX + 44f * density) <= leftCardRect.right - innerPad) {
+                val pillW = (leftCardRect.width() * 0.44f).coerceAtMost(70f * density)
+                val r2 = RectF(pillX, pillY, pillX + pillW, pillY + pillH)
+                drawGlassPill(context, canvas, r2, null, primary.badge2, palette.accentCold, palette)
             }
         }
-        val tempStr = data.primaryTemperature?.let { String.format(Locale.US, "%.1f°", it) } ?: "--°"
-        val tempY = leftCardRect.top + innerPad + tempPaint.textSize
-        canvas.drawText(tempStr, leftCardRect.left + innerPad, tempY, tempPaint)
 
-        // Dynamic Comfort Ring Gauge beside primary temperature
-        val gaugeRadius = (leftCardRect.height() * 0.22f).coerceIn(14f * density, 22f * density)
-        val gaugeCx = leftCardRect.right - innerPad - gaugeRadius
-        val gaugeCy = leftCardRect.top + innerPad + gaugeRadius
-        drawComfortGaugeRing(canvas, gaugeCx, gaugeCy, gaugeRadius, 4.5f * density, data.primaryTemperature, palette, showStatusText = false)
-
-        // Interactive Comfort Status Badge
-        val (comfortColor, comfortText) = getComfortInfo(data.primaryTemperature, palette)
-        val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = comfortColor
-            textSize = 9.5f * density
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            if (palette.isGlassmorphism) {
-                setShadowLayer(2.5f * density, 0f, 1f * density, 0x80000000.toInt())
-            }
-        }
-        canvas.drawText(comfortText, leftCardRect.left + innerPad, tempY + statusPaint.textSize + 4f * density, statusPaint)
-
-        // Bottom Pills inside Left Compartment (Humidity and Pressure)
-        var pillX = leftCardRect.left + innerPad
-        val pillH = 22f * density
-        val pillY = leftCardRect.bottom - innerPad - pillH
-
-        if (data.primaryHumidity != null) {
-            val humStr = String.format(Locale.US, "%.0f%%", data.primaryHumidity)
-            val humPillW = 54f * density
-            val humRect = RectF(pillX, pillY, pillX + humPillW, pillY + pillH)
-            drawGlassPill(context, canvas, humRect, R.drawable.ic_humidity, humStr, palette.accentCold, palette)
-            pillX += humPillW + 6f * density
-        }
-
-        if (data.primaryPressure != null && (pillX + 58f * density) <= leftCardRect.right - innerPad) {
-            val pressStr = String.format(Locale.US, "%.0f", data.primaryPressure)
-            val pressPillW = 56f * density
-            val pressRect = RectF(pillX, pillY, pillX + pressPillW, pillY + pillH)
-            drawGlassPill(context, canvas, pressRect, R.drawable.ic_pressure, pressStr, palette.textSecondary, palette)
-        }
-
-        // 3. Right Area: Secondary Rooms & Security Status
-        if (hasRightContent) {
+        // 3. Right Area: Secondary Devices (Device 2 and Device 3, up to 2 cards)
+        if (hasSecondaries) {
             val rightLeft = leftCardRect.right + 10f * density
             val rightW = w - padRight - rightLeft
+            val secCount = data.secondaryDevices.size.coerceAtMost(2)
+            val secGap = 6f * density
+            val totalAvailH = bodyBottom - bodyTop
+            val cardH = (totalAvailH - secGap * (secCount - 1)) / secCount
 
-            var currentY = bodyTop
+            for (i in 0 until secCount) {
+                val dev = data.secondaryDevices[i]
+                val cardTop = bodyTop + i * (cardH + secGap)
+                val cardRect = RectF(rightLeft, cardTop, rightLeft + rightW, cardTop + cardH)
 
-            // Up to 2 Secondary Rooms
-            val roomsToDisplay = data.roomSensors.take(2)
-            for (room in roomsToDisplay) {
-                val roomCardH = 26f * density
-                val roomCardRect = RectF(rightLeft, currentY, rightLeft + rightW, currentY + roomCardH)
-                drawSquircleCard(canvas, roomCardRect, 10f * density, palette, isSubTile = true)
+                drawSquircleCard(canvas, cardRect, 12f * density, palette, isSubTile = true)
 
-                val rNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                val cInnerPad = 8f * density
+                val dTitle = "${dev.iconEmoji} ${dev.roomName ?: dev.name}"
+                val dTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = palette.textSecondary
-                    textSize = 10f * density
-                    if (palette.isGlassmorphism) {
-                        setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
-                    }
+                    textSize = (10f * density).coerceIn(8.5f * density, 11f * density)
+                    if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x90000000.toInt())
                 }
-                val rSafeName = ellipsizeText(room.roomName, rNamePaint, rightW * 0.45f)
-                canvas.drawText(rSafeName, rightLeft + 8f * density, currentY + 16f * density, rNamePaint)
+                val safeDTitle = ellipsizeText(dTitle, dTitlePaint, rightW - cInnerPad * 2)
+                canvas.drawText(safeDTitle, rightLeft + cInnerPad, cardTop + cInnerPad + dTitlePaint.textSize, dTitlePaint)
 
-                val rValPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = palette.textPrimary
-                    textSize = 11.5f * density
+                // Bottom row in card: Main text + badge
+                val dValY = cardRect.bottom - cInnerPad
+                val dValPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (dev.isAlert) palette.alertRed else palette.textPrimary
+                    textSize = (12.5f * density).coerceIn(11f * density, 14f * density)
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    if (palette.isGlassmorphism) {
-                        setShadowLayer(2.5f * density, 0f, 1f * density, 0x85000000.toInt())
-                    }
+                    if (palette.isGlassmorphism) setShadowLayer(2.5f * density, 0f, 1f * density, 0x85000000.toInt())
                 }
-                val rTemp = room.temperature?.let { String.format(Locale.US, "%.1f°", it) } ?: ""
-                val rHum = room.humidity?.let { String.format(Locale.US, "%.0f%%", it) } ?: ""
-                val rValStr = "$rTemp $rHum".trim().ifEmpty { room.extraInfo ?: "" }
-                canvas.drawText(rValStr, rightLeft + rightW - 8f * density - rValPaint.measureText(rValStr), currentY + 17f * density, rValPaint)
+                val safeDVal = ellipsizeText(dev.mainText, dValPaint, rightW * 0.50f)
+                canvas.drawText(safeDVal, rightLeft + cInnerPad, dValY, dValPaint)
 
-                currentY += roomCardH + 5f * density
-            }
-
-            // Bottom Status Row (Door and Battery)
-            val bottomRowH = 24f * density
-            val bottomRowY = bodyBottom - bottomRowH
-
-            var badgeX = rightLeft
-            if (data.openDoorDeviceName != null || data.isAnyDoorOpen) {
-                val doorColor = if (data.isAnyDoorOpen) palette.alertRed else palette.okGreen
-                val doorText = if (data.isAnyDoorOpen) "🚪 ОТКРЫТО!" else "🚪 Закрыто"
-                val doorW = 76f * density
-                val doorRect = RectF(badgeX, bottomRowY, badgeX + doorW, bottomRowY + bottomRowH)
-                drawGlassPill(context, canvas, doorRect, null, doorText, doorColor, palette)
-                badgeX += doorW + 6f * density
-            }
-
-            if (data.lowestBatteryLevel != null && badgeX + 50f * density <= rightLeft + rightW) {
-                val batColor = if (data.lowestBatteryLevel <= 20.0) palette.accentWarm else palette.okGreen
-                val batStr = String.format(Locale.US, "🔋 %.0f%%", data.lowestBatteryLevel)
-                val batW = 56f * density
-                val batRect = RectF(badgeX, bottomRowY, badgeX + batW, bottomRowY + bottomRowH)
-                drawGlassPill(context, canvas, batRect, null, batStr, batColor, palette)
+                val badgeStr = dev.badge1 ?: dev.subText
+                if (badgeStr != null) {
+                    val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = if (dev.isAlert) palette.alertRed else palette.accentCold
+                        textSize = 10.5f * density
+                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                        if (palette.isGlassmorphism) setShadowLayer(2f * density, 0f, 1f * density, 0x80000000.toInt())
+                    }
+                    val safeBadge = ellipsizeText(badgeStr, badgePaint, rightW * 0.44f)
+                    val bX = cardRect.right - cInnerPad - badgePaint.measureText(safeBadge)
+                    canvas.drawText(safeBadge, bX, dValY, badgePaint)
+                }
             }
         }
 
