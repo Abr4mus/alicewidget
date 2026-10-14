@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
@@ -13,6 +14,7 @@ import androidx.core.content.ContextCompat
 import com.alice.homewidget.R
 import com.alice.homewidget.data.WidgetDataManager
 import com.alice.homewidget.model.AggregatedSensorData
+import com.alice.homewidget.model.DeviceWidgetState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
