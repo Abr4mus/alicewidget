@@ -111,29 +111,44 @@ data class Device(
     fun isVehicle(): Boolean {
         val t = type?.lowercase() ?: ""
         val n = name.lowercase()
-        if (t.contains("car") || t.contains("auto") || t.contains("vehicle")) return true
+        if (t.contains("car") || t.contains("auto") || t.contains("vehicle") || t.contains("tracker") || t.contains("telematics")) return true
         val keywords = listOf(
             "авто", "машин", "car", "starline", "pandora", "старлайн", "пандора", "сигнализац", "сигналк",
+            "автозапуск", "двигатель", "транспорт", "гараж", "тачка", "колеса", "колёса", "зажигание",
+            "маяк", "трекер", "tracker", "telematics", "gps", "can", "автомобиль",
             "лада", "веста", "гранта", "нива", "bmw", "mercedes", "audi", "haval", "geely", "chery",
             "omoda", "exeed", "tank", "monjaro", "changan", "hyundai", "kia", "toyota", "vw", "volkswagen",
             "skoda", "mazda", "ford", "nissan", "lexus", "subaru", "honda", "renault", "рено", "киа",
-            "хендай", "хёндай", "тойота", "шкода", "фольксваген", "бмв", "мерседес", "ауди"
+            "хендай", "хёндай", "тойота", "шкода", "фольксваген", "бмв", "мерседес", "ауди",
+            "эвакуатор", "газель", "уаз", "приора", "калина", "солярис", "рио", "поло", "рапид", "тигуан",
+            "камри", "рав4", "крета", "дастер", "каптюр", "аркана", "патриот", "patriot"
         )
         if (keywords.any { n.contains(it) }) return true
-        return (hasWaterOrFuel() && (hasBattery() || hasVoltage() || isOnOffDevice()))
+        // If device has battery voltage and is not a socket/switch/light, it is automotive telematics
+        if (hasVoltage() && !t.contains("socket") && !t.contains("switch") && !t.contains("light") && !t.contains("relay")) return true
+        if (hasWaterOrFuel() && (hasBattery() || hasVoltage() || isOnOffDevice())) return true
+        return false
     }
 
     fun isAc(): Boolean {
         val t = type?.lowercase() ?: ""
         val n = name.lowercase()
         if (t.contains("sensor")) return false
-        if (t == "devices.types.ac" || t == "devices.types.thermostat" || t == "devices.types.thermostat.ac" ||
+        // A passive climate sensor without on_off capability is NEVER an air conditioner!
+        if (!isOnOffDevice() && !n.contains("кондиционер") && !n.contains("кондёр") && !n.contains("сплит")) return false
+
+        if (t == "devices.types.ac" || t == "devices.types.thermostat.ac" ||
             t.endsWith(".ac") || t.contains("air_conditioner")) return true
         val keywords = listOf("кондиционер", "кондёр", "сплит", "тепловой насос")
-        return keywords.any { n.contains(it) }
+        if (keywords.any { n.contains(it) }) return true
+        if (t == "devices.types.thermostat" && isOnOffDevice()) return true
+        return false
     }
 
     fun isExcludedFromWidget(): Boolean {
+        // Never exclude vehicles!
+        if (isVehicle()) return false
+
         val t = type?.lowercase() ?: ""
         val n = name.lowercase()
         // Hubs, Gateways, Bridges
@@ -358,22 +373,29 @@ data class Device(
                 )
             }
             isKettle() -> {
-                val tempStr = getTemperature()?.let { String.format(java.util.Locale.US, "%.0f°C", it) } ?: "--°C"
+                val showTemp = metricSetting?.showTemperature ?: true
+                val temp = getTemperature()
+                val tempStr = temp?.let { String.format(java.util.Locale.US, "%.0f°C", it) }
                 val kState = getKettleState()
                 val onOffStr = if (isTurnedOn() == true) "ВКЛ" else "ВЫКЛ"
+
+                val main = if (showTemp && tempStr != null) tempStr else onOffStr
+                val sub = kState
+                val b1 = if (showTemp && tempStr != null) onOffStr else null
+
                 DeviceWidgetState(
                     id = id,
                     name = name,
                     roomName = roomName,
                     category = "kettle",
-                    mainText = tempStr,
-                    subText = kState,
-                    badge1 = onOffStr,
+                    mainText = main,
+                    subText = sub,
+                    badge1 = b1,
                     badge2 = null,
                     iconEmoji = "🫖",
                     isAlert = false,
                     hasComfortArc = false,
-                    rawTemperature = null
+                    rawTemperature = if (showTemp) temp else null
                 )
             }
             isTv() -> {

@@ -67,15 +67,15 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
                 )
                 views.setImageViewBitmap(R.id.ivWidgetCanvas, bitmap)
 
-                // 1. Click Hotspot: Open Main App
-                val appIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                // 1. Click Hotspot on Widget Body: Instant Refresh
+                val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {
+                    action = AliceHomeWidgetProvider.ACTION_REFRESH_WIDGET
                 }
-                val appPendingIntent = PendingIntent.getActivity(
-                    context, 0, appIntent,
+                val refreshPendingIntent = PendingIntent.getBroadcast(
+                    context, appWidgetId, refreshIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                views.setOnClickPendingIntent(R.id.btnWidgetOpenApp, appPendingIntent)
+                views.setOnClickPendingIntent(R.id.btnWidgetOpenApp, refreshPendingIntent)
 
                 // 2. Click Hotspot: Configure THIS specific widget instance
                 val configIntent = Intent(context, WidgetConfigureActivity::class.java).apply {
@@ -90,25 +90,13 @@ class AliceBarWidgetProvider : AppWidgetProvider() {
                 )
                 views.setOnClickPendingIntent(R.id.btnWidgetConfigure, configPendingIntent)
 
-                // 3. Click Hotspot: Refresh
-                val refreshIntent = Intent(context, AliceHomeWidgetProvider::class.java).apply {
-                    action = AliceHomeWidgetProvider.ACTION_REFRESH_WIDGET
-                }
-                val refreshPendingIntent = PendingIntent.getBroadcast(
-                    context, appWidgetId, refreshIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.btnWidgetRefresh, refreshPendingIntent)
-
-                // Dynamic contrast for action buttons in light themes
+                // Dynamic contrast for gear button in light themes
                 val palette = WidgetRenderEngine.getThemePalette(config.theme)
                 val isLightTheme = palette.isLight
                 val iconColor = if (isLightTheme) 0xFF22252A.toInt() else 0xE6FFFFFF.toInt()
                 val rippleBg = if (isLightTheme) R.drawable.bg_btn_ripple_light else R.drawable.bg_btn_ripple
                 views.setInt(R.id.ivWidgetConfigure, "setColorFilter", iconColor)
-                views.setInt(R.id.ivWidgetRefresh, "setColorFilter", iconColor)
                 views.setInt(R.id.btnWidgetConfigure, "setBackgroundResource", rippleBg)
-                views.setInt(R.id.btnWidgetRefresh, "setBackgroundResource", rippleBg)
 
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             } catch (e: Exception) {

@@ -174,8 +174,9 @@ class WidgetDataManager(context: Context) {
     )
 
     fun getDeviceMetricSetting(deviceId: String, appWidgetId: Int = 0): DeviceMetricSetting {
-        val prefix = if (appWidgetId > 0 && prefs.contains("w_${appWidgetId}_dev_${deviceId}_temp")) {
-            "w_${appWidgetId}_dev_${deviceId}_"
+        val widgetPrefix = "w_${appWidgetId}_dev_${deviceId}_"
+        val prefix = if (appWidgetId > 0 && (prefs.contains("${widgetPrefix}saved") || prefs.all.keys.any { it.startsWith(widgetPrefix) })) {
+            widgetPrefix
         } else {
             "dev_${deviceId}_"
         }
@@ -193,7 +194,8 @@ class WidgetDataManager(context: Context) {
     fun saveDeviceMetricSetting(deviceId: String, setting: DeviceMetricSetting, appWidgetId: Int = 0) {
         val editor = prefs.edit()
         val prefix = if (appWidgetId > 0) "w_${appWidgetId}_dev_${deviceId}_" else "dev_${deviceId}_"
-        editor.putBoolean("${prefix}temp", setting.showTemperature)
+        editor.putBoolean("${prefix}saved", true)
+            .putBoolean("${prefix}temp", setting.showTemperature)
             .putBoolean("${prefix}hum", setting.showHumidity)
             .putBoolean("${prefix}press", setting.showPressure)
             .putBoolean("${prefix}door", setting.showDoor)
@@ -274,9 +276,8 @@ class WidgetDataManager(context: Context) {
             rooms.firstOrNull { it.id == primaryDev.room || it.hasDevice(primaryDev.id) }
         } else null
 
-        val isTwoDeviceMode = targetDevices.size == 2
         val primaryTitle = config?.customTitle?.ifBlank { null }
-            ?: (if (isTwoDeviceMode) "Устройства" else (if (primaryDev.isVehicle()) primaryDev.name else primaryRoom?.name ?: primaryDev.name))
+            ?: (if (primaryDev.isVehicle()) primaryDev.name else primaryRoom?.name ?: primaryDev.name)
             ?: "Умный дом"
 
         val primaryMetricSetting = getDeviceMetricSetting(primaryDev.id, appWidgetId)

@@ -225,11 +225,15 @@ class WidgetConfigureActivity : AppCompatActivity() {
         val allDevices = dataManager.getAllRelevantDevices()
         val rooms = dataManager.getAvailableRooms().filter { room ->
             allDevices.any { it.room == room.id || room.hasDevice(it.id) }
-        }.sortedBy { it.name.lowercase() }
+        }
 
         addRoomChip("Все комнаты", null)
         for (room in rooms) {
             addRoomChip(room.name.ifBlank { "Комната" }, room.id)
+        }
+        val hasUnassigned = allDevices.any { dev -> rooms.none { it.id == dev.room || it.hasDevice(dev.id) } }
+        if (hasUnassigned) {
+            addRoomChip("🚗 Транспорт", "unassigned")
         }
     }
 
@@ -283,7 +287,7 @@ class WidgetConfigureActivity : AppCompatActivity() {
         allDeviceHolders.clear()
 
         val allDevices = dataManager.getAllRelevantDevices()
-        val rooms = dataManager.getAvailableRooms().sortedBy { it.name.lowercase() }
+        val rooms = dataManager.getAvailableRooms()
 
         if (allDevices.isEmpty()) {
             val emptyTv = TextView(this).apply {
@@ -303,18 +307,18 @@ class WidgetConfigureActivity : AppCompatActivity() {
         selectedDeviceOrder.clear()
         selectedDeviceOrder.addAll(selectedIds)
 
-        // Group devices by room - deterministic stable alphabetical sorting
+        // Group devices by room - stable original Yandex sorting
         val roomsWithDevices = mutableListOf<Pair<Room?, List<Device>>>()
         for (room in rooms) {
             val devInRoom = allDevices.filter { it.room == room.id || room.hasDevice(it.id) }
-                .sortedBy { it.name.lowercase() }
+                .sortedBy { it.name }
             if (devInRoom.isNotEmpty()) {
                 roomsWithDevices.add(room to devInRoom)
             }
         }
         val unassigned = allDevices.filter { dev ->
             rooms.none { it.id == dev.room || it.hasDevice(dev.id) }
-        }.sortedBy { it.name.lowercase() }
+        }.sortedBy { it.name }
         if (unassigned.isNotEmpty()) {
             roomsWithDevices.add(null to unassigned)
         }
@@ -322,8 +326,8 @@ class WidgetConfigureActivity : AppCompatActivity() {
         val density = resources.displayMetrics.density
 
         for ((room, devList) in roomsWithDevices) {
-            val rName = room?.name ?: "Другие устройства"
-            val rId = room?.id
+            val rName = room?.name ?: if (devList.any { it.isVehicle() }) "🚗 Транспорт" else "Другие устройства"
+            val rId = room?.id ?: "unassigned"
 
             // Room Card Container (HyperOS Rounded Glass Tile)
             val roomCard = LinearLayout(this).apply {

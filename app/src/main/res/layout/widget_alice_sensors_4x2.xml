@@ -20,51 +20,26 @@
         android:clickable="true"
         android:focusable="true" />
 
-    <!-- Action Hotspots in Top-Right: Settings & Instant Refresh -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <!-- Action Hotspot in Top-Right: Settings Only -->
+    <FrameLayout
+        android:id="@+id/btnWidgetConfigure"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
         android:layout_gravity="top|end"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:orientation="horizontal">
+        android:background="@drawable/bg_btn_ripple"
+        android:clickable="true"
+        android:focusable="true">
 
-        <FrameLayout
-            android:id="@+id/btnWidgetConfigure"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_marginEnd="5dp"
-            android:background="@drawable/bg_btn_ripple"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:id="@+id/ivWidgetConfigure"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:layout_gravity="center"
-                android:alpha="0.85"
-                android:contentDescription="Настроить этот виджет"
-                android:src="@drawable/ic_gear" />
-        </FrameLayout>
-
-        <FrameLayout
-            android:id="@+id/btnWidgetRefresh"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:background="@drawable/bg_btn_ripple"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:id="@+id/ivWidgetRefresh"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:layout_gravity="center"
-                android:alpha="0.85"
-                android:contentDescription="Обновить"
-                android:src="@drawable/ic_refresh" />
-        </FrameLayout>
-    </LinearLayout>
+        <ImageView
+            android:id="@+id/ivWidgetConfigure"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="center"
+            android:alpha="0.85"
+            android:contentDescription="Настроить этот виджет"
+            android:src="@drawable/ic_gear" />
+    </FrameLayout>
 
 </FrameLayout>
